@@ -1,154 +1,44 @@
-# Unity 6.3 LTS — Breaking Changes
+# Unity — Breaking Changes
 
-**Last verified:** 2026-02-13
+Last verified: 2026-05-01 | Engine: Unity 6.3 LTS
 
-This document tracks breaking API changes and behavioral differences between Unity 2022 LTS
-(likely in model training) and Unity 6.3 LTS (current version). Organized by risk level.
+Changes between Unity versions post-LLM-cutoff (6.0+).
 
-## HIGH RISK — Will Break Existing Code
+## Unity 2023.x → Unity 6.0 (HIGH RISK)
 
-### Entities/DOTS API Complete Overhaul
-**Versions:** Entities 1.0+ (Unity 6.0+)
+| Subsystem | Change | Migration |
+|-----------|--------|-----------|
+| Core | `Object.FindObjectsOfType()` → `Object.FindObjectsByType(sortMode)` | Add sort mode parameter |
+| Core | `Object.FindObjectOfType()` → `Object.FindFirstObjectByType()` or `FindAnyObjectByType()` | Choose appropriate variant |
+| Core | `GraphicsFormat.DepthAuto/ShadowAuto/VideoAuto` removed | Compile error — use explicit formats |
+| Core | Enlighten Baked GI backend removed | Migrate to Progressive Lightmapper |
+| Rendering | Light probes now 100% brightness (was 94%) | Adjust baked probe values if needed |
+| Rendering | Metal shader buffer layout changed for half/min16float | Recompile Metal shaders |
+| URP | `SetupRenderPasses` deprecated → `AddRenderPasses` + Render Graph | Rewrite Scriptable Renderer Features |
+| URP | URP Compatibility Mode deprecated (removed in 6.3) | Migrate all custom render features to Render Graph |
+| URP | `RenderPipelineEditorUtility.FetchFirstCompatibleType...` deprecated | Use `GetDerivedTypesSupportedOnCurrentPipeline()` |
+| UI Toolkit | `ExecuteDefaultAction/ExecuteDefaultActionAtTarget` → `HandleEventTrickleDown/HandleEventBubbleUp` | Update custom event handlers |
+| UI Toolkit | `PreventDefault()` → `StopPropagation()` | Rename calls |
+| Android | `UnityPlayer` Java class split into `UnityPlayerForActivityOrService` / `UnityPlayerForGameActivity` | Update Android native plugins |
+| Android | `UnityPlayer` no longer extends `FrameLayout`; use `getFrameLayout()` | Update layout access |
+| Android | Gradle 8.4, AGP 8.3.0, SDK Build Tools 34, JDK 17 required | Update build environment |
+| Lighting | `LightingSettings.filteringGaussRadiusAO/Direct/Indirect` (int) → `filteringGaussianRadius...` (float) | Rename + cast |
+| Packages | `UPM_CACHE_PATH` / `UPM_NPM_CACHE_PATH` env vars removed | Use `UPM_CACHE_ROOT` |
 
-```csharp
-// ❌ OLD (pre-Unity 6, GameObjectEntity pattern)
-public class HealthComponent : ComponentData {
-    public float Value;
-}
+## Unity 6.0 → Unity 6.3 (HIGH RISK)
 
-// ✅ NEW (Unity 6+, IComponentData)
-public struct HealthComponent : IComponentData {
-    public float Value;
-}
-
-// ❌ OLD: ComponentSystem
-public class DamageSystem : ComponentSystem { }
-
-// ✅ NEW: ISystem (unmanaged, Burst-compatible)
-public partial struct DamageSystem : ISystem {
-    public void OnCreate(ref SystemState state) { }
-    public void OnUpdate(ref SystemState state) { }
-}
-```
-
-**Migration:** Follow Unity's ECS migration guide. Major architectural changes required.
-
----
-
-### Input System — Legacy Input Deprecated
-**Versions:** Unity 6.0+
-
-```csharp
-// ❌ OLD: Input class (deprecated)
-if (Input.GetKeyDown(KeyCode.Space)) { }
-
-// ✅ NEW: Input System package
-using UnityEngine.InputSystem;
-if (Keyboard.current.spaceKey.wasPressedThisFrame) { }
-```
-
-**Migration:** Install Input System package, replace all `Input.*` calls with new API.
-
----
-
-### URP/HDRP Renderer Feature API Changes
-**Versions:** Unity 6.0+
-
-```csharp
-// ❌ OLD: ScriptableRenderPass.Execute signature
-public override void Execute(ScriptableRenderContext context, ref RenderingData data)
-
-// ✅ NEW: Uses RenderGraph API
-public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
-```
-
-**Migration:** Update custom render passes to use RenderGraph API.
-
----
-
-## MEDIUM RISK — Behavioral Changes
-
-### Addressables — Asset Loading Returns
-**Versions:** Unity 6.2+
-
-Asset loading failures now throw exceptions by default instead of returning null.
-Add proper exception handling or use `TryLoad` variants.
-
-```csharp
-// ❌ OLD: Silent null on failure
-var handle = Addressables.LoadAssetAsync<Sprite>("key");
-var sprite = handle.Result; // null if failed
-
-// ✅ NEW: Throws on failure, use try/catch or TryLoad
-try {
-    var handle = Addressables.LoadAssetAsync<Sprite>("key");
-    var sprite = await handle.Task;
-} catch (Exception e) {
-    Debug.LogError($"Failed to load: {e}");
-}
-```
-
----
-
-### Physics — Default Solver Iterations Changed
-**Versions:** Unity 6.0+
-
-Default solver iterations increased for better stability.
-Check `Physics.defaultSolverIterations` if you rely on old behavior.
-
----
-
-## LOW RISK — Deprecations (Still Functional)
-
-### UGUI (Legacy UI)
-**Status:** Deprecated but supported
-**Replacement:** UI Toolkit
-
-UGUI still works but UI Toolkit is recommended for new projects.
-
----
-
-### Legacy Particle System
-**Status:** Deprecated
-**Replacement:** Visual Effect Graph (VFX Graph)
-
----
-
-### Old Animation System
-**Status:** Deprecated
-**Replacement:** Animator Controller (Mecanim)
-
----
-
-## Platform-Specific Breaking Changes
-
-### WebGL
-- **Unity 6.0+**: WebGPU is now the default (WebGL 2.0 fallback available)
-- Update shaders for WebGPU compatibility
-
-### Android
-- **Unity 6.0+**: Minimum API level raised to 24 (Android 7.0)
-
-### iOS
-- **Unity 6.0+**: Minimum deployment target raised to iOS 13
-
----
-
-## Migration Checklist
-
-When upgrading from 2022 LTS to Unity 6.3 LTS:
-
-- [ ] Audit all DOTS/ECS code (complete rewrite likely needed)
-- [ ] Replace `Input` class with Input System package
-- [ ] Update custom render passes to RenderGraph API
-- [ ] Add exception handling to Addressables calls
-- [ ] Test physics behavior (solver iterations changed)
-- [ ] Consider migrating UGUI to UI Toolkit for new UI
-- [ ] Update WebGL shaders for WebGPU
-- [ ] Verify minimum platform versions (Android/iOS)
-
----
-
-**Sources:**
-- https://docs.unity3d.com/6000.0/Documentation/Manual/upgrade-guides.html
-- https://docs.unity3d.com/Packages/com.unity.entities@1.3/manual/upgrade-guide.html
+| Subsystem | Change | Migration |
+|-----------|--------|-----------|
+| URP | **Compatibility Mode fully removed** — code stripped by default | Any code using `enableRenderCompatibilityMode` must be removed |
+| URP | `enableRenderCompatibilityMode` property now read-only | Remove all writes to this property |
+| URP | Legacy ETC texture compression removed | Textures auto-convert; visual difference possible |
+| C# | `[SerializeField]` now only valid on fields — compile error on properties/methods | Move to fields or use `[field: SerializeField]` |
+| Accessibility | `AccessibilityRole` converted from flags enum to standard enum | Remove bitwise operations |
+| Accessibility | `AccessibilityRole`/`AccessibilityState` types changed from `int` to `byte` | Recompile precompiled assemblies |
+| Accessibility | `AccessibilityNode.selected` deprecated | Use `AccessibilityNode.invoked` |
+| Android | Round and legacy icons deprecated | Use adaptive icons |
+| Android | Android 16 large screen: set App Category to "Game" for orientation control | Add app category metadata |
+| UI Toolkit | USS parser upgraded — previously-ignored invalid syntax now errors | Fix USS files with invalid syntax |
+| Packages | `UPM_NPM_CACHE_PATH` deprecated | Use `UPM_CACHE_ROOT` |
+| Editor | Search Index Manager removed | Use Preferences > Search > Indexing |
+| Services | Facebook Instant Games deprecated | Migrate to Web platform |

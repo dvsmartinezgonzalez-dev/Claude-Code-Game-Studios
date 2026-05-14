@@ -1,0 +1,90 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash 'C:\\Users\\dvsma\\Desktop\\boltsort\\.codex\\hooks\\validate-commit.sh'",
+            "timeout": 15
+          },
+          {
+            "type": "command",
+            "command": "bash 'C:\\Users\\dvsma\\Desktop\\boltsort\\.codex\\hooks\\validate-push.sh'",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash 'C:\\Users\\dvsma\\Desktop\\boltsort\\.codex\\hooks\\validate-assets.sh'",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash 'C:\\Users\\dvsma\\Desktop\\boltsort\\.codex\\hooks\\validate-skill-change.sh'",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash 'C:\\Users\\dvsma\\Desktop\\boltsort\\.codex\\hooks\\pre-compact.sh'",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostCompact": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash 'C:\\Users\\dvsma\\Desktop\\boltsort\\.codex\\hooks\\post-compact.sh'",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash 'C:\\Users\\dvsma\\Desktop\\boltsort\\.codex\\hooks\\session-start.sh'",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "bash 'C:\\Users\\dvsma\\Desktop\\boltsort\\.codex\\hooks\\detect-gaps.sh'",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash 'C:\\Users\\dvsma\\Desktop\\boltsort\\.codex\\hooks\\session-stop.sh'",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

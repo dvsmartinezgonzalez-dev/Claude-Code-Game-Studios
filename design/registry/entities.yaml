@@ -37,7 +37,7 @@
 #   Each entry: name, status, source, referenced_by[], attributes{}, added, revised
 
 version: 1
-last_updated: ""
+last_updated: "2026-05-10"
 
 # ─── ENTITIES ────────────────────────────────────────────────────────────────
 # Named game-world objects: enemies, NPCs, characters, factions, bosses.
@@ -77,7 +77,26 @@ entities: []
 # Attribute fields: value_gold, weight, stackable, category, and any stat
 #   modifiers that another system (e.g., economy, crafting) might reference.
 
-items: []
+items:
+  - name: coin
+    status: active
+    source: design/gdd/coin-economy.md      # ownership transferred from level-complete-ui.md (2026-04-24)
+    referenced_by:
+      - design/gdd/level-complete-ui.md     # computes coins_earned from star rating; fires coin_reward_granted/coin_bonus_granted to LP
+      - design/gdd/level-progression.md     # LP delegates GetCoinBalance/AddCoins to CE; routes coin events from LC UI
+      - design/gdd/coin-economy.md          # owns earn/spend rules, balance persistence, and economy.coin_balance schema field
+      # design/gdd/in-game-hud.md — add when authored; HUD displays coin_balance
+      # design/gdd/hint-system.md — add when authored; hints deduct 50 coins via SpendCoins
+      # design/gdd/shop-ui.md — add when authored; shop spends coins via SpendCoins
+    category: soft_currency
+    stackable: true
+    notes: "Primary soft currency. Earn: coin_reward_per_star=[0,15,20,40] (LOCKED — Coin Economy GDD
+      CE-09; updated 2026-05-08 Cluster A retune); ad_multiplier=2.0 (LOCKED — Level Complete UI
+      F-03, confirmed by Coin Economy GDD). Spend: hint_cost=50, skin_price_finish=300,
+      skin_price_set=1200, skin_price_workshop=2800 (all CE-09). coin_balance owned by Coin Economy;
+      Level Progression delegates. No hard cap; INT_MAX safety clamp only. Floor=0 (hard)."
+    added: 2026-04-20
+    revised: "2026-05-08"
 
 # Example:
 #
@@ -106,7 +125,94 @@ items: []
 #   output_range[min, max], added
 # Optional: expression (the actual formula), notes
 
-formulas: []
+formulas:
+  - name: is_breather
+    status: active
+    source: design/gdd/level-progression.md
+    referenced_by:
+      - design/gdd/level-progression.md
+      # design/gdd/level-select-ui.md — add when authored; reads IsBreather to render tier indicator on tile
+    variables:
+      - level_id
+    output_range: [false, true]
+    expression: "is_breather = (level_id % 10 == 0)"
+    notes: "Flag only — Level Progression emits this property; no difficulty enforcement is applied by LP.
+      Breather levels are authored one tier lower (e.g., a Tier 3 level authored at Tier 2 difficulty)
+      by the level design pipeline, which emits a build warning if the authored tier appears inconsistent.
+      Level Select UI uses this to render a visual indicator on breather level tiles."
+    added: 2026-04-21
+    revised: ""
+
+  - name: is_locked
+    status: active
+    source: design/gdd/level-progression.md
+    referenced_by:
+      - design/gdd/level-progression.md
+      - design/gdd/save-persistence.md    # current_level_id persisted here; is_locked depends on current_level_id being correct after cold start
+      # design/gdd/level-select-ui.md — add when authored; reads IsLocked per tile to show lock overlay
+    variables:
+      - level_id
+      - current_level_id
+    output_range: [false, true]
+    expression: "is_locked(level_id) = (level_id > current_level_id)"
+    notes: "current_level_id = highest authorized level (current or next-to-play). After completing level N,
+      current_level_id advances to N+1. IsLocked(current_level_id) always returns false — the player's
+      current level is never locked. Level Select UI must not cache this value; re-query on each focus."
+    added: 2026-04-21
+    revised: ""
+
+  - name: best_stars_update
+    status: active
+    source: design/gdd/level-progression.md
+    referenced_by:
+      - design/gdd/level-progression.md
+      - design/gdd/save-persistence.md    # persists best_stars per level_id; WriteCompletionAtomic enforces best_stars' = max(current, earned) and write-once completion_version
+      # design/gdd/level-select-ui.md — add when authored; reads best_stars to render star badges
+    variables:
+      - current_best_stars
+      - stars_earned
+    output_range: [0, 3]
+    expression: "best_stars' = max(current_best_stars, stars_earned)"
+    notes: "Progress is monotonically non-decreasing. current_best_stars = 0 means never completed.
+      stars_earned = 0 events are discarded by LP before this formula runs (AC-34). Save & Persistence
+      GDD must store best_stars as int [0–3] per level_id and support the atomic write requirement
+      with current_level_id advance (EC-16 / AC-18)."
+    added: 2026-04-21
+    revised: ""
+
+  - name: level_completed_event
+    status: active
+    source: design/gdd/level-progression.md
+    referenced_by:
+      - design/gdd/level-progression.md
+      - design/gdd/coin-economy.md          # subscribes to LevelCompleted for analytics; award arrives separately via CE.AddCoins()
+    value: "LevelCompleted(stars: int, level_id: int, move_count: int, par_moves: int)"
+    unit: string (event name + signature)
+    notes: "Emitted by Level Progression exactly once per completion in COMPLETION_FLOW. The event/callback
+      boundary between LP and Coin Economy — LP never calls Coin Economy directly. stars=1–3 (0 is
+      discarded by LP before emission). level_id = current_level_id at completion time. move_count from
+      GSM level_complete payload. par_moves from LDS GetLevel(level_id).par_moves. Coin Economy GDD must
+      add itself to referenced_by when authored."
+    added: 2026-04-21
+    revised: ""
+
+  - name: bolt_count_invariant
+    status: active
+    source: design/gdd/level-data-system.md
+    referenced_by:
+      - design/gdd/level-data-system.md
+      - design/gdd/game-state-manager.md    # GSM verifies this when initializing board state
+      - design/gdd/sort-mechanic.md         # Sort Mechanic win condition relies on this invariant
+    variables:
+      - color_count
+      - stack_depth
+    output_range: [6, 64]
+    expression: "total_bolts = color_count × stack_depth; each color_id appears exactly stack_depth times"
+    notes: "Two stacked checks: Check 1 (total count) is a fast early-exit; Check 2 (per-color count)
+      is the sufficient condition. Temp slots are excluded — they contain zero bolts at level start.
+      If GSM or Sort Mechanic use different values, surface the conflict before writing those GDDs."
+    added: 2026-04-16
+    revised: ""
 
 # Example:
 #
@@ -139,7 +245,155 @@ formulas: []
 #
 # Required fields: name, status, source, referenced_by, value, unit, added
 
-constants: []
+constants:
+  - name: quality_density_multiplier
+    status: active
+    source: design/gdd/quality-tier-system.md
+    referenced_by:
+      - design/gdd/quality-tier-system.md
+      - design/gdd/animation-system.md
+    value: "0.25 (Low) / 0.65 (Medium) / 1.0 (High)"
+    unit: float (0.0–1.0 scale)
+    notes: "Global VFX Graph float property name that all VFX assets must expose and read at initialization.
+      Values set by Quality Tier System: Low=0.25, Medium=0.65, High=1.0. VFX assets must not cache
+      their authored density before this property is applied. QTS validates via editor script
+      (AC-EC-02). Animation System GDD lists this as a required property on every VFX Graph asset (QT-01).
+      Animation System applies it via VFXManager.SetGlobalFloat at level_loaded."
+    added: 2026-04-18
+    revised: "2026-04-19"
+
+  - name: watchdog_timeout_ms
+    status: active
+    source: design/gdd/game-state-manager.md
+    referenced_by:
+      - design/gdd/game-state-manager.md
+      - design/gdd/animation-system.md
+    value: 1500
+    unit: ms
+    notes: "Safe range: 500–3000ms. Maximum Animation System bolt gesture duration is lift(80) + travel(300) +
+      settle(70) = 450ms — well within this ceiling. travel_max_ms tuning knob must not exceed
+      watchdog_timeout_ms − 200ms (Animation System GDD tuning knob safe range note)."
+    added: 2026-04-18
+    revised: "2026-04-19"
+
+  - name: animation_complete_signal
+    status: active
+    source: design/gdd/animation-system.md
+    referenced_by:
+      - design/gdd/animation-system.md
+      - design/gdd/sort-mechanic.md
+      - design/gdd/in-game-hud.md    # subscribes to re-enable undo button after MOVE_EXECUTING
+    value: "animation_complete(sequence_id: int64)"
+    unit: string (event name + signature)
+    notes: "Signal emitted by Animation System at end of bolt settle (BM-04). Sort Mechanic subscribes
+      to exit MOVE_EXECUTING state. Stale sequence IDs discarded by Sort Mechanic via sequence_id
+      mismatch check. int64 required (not int32) — C# unchecked int32 wrap to negative causes permanent
+      MOVE_EXECUTING softlock; int64 (~9.2e18) eliminates this failure mode. Upgraded from int32 in
+      Sort Mechanic pass 7 (2026-05-09); propagated to Animation System GDD and HUD GDD (2026-05-10)."
+    added: 2026-04-19
+    revised: "2026-05-10"  # was: int32 before sort-mechanic pass 7
+
+  - name: audio_mixer_sfx_param
+    status: active
+    source: design/gdd/audio-system.md
+    referenced_by:
+      - design/gdd/audio-system.md
+      # design/gdd/settings-ui.md — add when authored; Settings UI must call AudioMixer.SetFloat with this exact name
+    value: "SFXVolume"
+    unit: string (AudioMixer exposed parameter name)
+    notes: "Exposed parameter name on the SFX mixer group. Settings UI calls AudioMixer.SetFloat(audio_mixer_sfx_param)
+      to control bolt SFX and chime volume. Must not be renamed after Settings UI is built — rename
+      requires coordinated update across Audio System inspector, Settings UI code, and this registry."
+    added: 2026-04-18
+    revised: ""
+
+  - name: audio_mixer_ambient_param
+    status: active
+    source: design/gdd/audio-system.md
+    referenced_by:
+      - design/gdd/audio-system.md
+      # design/gdd/settings-ui.md — add when authored
+    value: "AmbientVolume"
+    unit: string (AudioMixer exposed parameter name)
+    notes: "Exposed parameter name on the Ambient mixer group. Controls machine hum loop volume.
+      Must not be renamed after Settings UI is built."
+    added: 2026-04-18
+    revised: ""
+
+  - name: audio_mixer_ui_param
+    status: active
+    source: design/gdd/audio-system.md
+    referenced_by:
+      - design/gdd/audio-system.md
+      # design/gdd/settings-ui.md — add when authored
+    value: "UIVolume"
+    unit: string (AudioMixer exposed parameter name)
+    notes: "Exposed parameter name on the UI mixer group. Controls button tap volume.
+      Must not be renamed after Settings UI is built."
+    added: 2026-04-18
+    revised: ""
+
+  - name: audio_prefs_namespace
+    status: active
+    source: design/gdd/audio-system.md
+    referenced_by:
+      - design/gdd/audio-system.md
+      # design/gdd/settings-ui.md — add when authored; Settings UI writes these keys
+      - design/gdd/save-persistence.md    # reserves audio.* namespace in PlayerPrefs namespace table (C.3); does not write these keys
+    value: "audio.sfx_volume / audio.ambient_volume / audio.ui_volume"
+    unit: string (PlayerPrefs key names)
+    notes: "PlayerPrefs keys owned by Audio System (read on Awake) and written by Settings UI.
+      Save & Persistence GDD must reserve the audio.* namespace. Keys must not change post-launch —
+      a rename invalidates all existing player volume preferences."
+    added: 2026-04-18
+    revised: ""
+
+  - name: write_completion_atomic
+    status: active
+    source: design/gdd/save-persistence.md
+    referenced_by:
+      - design/gdd/save-persistence.md
+      - design/gdd/level-progression.md    # LP is the sole caller; triggers W-1 on level completion. NOTE: LP GDD uses provisional SP API language — must be updated to reference WriteCompletionAtomic by name now that SP GDD is Approved (Cross-GDD LP-SaveAPI-01)
+    value: "WriteCompletionAtomic(level_id: int, best_stars: int, completion_version: string, new_current_level_id: int)"
+    unit: string (method signature)
+    notes: "Atomic write primitive owned by Save & Persistence. Writes best_stars[N], completion_version (write-once),
+      and current_level_id = N+1 together in a single write-then-swap operation. Satisfies LP EC-16 / AC-18.
+      Rejects best_stars = 0 (caller bug). Never overwrites completion_version on repeat calls for the same level_id.
+      Level Progression is the only authorized caller. Additional callers require a Save & Persistence GDD update."
+    added: 2026-04-22
+    revised: ""
+
+  - name: save_system_ready
+    status: active
+    source: design/gdd/save-persistence.md
+    referenced_by:
+      - design/gdd/save-persistence.md
+      - design/gdd/level-progression.md    # LP reads current_level_id and completion_record[] only after IsReady. NOTE: LP GDD uses provisional SP API language — must be updated to reference SaveSystem.IsReady and OnSaveReady by name now that SP GDD is Approved (Cross-GDD LP-SaveAPI-01)
+      - design/gdd/coin-economy.md          # must await IsReady before reading coin_balance (CE LOADING → READY gate); uses SaveSystem.IsReady + OnSaveReady subscribe-then-check pattern per CE Detailed Rules
+      # design/gdd/skin-system.md — add when authored; must await IsReady before reading skins block
+    value: "SaveSystem.IsReady"
+    unit: bool
+    notes: "Flag set to true by Save & Persistence after cold-start read (including migration) completes.
+      No system may read saved values before this flag is true. On iOS pre-unlock cold start, IsReady is
+      not set until the file becomes accessible or the 5-second timeout elapses (first_unlock_read_failure path).
+      Systems must subscribe to OnSaveReady event or poll IsReady — not assume it is true at Awake/Start."
+    added: 2026-04-22
+    revised: ""
+
+  - name: hint_cost
+    status: active
+    source: design/gdd/coin-economy.md
+    referenced_by:
+      - design/gdd/coin-economy.md          # authoritative owner; CE-09 defines value as 50; CE-13 pity grant fires AddCoins(50) as substitute
+      - design/gdd/in-game-hud.md           # Cross-GDD HUD-02 resolved 2026-05-08: HUD Tuning Knobs updated to 50 (reads from CE config, not hardcoded)
+      # design/gdd/hint-system.md — add when authored; Hint System GDD will own the spend call (SpendCoins(50))
+    value: 50
+    unit: coins
+    notes: "Cost of one hint. Safe range: [25, 100]. Authoritative source: CE GDD (CE-09). HUD reads
+      from CE config at level_loaded — not hardcoded. HUD GDD cross-doc conflict (temp value 10) resolved
+      2026-05-08 per HUD Pass 8 design review (Cross-GDD HUD-02). All documents now consistent at 50."
+    added: 2026-05-01
+    revised: "2026-05-10"  # was: stale conflict note about HUD value 10 — resolved
 
 # Example:
 #

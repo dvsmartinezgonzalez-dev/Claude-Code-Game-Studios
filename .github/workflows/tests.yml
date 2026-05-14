@@ -1,0 +1,51 @@
+name: Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    name: Unity Test Runner
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      # Cache Unity Library folder for faster subsequent runs
+      - name: Cache Library
+        uses: actions/cache@v3
+        with:
+          path: Library
+          key: Library-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-
+
+      # Run EditMode (unit) and PlayMode (integration) tests
+      # Requires UNITY_LICENSE, UNITY_EMAIL, UNITY_PASSWORD secrets in repo settings
+      - name: Run Tests
+        uses: game-ci/unity-test-runner@v4
+        id: tests
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          projectPath: .
+          unityVersion: 6000.3.0f1  # Unity 6.3 LTS — match project version exactly
+          testMode: all              # runs EditMode + PlayMode
+          artifactsPath: test-results
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          checkName: Test Results
+
+      - name: Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: ${{ steps.tests.outputs.artifactsPath }}

@@ -1,0 +1,13 @@
+<linker>
+  <!-- Preserve all Newtonsoft.Json types including ArrayConverter, NullableConverter,
+       and all internal converters required for int[][] and int? deserialization.
+       IL2CPP strips unused generic instantiations without this entry. -->
+  <assembly fullname="Newtonsoft.Json" preserve="all"/>
+
+  <!-- Preserve LevelData types that Newtonsoft.Json constructs via reflection.
+       Without this, IL2CPP may strip private setters and [JsonConstructor] methods. -->
+  <assembly fullname="Assembly-CSharp">
+    <type fullname="BoltSort.LevelData.LevelRecord" preserve="all"/>
+    <type fullname="BoltSort.LevelData.LevelCatalogue" preserve="all"/>
+  </assembly>
+</linker>

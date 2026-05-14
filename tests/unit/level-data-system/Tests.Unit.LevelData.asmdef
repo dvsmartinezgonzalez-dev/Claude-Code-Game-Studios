@@ -1,0 +1,21 @@
+{
+    "name": "Tests.Unit.LevelData",
+    "rootNamespace": "BoltSort.Tests.Unit.LevelData",
+    "references": [
+        "com.unity.nuget.newtonsoft-json"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false,
+    "optionalUnityReferences": [
+        "TestAssembly"
+    ]
+}

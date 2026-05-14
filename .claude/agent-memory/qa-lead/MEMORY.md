@@ -1,0 +1,1 @@
+- [BoltSort project context](project_boltsort_context.md) — genre, platform, engine, Sort Mechanic review history (2 adversarial QA reviews as of 2026-04-30)

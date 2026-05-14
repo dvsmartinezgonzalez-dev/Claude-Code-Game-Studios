@@ -30,7 +30,7 @@
 #   Superseded entries:     Grep pattern="status: superseded"
 
 version: 1
-last_updated: ""
+last_updated: "2026-05-03"
 
 # ─── STATE OWNERSHIP ─────────────────────────────────────────────────────────
 # Who is the authoritative owner of each piece of shared game state.
@@ -43,7 +43,61 @@ last_updated: ""
 # interface: how other systems access this state (read-only property, method call,
 #   signal, shared resource, etc.) — this is the contract other ADRs depend on.
 
-state_ownership: []
+state_ownership:
+  - state: singleton_boot_order
+    status: active
+    owner_system: all-managers (QualityTierSystem, SaveSystem, AudioSystem, GameStateManager, CoinEconomy, LevelProgression)
+    adr: docs/architecture/adr-0001-singleton-architecture-and-boot-sequence.md
+    interface: "Each manager exposes public static Instance { get; private set; } set in Awake. SEO order is the authoritative boot contract (see ADR-0001 table)."
+    write_access: each-manager-owns-its-own-instance
+    referenced_by:
+      - docs/architecture/adr-0001-singleton-architecture-and-boot-sequence.md
+    added: 2026-05-02
+    revised: ""
+
+  - state: level_record_cache
+    status: active
+    owner_system: LevelDataSystem
+    adr: docs/architecture/adr-0004-level-data-loading-strategy.md
+    interface: "LevelDataSystem.GetLevel(int levelId): LevelRecord — synchronous, O(1) dictionary lookup. Throws if not ready or level not found. IsReady must be true before calling."
+    write_access: LevelDataSystem-only (populated once at startup, immutable thereafter)
+    referenced_by:
+      - docs/architecture/adr-0004-level-data-loading-strategy.md
+    added: 2026-05-02
+    revised: ""
+
+  - state: rendering_quality_settings
+    status: active
+    owner_system: QualityTierSystem
+    adr: docs/architecture/adr-0005-rendering-pipeline-configuration.md
+    interface: "QualityTierSystem.ActiveTier (enum), DensityMultiplier (float 0.25/0.65/1.0), TargetFrameRate (int 30/60), SupportsVFXGraph (bool). All set once in Awake() [SEO -100], read-only thereafter."
+    write_access: QualityTierSystem-only (set once at startup; player override via PlayerPrefs 'qts.tier')
+    referenced_by:
+      - docs/architecture/adr-0005-rendering-pipeline-configuration.md
+    added: 2026-05-02
+    revised: ""
+
+  - state: board_state_arrays
+    status: active
+    owner_system: GameStateManager
+    adr: docs/architecture/adr-0006-board-state-representation.md
+    interface: "IReadOnlyList<int>[] StackContents, IReadOnlyList<int>[] TempSlotContents — read-only from outside GSM. Also: int StackDepth, TempSlotDepth, TempSlotCount, ColorCount, MoveCount, CurrentSequenceId (all read-only properties)."
+    write_access: GameStateManager-only. No other system may write to StackContents or TempSlotContents arrays.
+    referenced_by:
+      - docs/architecture/adr-0006-board-state-representation.md
+    added: 2026-05-02
+    revised: ""
+
+  - state: coin_balance
+    status: active
+    owner_system: CoinEconomy
+    adr: docs/architecture/adr-0006-board-state-representation.md
+    interface: "ICoinEconomy.GetCoinBalance(): int (read-only); AddCoins(amount, levelId, EarnSource): bool; SpendCoins(amount): bool; event OnCoinBalanceChanged(newBalance, delta). Persisted via SaveSystem.SetCoinBalance() on every change."
+    write_access: CoinEconomy-only (AddCoins / SpendCoins are the only write paths; no direct field access)
+    referenced_by:
+      - docs/architecture/adr-0006-board-state-representation.md
+    added: 2026-05-02
+    revised: ""
 
 # Example:
 #
@@ -71,7 +125,93 @@ state_ownership: []
 #
 # pattern options: signal | direct_call | event_bus | shared_resource | rpc | none
 
-interfaces: []
+interfaces:
+  - contract: singleton_access
+    status: active
+    pattern: direct_call
+    description: "All singleton managers are accessed via static Instance property set in Awake. No runtime scene scans (FindFirstObjectByType / FindObjectsByType) for singleton retrieval on any hot path."
+    adr: docs/architecture/adr-0001-singleton-architecture-and-boot-sequence.md
+    referenced_by:
+      - docs/architecture/adr-0001-singleton-architecture-and-boot-sequence.md
+    added: 2026-05-02
+    revised: ""
+
+  - contract: async_ready_pattern
+    status: active
+    pattern: direct_call
+    description: "Any system with async initialization must expose bool IsReady + event Action OnReady. Callers must use subscribe-then-check: subscribe first, then check IsReady and call handler immediately if already true. This prevents the race condition where the event fires before the subscriber registers."
+    adr: docs/architecture/adr-0001-singleton-architecture-and-boot-sequence.md
+    example: |
+      system.OnReady += HandleReady;
+      if (system.IsReady) HandleReady();
+    systems_using_pattern:
+      - SaveSystem (OnSaveReady / IsReady)
+      - LevelDataSystem (IsReady)
+      - CoinEconomy (CE FSM LOADING/READY — internally driven by SaveSystem.OnSaveReady)
+    referenced_by:
+      - docs/architecture/adr-0001-singleton-architecture-and-boot-sequence.md
+    added: 2026-05-02
+    revised: ""
+
+  - contract: typed_event_invocation
+    status: active
+    pattern: signal
+    description: "All inter-system events use C# typed event Action<T> delegates declared on MonoBehaviour classes. Invocation via ?.Invoke() only. No UnityEvent, no ScriptableObject event channels, no central EventBus."
+    adr: docs/architecture/adr-0002-event-and-signal-architecture.md
+    referenced_by:
+      - docs/architecture/adr-0002-event-and-signal-architecture.md
+    added: 2026-05-02
+    revised: ""
+
+  - contract: event_subscription_lifecycle
+    status: active
+    pattern: signal
+    description: "Subscribe in Awake (not Start). Use subscribe-then-check for events fired from async callbacks (OnSaveReady, OnLevelLoaded). Scene-loaded MonoBehaviours must unsubscribe all events in OnDestroy. DDOL-to-DDOL subscriptions: no unsubscribe needed. No lambda subscribers — named instance methods only."
+    adr: docs/architecture/adr-0002-event-and-signal-architecture.md
+    referenced_by:
+      - docs/architecture/adr-0002-event-and-signal-architecture.md
+    added: 2026-05-02
+    revised: ""
+
+  - contract: dual_ready_coordination
+    status: active
+    pattern: direct_call
+    description: "LevelProgression must wait for BOTH SaveSystem.IsReady AND LevelDataSystem.IsReady before calling GSM.LoadLevel(). Use subscribe-then-check for both events; gate the actual LoadLevel call with a TryLoadFirstLevel() method that only proceeds when _saveReady && _ldsReady."
+    adr: docs/architecture/adr-0004-level-data-loading-strategy.md
+    referenced_by:
+      - docs/architecture/adr-0004-level-data-loading-strategy.md
+    added: 2026-05-02
+    revised: ""
+
+  - contract: audio_volume_control
+    status: active
+    pattern: direct_call
+    description: "All audio volume changes must go through IAudioSystem.SetSFXVolume(), SetAmbientVolume(), SetUIVolume(). Direct AudioMixer.SetFloat() calls are forbidden from outside AudioSystem — they would bypass PlayerPrefs persistence."
+    adr: docs/architecture/adr-0011-audio-architecture.md
+    referenced_by:
+      - docs/architecture/adr-0011-audio-architecture.md
+    added: 2026-05-02
+    revised: ""
+
+  - contract: level_complete_payload
+    status: active
+    pattern: signal
+    description: "The level_complete event carries four fields: (int levelId, int moveCount, int parMoves, int sequenceId). GSM reads par_moves from LevelDataSystem before emitting. All consumers — InGameHUD, LevelCompleteUI, LevelProgression — must use par_moves from the event payload and must NOT query LDS for par_moves independently."
+    adr: docs/architecture/adr-0012-hud-and-level-complete-ui-business-logic.md
+    referenced_by:
+      - docs/architecture/adr-0012-hud-and-level-complete-ui-business-logic.md
+    added: 2026-05-03
+    revised: ""
+
+  - contract: coin_reward_delivery
+    status: active
+    pattern: signal
+    description: "LevelCompleteUI delivers coin rewards by firing C# events (OnCoinRewardGranted, OnCoinBonusGranted) to Level Progression. Level Progression calls CE.AddCoins(). LevelCompleteUI must not call ICoinEconomy.AddCoins() directly. OnCoinRewardGranted fires in OnEnable — unconditionally, before the first rendered frame."
+    adr: docs/architecture/adr-0012-hud-and-level-complete-ui-business-logic.md
+    referenced_by:
+      - docs/architecture/adr-0012-hud-and-level-complete-ui-business-logic.md
+    added: 2026-05-03
+    revised: ""
 
 # Example:
 #
@@ -131,7 +271,83 @@ performance_budgets: []
 # Register an API decision when the choice is non-obvious and other ADRs might
 # make a different choice for the same purpose without knowing this was decided.
 
-api_decisions: []
+api_decisions:
+  - purpose: singleton_lifetime_management
+    status: active
+    api: "DontDestroyOnLoad(gameObject) + Script Execution Order (Project Settings)"
+    not: "Zenject/VContainer DI; lazy FindFirstObjectByType<T>() at runtime"
+    adr: docs/architecture/adr-0001-singleton-architecture-and-boot-sequence.md
+    reason: "Static Instance access is zero-cost; SEO gives explicit, auditable boot order without third-party packages"
+    referenced_by:
+      - docs/architecture/adr-0001-singleton-architecture-and-boot-sequence.md
+    added: 2026-05-02
+    revised: ""
+
+  - purpose: atomic_file_write
+    status: active
+    api: "FileStream(path, FileMode.Create) + Write + Flush(flushToDisk:true) + close → File.Replace (if exists) / File.Move (first write)"
+    not: "File.WriteAllText (no fsync guarantee); File.Move(src, dst, overwrite:true) (does not exist in .NET Standard 2.1)"
+    adr: docs/architecture/adr-0003-save-system-design.md
+    reason: "File.WriteAllText does not call fsync — file may be unflushed before rename; power loss produces corrupt save. File.Move 3-arg overload was added in .NET 5, not .NET Standard 2.1 (Unity 6.3 BCL target)."
+    referenced_by:
+      - docs/architecture/adr-0003-save-system-design.md
+    added: 2026-05-02
+    revised: ""
+
+  - purpose: addressables_batch_load
+    status: active
+    api: "Addressables.LoadAssetsAsync<TextAsset>((object)label, perAssetCallback, true) — 3-argument form with releaseDependenciesOnFailure=true. Store handle in field. After all assets parsed: Addressables.Release(handle)."
+    not: "2-argument LoadAssetsAsync form (removed in Addressables 2.x); Resources.Load (no memory management)"
+    adr: docs/architecture/adr-0004-level-data-loading-strategy.md
+    reason: "Addressables 2.x requires the 3rd bool parameter for partial-load failure cleanup. Handle must be stored or it is GC-eligible mid-load."
+    referenced_by:
+      - docs/architecture/adr-0004-level-data-loading-strategy.md
+    added: 2026-05-02
+    revised: ""
+
+  - purpose: urp_render_feature_pattern
+    status: active
+    api: "ScriptableRendererFeature.AddRenderPasses() to enqueue pass; ScriptableRenderPass.RecordRenderGraph(RenderGraph, ContextContainer) for pass work"
+    not: "SetupRenderPasses() (removed in Unity 6.3); Execute(ScriptableRenderContext, ref RenderingData) (compatibility-mode path, unavailable)"
+    adr: docs/architecture/adr-0005-rendering-pipeline-configuration.md
+    reason: "URP Compatibility Mode removed in Unity 6.3. All custom render features must use Render Graph API. SetupRenderPasses causes compile error."
+    referenced_by:
+      - docs/architecture/adr-0005-rendering-pipeline-configuration.md
+    added: 2026-05-02
+    revised: ""
+
+  - purpose: touch_input
+    status: active
+    api: "UnityEngine.InputSystem.EnhancedTouch.EnhancedTouchSupport + Touch.activeTouches (Input System Package). Physics2D.OverlapPoint(worldPos, layerMask) for tap-to-object mapping."
+    not: "Legacy Input class (Input.GetMouseButtonDown, Input.touches) — deprecated in Unity 6.x"
+    adr: docs/architecture/adr-0007-input-handling-strategy.md
+    reason: "Legacy Input class is deprecated. Input System Package is the required path in Unity 6.x. EnhancedTouchSupport provides allocation-free per-frame touch access."
+    referenced_by:
+      - docs/architecture/adr-0007-input-handling-strategy.md
+    added: 2026-05-02
+    revised: ""
+
+  - purpose: mobile_safe_area
+    status: active
+    api: "Screen.safeArea → normalize by Screen.width/height → set RectTransform.anchorMin/Max on SafeAreaPanel child of Canvas. Applied in Awake() + OnRectTransformDimensionsChange()."
+    not: "Hardcoded padding values; platform-specific native APIs; per-element offset code"
+    adr: docs/architecture/adr-0008-ui-hierarchy-and-safe-area.md
+    reason: "Screen.safeArea is the only Unity managed-code API for notch/home indicator insets on iOS and Android. SafeAreaPanel centralizes the logic in one reusable component."
+    referenced_by:
+      - docs/architecture/adr-0008-ui-hierarchy-and-safe-area.md
+    added: 2026-05-02
+    revised: ""
+
+  - purpose: singleton_unsubscribe_null_guard
+    status: active
+    api: "if (X.Instance != null) { X.Instance.Event -= Handler; } in OnDestroy for all scene-loaded MonoBehaviours"
+    not: "Unconditional X.Instance.Event -= Handler; in OnDestroy"
+    adr: docs/architecture/adr-0012-hud-and-level-complete-ui-business-logic.md
+    reason: "On app quit or mid-scene-reload, DDOL singleton managers may be destroyed before scene-loaded MonoBehaviours. Unconditional unsubscribe throws NullReferenceException. Null guard is safe and Unity-idiomatic."
+    referenced_by:
+      - docs/architecture/adr-0012-hud-and-level-complete-ui-business-logic.md
+    added: 2026-05-03
+    revised: ""
 
 # Example:
 #
@@ -157,7 +373,118 @@ api_decisions: []
 # Register a pattern when an ADR explicitly bans it AND other ADRs might
 # unknowingly use it (i.e., it's a tempting but wrong approach for this project).
 
-forbidden_patterns: []
+forbidden_patterns:
+  - pattern: runtime_singleton_scene_scan
+    status: active
+    description: "Systems must not call FindObjectOfType, FindFirstObjectByType, or FindObjectsByType to locate singleton managers at runtime. Use the static Instance reference instead."
+    why: "O(n) scene scan on every access breaks the 60fps frame budget. FindObjectOfType is removed in Unity 6.0. Static Instance access is zero-cost and consistent with the SEO-enforced boot contract."
+    adr: docs/architecture/adr-0001-singleton-architecture-and-boot-sequence.md
+    added: 2026-05-02
+
+  - pattern: scene_load_from_manager_awake
+    status: active
+    description: "No manager class may call SceneManager.LoadScene or SceneManager.LoadSceneAsync from within its Awake method. Scene transitions must be initiated from gameplay code at SEO 0 or later."
+    why: "If a manager triggers a scene load before DontDestroyOnLoad executes, the manager's GameObject is destroyed with the outgoing scene before it escapes — silent, hard-to-diagnose failure."
+    adr: docs/architecture/adr-0001-singleton-architecture-and-boot-sequence.md
+    added: 2026-05-02
+
+  - pattern: lambda_event_subscriber
+    status: active
+    description: "Event subscriptions must use named instance methods, not lambda expressions or anonymous methods. Example: 'event += (x) => DoThing(x)' is forbidden; 'event += HandleThing' is required."
+    why: "Lambda subscribers allocate a closure object at subscription time. They also cannot be unsubscribed (the lambda reference is not stored), causing MissingReferenceException when scene-loaded consumers are destroyed."
+    adr: docs/architecture/adr-0002-event-and-signal-architecture.md
+    added: 2026-05-02
+
+  - pattern: unity_event_for_inter_system
+    status: active
+    description: "UnityEvent must not be used for inter-system communication on gameplay hot paths (move events, board state, animation completion)."
+    why: "UnityEvent.Invoke() allocates GC per call (internal iterator object). At 60fps with 3-5 taps/second, this creates sustained GC pressure on mobile. C# event Action<T> with ?.Invoke() is zero-allocation after subscription."
+    adr: docs/architecture/adr-0002-event-and-signal-architecture.md
+    added: 2026-05-02
+
+  - pattern: three_arg_file_move
+    status: active
+    description: "File.Move(source, dest, overwrite: true) must not be used. The three-argument overload does not exist in .NET Standard 2.1 (Unity 6.3 BCL target) — it was added in .NET 5. Use File.Replace(source, dest, null) when destination exists, or two-arg File.Move(source, dest) for first write."
+    why: "Compile error in Unity 6.3. Developers familiar with .NET 5+ may reach for the overload instinctively."
+    adr: docs/architecture/adr-0003-save-system-design.md
+    added: 2026-05-02
+
+  - pattern: async_void_unity_lifecycle
+    status: active
+    description: "async void must not be used on Unity lifecycle methods: Awake, Start, OnApplicationPause, OnApplicationQuit, OnDestroy. These methods must be synchronous."
+    why: "Unity does not await these methods. Any await expression causes Unity to return control to the engine mid-execution, allowing other systems to run before initialization completes — e.g., async void Awake() allows Start() on other MonoBehaviours to fire while Awake() is suspended. For OnApplicationPause: Unity returns control to the OS at the first await, abandoning the write before iOS suspension."
+    adr: docs/architecture/adr-0003-save-system-design.md
+    added: 2026-05-02
+
+  - pattern: addressables_handle_unstored
+    status: active
+    description: "Every AsyncOperationHandle returned by Addressables must be stored in a field for the duration of the async operation. Anonymous or local-variable handles are GC-eligible mid-load and will cause the operation to silently abort."
+    why: "GC-collected handle = Completed callback never fires; IsReady never set; game hangs at boot with no error. Silent failure is the worst class of bug."
+    adr: docs/architecture/adr-0004-level-data-loading-strategy.md
+    added: 2026-05-02
+
+  - pattern: setup_render_passes_forbidden
+    status: active
+    description: "ScriptableRendererFeature.SetupRenderPasses() and URPRenderPipelineAsset.enableRenderCompatibilityMode must not be used or referenced anywhere in the codebase. Use AddRenderPasses() + RecordRenderGraph() instead."
+    why: "URP Compatibility Mode was removed in Unity 6.3. Both APIs cause compile errors. Code from Unity 5.x/2022/2023 tutorials commonly uses SetupRenderPasses — copying this code into the project will break the build."
+    adr: docs/architecture/adr-0005-rendering-pipeline-configuration.md
+    added: 2026-05-02
+
+  - pattern: direct_board_state_write
+    status: active
+    description: "No system other than GameStateManager may write to StackContents or TempSlotContents arrays, or to CurrentSequenceId. All board mutations must go through GSM.HandleMoveCommitted() or GSM.LoadLevel()."
+    why: "Direct state writes by other systems break the monotonic sequence ID invariant, create race conditions with the watchdog, and make undo history inconsistent. GSM is the sole authoritative owner of board state."
+    adr: docs/architecture/adr-0006-board-state-representation.md
+    added: 2026-05-02
+
+  - pattern: legacy_input_class
+    status: active
+    description: "Input.GetMouseButtonDown(), Input.touches, Input.GetKeyDown(KeyCode.Escape) and all other legacy Input class calls are forbidden. Use Input System Package (EnhancedTouch, Keyboard.current) instead."
+    why: "Legacy Input class is deprecated in Unity 6.x. It cannot coexist cleanly with Input System Package and will be removed in a future Unity version."
+    adr: docs/architecture/adr-0007-input-handling-strategy.md
+    added: 2026-05-02
+
+  - pattern: standalone_input_module
+    status: active
+    description: "StandaloneInputModule must not be used on EventSystem GameObjects when the Input System Package is active. Replace with InputSystemUIInputModule. All scenes must be verified before story Done."
+    why: "StandaloneInputModule does not route Input System Package touch events to UGUI — buttons silently fail to respond to touch. Unity replaces this automatically on package installation but not for subsequently-created scenes."
+    adr: docs/architecture/adr-0007-input-handling-strategy.md
+    added: 2026-05-02
+
+  - pattern: legacy_ui_text
+    status: active
+    description: "UI.Text (legacy Unity text component) must not be used anywhere in the project. All text must use TextMeshProUGUI."
+    why: "UI.Text is deprecated in Unity 6.x and produces inferior rendering on high-DPI mobile screens. It also triggers GC from legacy mesh rebuilds. TextMeshProUGUI is the Unity-supported standard."
+    adr: docs/architecture/adr-0008-ui-hierarchy-and-safe-area.md
+    added: 2026-05-02
+
+  - pattern: stop_all_coroutines_on_animation_system
+    status: active
+    description: "StopAllCoroutines() must not be called on AnimationSystem. Each coroutine (bolt move, celebration, glow ramp) must be stopped via its named Coroutine reference stored on the owning component."
+    why: "StopAllCoroutines() on AnimationSystem would abort all in-flight bolt animations, celebration sequences, and glow ramps simultaneously — destroying unrelated visual states. Named handles enable surgical cancellation."
+    adr: docs/architecture/adr-0009-bolt-animation-strategy.md
+    added: 2026-05-02
+
+  - pattern: material_property_block_sprite_renderer
+    status: active
+    description: "MaterialPropertyBlock must not be used to set properties on SpriteRenderer components in URP 2D. Use a second sprite overlay layer (GlowOverlay) for per-sprite emissive/HDR color changes."
+    why: "MaterialPropertyBlock writes properties outside the SRP Batcher's CBUFFER, breaking batching for the affected sprite. In URP 2D where all bolt sprites batch together, each MaterialPropertyBlock call creates up to 11 batch splits. Overlay layer adds one extra draw call per glow event but preserves all existing batching."
+    adr: docs/architecture/adr-0010-vfx-graph-and-bloom-mobile.md
+    added: 2026-05-02
+
+  - pattern: lcui_direct_ce_call
+    status: active
+    description: "LevelCompleteUI must not call ICoinEconomy.AddCoins() directly. Coin reward delivery must route through Level Progression: LevelCompleteUI fires OnCoinRewardGranted(amount) and OnCoinBonusGranted(amount) events; Level Progression subscribes and calls CE.AddCoins()."
+    why: "Direct CE call from UI violates coin_balance ownership (ADR-0006). It creates a UI→Economy coupling that bypasses Level Progression's role as the routing authority for level outcomes."
+    adr: docs/architecture/adr-0012-hud-and-level-complete-ui-business-logic.md
+    added: 2026-05-03
+
+  - pattern: ad_watchdog_wait_for_seconds
+    status: active
+    description: "The LevelCompleteUI ad watchdog coroutine must not use WaitForSeconds or WaitForSecondsRealtime. Use a polling loop with yield return null and compare Time.realtimeSinceStartup against the recorded AD_PROCESSING entry time."
+    why: "WaitForSeconds is frame-dependent and pauses when the app is backgrounded on iOS/Android. A phone call mid-ad-watch would permanently soft-lock the player in AD_PROCESSING with navigation buttons disabled. Time.realtimeSinceStartup continues advancing during suspension."
+    adr: docs/architecture/adr-0012-hud-and-level-complete-ui-business-logic.md
+    added: 2026-05-03
 
 # Example:
 #

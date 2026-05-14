@@ -24,33 +24,681 @@
 #
 # STATUS VALUES: active | deprecated | superseded-by: TR-[system]-NNN
 
-version: 1
-last_updated: ""
+version: 5
+last_updated: "2026-05-12"
 
-requirements: []
+requirements:
 
-# --- EXAMPLE ENTRIES (remove when first real entries are added) ---
-#
-# - id: TR-combat-001
-#   system: combat
-#   gdd: design/gdd/combat-system.md
-#   requirement: "Player takes damage from enemies based on attack power minus defence"
-#   created: 2026-03-10
-#   revised: ""
-#   status: active
-#
-# - id: TR-combat-002
-#   system: combat
-#   gdd: design/gdd/combat-system.md
-#   requirement: "Combo window timing is 0.4 seconds between hits"
-#   created: 2026-03-10
-#   revised: "2026-04-01"
-#   status: active
-#
-# - id: TR-combat-003
-#   system: combat
-#   gdd: design/gdd/combat-system.md
-#   requirement: "Old damage formula using raw stats"
-#   created: 2026-03-10
-#   revised: ""
-#   status: superseded-by: TR-combat-001
+  # ─── SORT MECHANIC ────────────────────────────────────────────────────────
+
+  - id: TR-SORT-001
+    system: sort-mechanic
+    gdd: design/gdd/sort-mechanic.md
+    requirement: "State machine: IDLE/BOLT_SELECTED/MOVE_EXECUTING/WIN/CANCELLATION/INVALID_MOVE"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0006
+    status: active
+
+  - id: TR-SORT-002
+    system: sort-mechanic
+    gdd: design/gdd/sort-mechanic.md
+    requirement: "Move validation: empty destination accepts any color; full destination rejects; non-full non-empty accepts only if top bolt color matches"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0006
+    status: active
+
+  - id: TR-SORT-003
+    system: sort-mechanic
+    gdd: design/gdd/sort-mechanic.md
+    requirement: "Win condition: all color stacks full and monochromatic; temp slots excluded from win check"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0006
+    status: active
+
+  - id: TR-SORT-004
+    system: sort-mechanic
+    gdd: design/gdd/sort-mechanic.md
+    requirement: "One-tap input buffer during MOVE_EXECUTING; buffer discarded on WIN exit"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0007
+    status: active
+
+  - id: TR-SORT-005
+    system: sort-mechanic
+    gdd: design/gdd/sort-mechanic.md
+    requirement: "Shallow deadlock check (depth-1) on every MOVE_EXECUTING exit → emit OnDeadlockDetected if no legal move exists"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0006
+    status: active
+
+  - id: TR-SORT-006
+    system: sort-mechanic
+    gdd: design/gdd/sort-mechanic.md
+    requirement: "Sequence ID stale-signal guard on animation_complete: discard if seqId != currentMoveExecutingSeqId"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0002
+    status: active
+
+  - id: TR-SORT-007
+    system: sort-mechanic
+    gdd: design/gdd/sort-mechanic.md
+    requirement: "OnMoveExecutingExited emitted only on MOVE_EXECUTING → IDLE transition; NOT on WIN, NOT on watchdog"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0002
+    status: active
+
+  - id: TR-SORT-008
+    system: sort-mechanic
+    gdd: design/gdd/sort-mechanic.md
+    requirement: "Android back gesture → cancellation in BOLT_SELECTED state (escapeKey.wasPressedThisFrame)"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0007
+    status: active
+
+  - id: TR-SORT-009
+    system: sort-mechanic
+    gdd: design/gdd/sort-mechanic.md
+    requirement: "Synchronous pull-on-demand read of board state from GSM (StackContents[], TempSlotContents[])"
+    created: 2026-05-02
+    revised: ""
+    adr: "ADR-0006, ADR-0007"
+    status: active
+
+  - id: TR-SORT-010
+    system: sort-mechanic
+    gdd: design/gdd/sort-mechanic.md
+    requirement: "Column cap: color_count + temp_slot_count ≤ 8 (UI/Layout constraint)"
+    created: 2026-05-02
+    revised: "2026-05-04"
+    adr: ADR-0013
+    status: active
+
+  # ─── GAME STATE MANAGER ───────────────────────────────────────────────────
+
+  - id: TR-GSM-001
+    system: game-state-manager
+    gdd: design/gdd/game-state-manager.md
+    requirement: "GameStateManager is the sole owner and writer of board state arrays; no external system may write board state"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0006
+    status: active
+
+  - id: TR-GSM-002
+    system: game-state-manager
+    gdd: design/gdd/game-state-manager.md
+    requirement: "CurrentSequenceId is monotonically increasing; it never decrements"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0006
+    status: active
+
+  - id: TR-GSM-003
+    system: game-state-manager
+    gdd: design/gdd/game-state-manager.md
+    requirement: "Unlimited undo stack during ACTIVE state; frozen (no new entries) on COMPLETE"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0006
+    status: active
+
+  - id: TR-GSM-004
+    system: game-state-manager
+    gdd: design/gdd/game-state-manager.md
+    requirement: "Watchdog timer 1500ms: fires OnBoardRefreshForced if OnMoveExecutingExited does not arrive"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0006
+    status: active
+
+  - id: TR-GSM-005
+    system: game-state-manager
+    gdd: design/gdd/game-state-manager.md
+    requirement: "Atomic board mutation: all 5 steps (remove source, add dest, push undo, seqId++, moveCount++) execute synchronously on main thread in one frame"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0006
+    status: active
+
+  - id: TR-GSM-006
+    system: game-state-manager
+    gdd: design/gdd/game-state-manager.md
+    requirement: "Deferred undo during MOVE_EXECUTING: UndoRequested sets _pendingUndo; executed on OnMoveExecutingExited (IDLE path only)"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0006
+    status: active
+
+  - id: TR-GSM-007
+    system: game-state-manager
+    gdd: design/gdd/game-state-manager.md
+    requirement: "bolt_count_invariant check at level load: sum(colorStacks[i].length) == colorCount × stackDepth"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0006
+    status: active
+
+  - id: TR-GSM-008
+    system: game-state-manager
+    gdd: design/gdd/game-state-manager.md
+    requirement: "Level lifecycle FSM: UNLOADED → LOADING → ACTIVE → COMPLETE → TEARDOWN → UNLOADED"
+    created: 2026-05-02
+    revised: ""
+    adr: "ADR-0001, ADR-0006"
+    status: active
+
+  - id: TR-GSM-009
+    system: game-state-manager
+    gdd: design/gdd/game-state-manager.md
+    requirement: "GSM emits typed C# event Action<T> delegates for all inter-system communication"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0002
+    status: active
+
+  - id: TR-GSM-010
+    system: game-state-manager
+    gdd: design/gdd/game-state-manager.md
+    requirement: "OnLevelComplete canonical payload: (levelId, moveCount, parMoves, sequenceId) — 4-arg signature; GSM reads parMoves from LDS before emitting"
+    created: 2026-05-03
+    revised: "2026-05-04"
+    adr: "ADR-0012, ADR-0006, ADR-0002"
+    status: active
+
+  # ─── LEVEL DATA SYSTEM ────────────────────────────────────────────────────
+
+  - id: TR-LDS-001
+    system: level-data-system
+    gdd: design/gdd/level-data-system.md
+    requirement: "Level record schema: levelId, colorCount, stackDepth, colorStacks[], tempSlotCount, tempSlotDepth, parMoves (camelCase JSON fields)"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0004
+    status: active
+
+  - id: TR-LDS-002
+    system: level-data-system
+    gdd: design/gdd/level-data-system.md
+    requirement: "bolt_count_invariant validated at authoring time (pipeline) and at runtime GetLevel() (throws LevelDataException on failure)"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0004
+    status: active
+
+  - id: TR-LDS-003
+    system: level-data-system
+    gdd: design/gdd/level-data-system.md
+    requirement: "System readiness pattern: IsReady bool + OnLevelDataReady event; callers use subscribe-then-check"
+    created: 2026-05-02
+    revised: ""
+    adr: "ADR-0001, ADR-0004"
+    status: active
+
+  # ─── ANIMATION SYSTEM ─────────────────────────────────────────────────────
+
+  - id: TR-ANIM-001
+    system: animation-system
+    gdd: design/gdd/animation-system.md
+    requirement: "Bolt move animation: Lift 80ms (EaseOutCubic) + Travel 80–300ms distance-proportional (EaseInOutQuad) + Settle 70ms+micro-bounce (EaseInQuint)"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0009
+    status: active
+
+  - id: TR-ANIM-002
+    system: animation-system
+    gdd: design/gdd/animation-system.md
+    requirement: "Stack completion glow (HDR overlay sprite) + VFX ring + sparks (VFX Graph on Medium/High; ParticleSystem fallback on Low)"
+    created: 2026-05-02
+    revised: ""
+    adr: "ADR-0009, ADR-0010"
+    status: active
+
+  - id: TR-ANIM-003
+    system: animation-system
+    gdd: design/gdd/animation-system.md
+    requirement: "Snap all bolt visuals immediately on OnBoardStateChanged (undo path) and OnBoardRefreshForced (watchdog); no tween"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0009
+    status: active
+
+  - id: TR-ANIM-004
+    system: animation-system
+    gdd: design/gdd/animation-system.md
+    requirement: "Level complete celebration ~2000ms multi-phase: glow ramp 400ms + ring 600ms + star cascade 800ms + silence 200ms"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0009
+    status: active
+
+  - id: TR-ANIM-005
+    system: animation-system
+    gdd: design/gdd/animation-system.md
+    requirement: "quality_density_multiplier from QualityTierSystem applied to all active VFX instances on GSM.OnLevelLoaded"
+    created: 2026-05-02
+    revised: ""
+    adr: "ADR-0005, ADR-0010"
+    status: active
+
+  - id: TR-ANIM-006
+    system: animation-system
+    gdd: design/gdd/animation-system.md
+    requirement: "AnimationSystem emits OnAnimationComplete(int seqId) after each move settle and after celebration"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0002
+    status: active
+
+  - id: TR-ANIM-007
+    system: animation-system
+    gdd: design/gdd/animation-system.md
+    requirement: "OnAnimationComplete must fire within watchdog_timeout_ms (1500ms) of OnMoveCommitted; max animation duration 450ms << 1500ms"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0009
+    status: active
+
+  - id: TR-ANIM-008
+    system: animation-system
+    gdd: design/gdd/animation-system.md
+    requirement: "Rejection shake: 100ms horizontal shake on OnMoveRejected; no OnAnimationComplete emitted"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0009
+    status: active
+
+  # ─── AUDIO SYSTEM ─────────────────────────────────────────────────────────
+
+  - id: TR-AUDIO-001
+    system: audio-system
+    gdd: design/gdd/audio-system.md
+    requirement: "Three AudioMixer bus groups with independent volume control: SFX, Ambient, UI"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0011
+    status: active
+
+  - id: TR-AUDIO-002
+    system: audio-system
+    gdd: design/gdd/audio-system.md
+    requirement: "Volume control via AudioMixer.SetFloat(paramName, dB); linear 0-1 to dB conversion: dB = log10(vol)*20 or -80 at floor"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0011
+    status: active
+
+  - id: TR-AUDIO-003
+    system: audio-system
+    gdd: design/gdd/audio-system.md
+    requirement: "PlayerPrefs audio preference keys read on Awake at SEO -80 and applied to AudioMixer"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0011
+    status: active
+
+  - id: TR-AUDIO-004
+    system: audio-system
+    gdd: design/gdd/audio-system.md
+    requirement: "PlayBoltSettle(bool isValid) API; AnimationSystem is the sole caller"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0011
+    status: active
+
+  - id: TR-AUDIO-005
+    system: audio-system
+    gdd: design/gdd/audio-system.md
+    requirement: "Machine ambient hum loop: dedicated looping AudioSource on Ambient bus; starts in Awake"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0011
+    status: active
+
+  - id: TR-AUDIO-006
+    system: audio-system
+    gdd: design/gdd/audio-system.md
+    requirement: "Pool of 8 AudioSources for concurrent SFX playback; round-robin selection"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0011
+    status: active
+
+  # ─── IN-GAME HUD ──────────────────────────────────────────────────────────
+
+  - id: TR-HUD-001
+    system: in-game-hud
+    gdd: design/gdd/in-game-hud.md
+    requirement: "UGUI Canvas in Screen Space-Overlay mode with Screen.safeArea applied via SafeAreaPanel"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0008
+    status: active
+
+  - id: TR-HUD-002
+    system: in-game-hud
+    gdd: design/gdd/in-game-hud.md
+    requirement: "Move counter subscribes to GSM.OnBoardStateChanged and updates on every board mutation"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0008
+    status: active
+
+  - id: TR-HUD-003
+    system: in-game-hud
+    gdd: design/gdd/in-game-hud.md
+    requirement: "Undo button: optimistic lock on tap; re-enabled only on OnAnimationComplete matching in-flight seqId"
+    created: 2026-05-02
+    revised: "2026-05-03"
+    adr: ADR-0012
+    status: active
+
+  - id: TR-HUD-004
+    system: in-game-hud
+    gdd: design/gdd/in-game-hud.md
+    requirement: "Hint button: disabled when coin_balance < hint_cost (50) or SortMechanic state is MOVE_EXECUTING"
+    created: 2026-05-02
+    revised: "2026-05-03"
+    adr: ADR-0012
+    status: active
+
+  - id: TR-HUD-005
+    system: in-game-hud
+    gdd: design/gdd/in-game-hud.md
+    requirement: "Coin display subscribes to CoinEconomy.OnCoinBalanceChanged and updates text on change"
+    created: 2026-05-02
+    revised: "2026-05-03"
+    adr: "ADR-0002, ADR-0012"
+    status: active
+
+  - id: TR-HUD-006
+    system: in-game-hud
+    gdd: design/gdd/in-game-hud.md
+    requirement: "Pity grant counter: 5 consecutive 0-star completions triggers AddCoins(50, -1, EarnSource.PityGrant)"
+    created: 2026-05-02
+    revised: "2026-05-03"
+    adr: ADR-0012
+    status: active
+
+  - id: TR-HUD-007
+    system: in-game-hud
+    gdd: design/gdd/in-game-hud.md
+    requirement: "HUD emits undo request by calling GSM.UndoRequested() via IGameStateManager interface (not a C# event)"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0002
+    status: active
+
+  - id: TR-HUD-008
+    system: in-game-hud
+    gdd: design/gdd/in-game-hud.md
+    requirement: "HUD FSM: INACTIVE / IDLE / HINT_PROCESSING / FROZEN; private enum + switch; no framework"
+    created: 2026-05-03
+    revised: ""
+    adr: ADR-0012
+    status: active
+
+  - id: TR-HUD-009
+    system: in-game-hud
+    gdd: design/gdd/in-game-hud.md
+    requirement: "Hint timeout coroutine (_hintTimeoutCoroutine stored ref); cancellable on hint_result; no coin deducted on timeout; ExitHintProcessing() called"
+    created: 2026-05-03
+    revised: ""
+    adr: ADR-0012
+    status: active
+
+  - id: TR-HUD-010
+    system: in-game-hud
+    gdd: design/gdd/in-game-hud.md
+    requirement: "Shared StarRatingCalculator.Compute(moveCount, parMoves, threshold2Star) static utility; single implementation used by both HUD and LevelCompleteUI"
+    created: 2026-05-03
+    revised: ""
+    adr: ADR-0012
+    status: active
+
+  # ─── LEVEL COMPLETE UI ────────────────────────────────────────────────────
+
+  - id: TR-LCUI-001
+    system: level-complete-ui
+    gdd: design/gdd/level-complete-ui.md
+    requirement: "StarRating computed from (move_count, par_moves) formula; displayed in LevelCompleteUI"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0008
+    status: active
+
+  - id: TR-LCUI-002
+    system: level-complete-ui
+    gdd: design/gdd/level-complete-ui.md
+    requirement: "Coin animation on completion; coin_reward_per_star = [0, 10, 20, 40]; OnCoinRewardGranted fires in OnEnable"
+    created: 2026-05-02
+    revised: "2026-05-03"
+    adr: ADR-0012
+    status: active
+
+  - id: TR-LCUI-003
+    system: level-complete-ui
+    gdd: design/gdd/level-complete-ui.md
+    requirement: "Ad FSM + 30s watchdog; LevelCompleteUI blocks next-level until ad flow resolves"
+    created: 2026-05-02
+    revised: "2026-05-03"
+    adr: ADR-0012
+    status: active
+
+  - id: TR-LCUI-004
+    system: level-complete-ui
+    gdd: design/gdd/level-complete-ui.md
+    requirement: "Level Complete FSM: HIDDEN / REVEALING / AD_OFFER / AD_PROCESSING / IDLE / DISMISSED; private enum + switch; no framework"
+    created: 2026-05-03
+    revised: ""
+    adr: ADR-0012
+    status: active
+
+  - id: TR-LCUI-005
+    system: level-complete-ui
+    gdd: design/gdd/level-complete-ui.md
+    requirement: "OnCoinRewardGranted fires in OnEnable (synchronous, before first rendered frame); Level Progression routes to CE.AddCoins — UI must not call ICoinEconomy directly"
+    created: 2026-05-03
+    revised: ""
+    adr: ADR-0012
+    status: active
+
+  - id: TR-LCUI-006
+    system: level-complete-ui
+    gdd: design/gdd/level-complete-ui.md
+    requirement: "Ad watchdog uses Time.realtimeSinceStartup (wall-clock elapsed; survives iOS backgrounding); yield return null polling; WaitForSeconds explicitly forbidden"
+    created: 2026-05-03
+    revised: ""
+    adr: ADR-0012
+    status: active
+
+  # ─── SAVE & PERSISTENCE ───────────────────────────────────────────────────
+
+  - id: TR-SP-001
+    system: save-persistence
+    gdd: design/gdd/save-persistence.md
+    requirement: "JSON file; atomic write via FileStream+Flush(flushToDisk:true) + File.Replace (two-arg)/File.Move (first write)"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0003
+    status: active
+
+  - id: TR-SP-002
+    system: save-persistence
+    gdd: design/gdd/save-persistence.md
+    requirement: "Save schema fields: schema_version, current_level_id, completion_record[], coin_balance, undo_stack[]"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0003
+    status: active
+
+  - id: TR-SP-003
+    system: save-persistence
+    gdd: design/gdd/save-persistence.md
+    requirement: "WriteCompletionAtomic(levelId, bestStars, version, newCurrentLevelId): snapshot on main thread + background write via Awaitable"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0003
+    status: active
+
+  - id: TR-SP-004
+    system: save-persistence
+    gdd: design/gdd/save-persistence.md
+    requirement: "IsReady bool + OnSaveReady event; all consumers use subscribe-then-check pattern"
+    created: 2026-05-02
+    revised: ""
+    adr: "ADR-0001, ADR-0003"
+    status: active
+
+  - id: TR-SP-005
+    system: save-persistence
+    gdd: design/gdd/save-persistence.md
+    requirement: "PlayerPrefs stores audio preferences; SaveSystem does not mediate PlayerPrefs writes"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0003
+    status: active
+
+  - id: TR-SP-006
+    system: save-persistence
+    gdd: design/gdd/save-persistence.md
+    requirement: "Save migration versioning: integer schema_version field; sequential migrators applied on R-2 (version < current)"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0003
+    status: active
+
+  - id: TR-SP-007
+    system: save-persistence
+    gdd: design/gdd/save-persistence.md
+    requirement: "iOS file protection cold-start: catch UnauthorizedAccessException; 250ms retry loop; 5-second timeout"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0003
+    status: active
+
+  - id: TR-SP-008
+    system: save-persistence
+    gdd: design/gdd/save-persistence.md
+    requirement: "W-1 write off main thread via Awaitable.BackgroundThreadAsync; W-2 (app pause) synchronous on main thread"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0003
+    status: active
+
+  # ─── COIN ECONOMY ─────────────────────────────────────────────────────────
+
+  - id: TR-CE-001
+    system: coin-economy
+    gdd: design/gdd/coin-economy.md
+    requirement: "CoinEconomy FSM: LOADING (before OnSaveReady) → READY; no method callable before READY"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0001
+    status: active
+
+  - id: TR-CE-002
+    system: coin-economy
+    gdd: design/gdd/coin-economy.md
+    requirement: "AddCoins with idempotency guard: Dictionary<EarnSource, int> lastCreditedLevelId; skipped when levelId == -1"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0006
+    status: active
+
+  - id: TR-CE-003
+    system: coin-economy
+    gdd: design/gdd/coin-economy.md
+    requirement: "SpendCoins(amount): floor = 0 (Math.Max(0, balance - amount)); returns false if insufficient balance"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0006
+    status: active
+
+  - id: TR-CE-004
+    system: coin-economy
+    gdd: design/gdd/coin-economy.md
+    requirement: "First-install starter grant: if SaveSystem.GetCoinBalance() == 0 AND GetCurrentLevelId() == 1, AddCoins(150, -1, Base)"
+    created: 2026-05-02
+    revised: "2026-05-03"
+    adr: ADR-0006
+    status: active
+
+  # ─── QUALITY TIER SYSTEM ──────────────────────────────────────────────────
+
+  - id: TR-QTS-001
+    system: quality-tier-system
+    gdd: design/gdd/quality-tier-system.md
+    requirement: "Detect tier at startup from SystemInfo: Android Perf Class (priority 1), graphicsShaderLevel (priority 2), graphicsMemorySize (priority 3); default Medium"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0005
+    status: active
+
+  - id: TR-QTS-002
+    system: quality-tier-system
+    gdd: design/gdd/quality-tier-system.md
+    requirement: "Apply DensityMultiplier (0.25/0.65/1.0) and targetFrameRate (30/60) at SEO -100 before any scene or VFX initializes; QualitySettings.vSyncCount = 0 first"
+    created: 2026-05-02
+    revised: ""
+    adr: "ADR-0001, ADR-0005"
+    status: active
+
+  # ─── LEVEL PROGRESSION ────────────────────────────────────────────────────
+
+  - id: TR-LP-001
+    system: level-progression
+    gdd: design/gdd/level-progression.md
+    requirement: "is_locked = (levelId > currentLevelId)"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0006
+    status: active
+
+  - id: TR-LP-002
+    system: level-progression
+    gdd: design/gdd/level-progression.md
+    requirement: "best_stars = max(current_best, earned_stars); persisted via WriteCompletionAtomic"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0006
+    status: active
+
+  - id: TR-LP-003
+    system: level-progression
+    gdd: design/gdd/level-progression.md
+    requirement: "Emit OnLevelCompleted(stars, levelId, moveCount, parMoves) after WriteCompletionAtomic"
+    created: 2026-05-02
+    revised: ""
+    adr: ADR-0002
+    status: active
+
+  # ─── GAME STATE MANAGER (continued) ──────────────────────────────────────
+
+  - id: TR-GSM-011
+    system: game-state-manager
+    gdd: design/gdd/game-state-manager.md
+    requirement: "App background serialization: GSM serializes board state snapshot to SP on OnApplicationPause; deserializes + increments seqId on foreground restore; emits session_load_failed(SAVE_CORRUPT) on deserialization failure (SER-01/02/03)"
+    created: 2026-05-03
+    revised: "2026-05-12"
+    adr: "ADR-0006, ADR-0003"
+    status: active
+
+  # ─── LEVEL DATA SYSTEM (continued) ───────────────────────────────────────
+
+  - id: TR-LDS-004
+    system: level-data-system
+    gdd: design/gdd/level-data-system.md
+    requirement: "DEGRADED state when failure_ratio > 0.20 (strict greater-than); serve only passing records; failure_ratio = failed_record_count / total_record_count; unconditional DEGRADED if total_record_count == 0"
+    created: 2026-05-03
+    revised: "2026-05-04"
+    adr: "ADR-0004"
+    status: active

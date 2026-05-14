@@ -1,334 +1,146 @@
-# Unity 6.3 LTS — Current Best Practices
+# Unity — Current Best Practices
 
-**Last verified:** 2026-02-13
+Last verified: 2026-05-01 | Engine: Unity 6.3 LTS
 
-Modern Unity 6 patterns that may not be in the LLM's training data.
-These are production-ready recommendations as of Unity 6.3 LTS.
+Practices that are new or changed since the model's training data (~2023.x).
 
----
+## URP 2D Rendering (Unity 6.x)
 
-## Project Setup
+- **Use 2D Renderer asset** — set in the URP Asset's Renderer List. This enables 2D lights, shadow casters, and sprite-specific shaders
+- **Render Graph is required** for any custom `ScriptableRendererFeature` — Compatibility Mode is removed in 6.3
+- **On-Tile Post Processing** — enable "Tile-Only Mode" in URP settings for mobile. Reduces GPU bandwidth consumption significantly on Android/iOS tile-based GPUs
+- **Bloom for mobile**: Use URP's built-in Bloom post-process volume. Bloom intensity must be tuned in-engine — do not rely on non-URP defaults
+- **GPU Resident Drawer**: Enabled via URP settings. Automatically uses `BatchRendererGroup` to reduce draw calls via GPU instancing — beneficial for bolt sprites
 
-### Use Unity 6.3 LTS for Production
-- **Tech Stream** (6.4+): Latest features, less stable
-- **LTS** (6.3): Production-ready, 2-year support (until Dec 2027)
-
-### Choose the Right Render Pipeline
-- **URP (Universal)**: Mobile, cross-platform, good performance ✅ Recommended for most games
-- **HDRP (High Definition)**: High-end PC/console, photorealistic
-- **Built-in**: Deprecated, avoid for new projects
-
----
-
-## Scripting
-
-### Use C# 9+ Features (Unity 6 Supports C# 9)
+## Sprite & 2D Workflow
 
 ```csharp
-// ✅ Record types for data
-public record PlayerData(string Name, int Level, float Health);
+// Sprite Renderer — unchanged API
+[SerializeField] private SpriteRenderer _spriteRenderer;  // field, not property
 
-// ✅ Init-only properties
-public class Config {
-    public string GameMode { get; init; }
-}
-
-// ✅ Pattern matching
-var result = enemy switch {
-    Boss boss => boss.Enrage(),
-    Minion minion => minion.Flee(),
-    _ => null
-};
-```
-
-### Async/Await for Asset Loading
-
-```csharp
-// ✅ Modern async pattern
-public async Task<GameObject> LoadEnemyAsync(string key) {
-    var handle = Addressables.LoadAssetAsync<GameObject>(key);
-    return await handle.Task;
+void Start()
+{
+    _spriteRenderer.color = Color.white;
+    _spriteRenderer.sortingLayerName = "Bolts";
+    _spriteRenderer.sortingOrder = 1;
 }
 ```
 
-### Use Source Generators for Serialization (Unity 6+)
+## Object Lookup (CHANGED in 6.0)
 
 ```csharp
-// ✅ Source-generated serialization (faster, less reflection)
-[GenerateSerializer]
-public partial struct PlayerStats : IComponentData {
-    public int Health;
-    public int Mana;
+// WRONG — removed in 6.0
+var managers = FindObjectsOfType<GameManager>();
+
+// CORRECT — Unity 6.x
+var managers = FindObjectsByType<GameManager>(FindObjectsSortMode.None);
+var first = FindFirstObjectByType<GameManager>();
+var any = FindAnyObjectByType<GameManager>();
+```
+
+## SerializeField (CHANGED in 6.3)
+
+```csharp
+// WRONG — compile error in 6.3
+[SerializeField] public int MaxStack { get; set; }
+
+// CORRECT option A — backing field
+[SerializeField] private int _maxStack;
+public int MaxStack => _maxStack;
+
+// CORRECT option B — auto-property with field attribute
+[field: SerializeField] public int MaxStack { get; private set; }
+```
+
+## Scriptable Renderer Features — Render Graph (REQUIRED in 6.3)
+
+```csharp
+// WRONG — SetupRenderPasses removed in 6.3
+public override void SetupRenderPasses(ScriptableRenderer renderer, in RenderingData renderingData) { }
+
+// CORRECT — Render Graph API
+public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
+{
+    renderer.EnqueuePass(m_Pass);
 }
 ```
 
----
-
-## DOTS/ECS (Production-Ready in Unity 6.3 LTS)
-
-### Use ISystem (Not ComponentSystem)
+## Coroutines & Async (unchanged, but prefer async/await)
 
 ```csharp
-// ✅ Modern unmanaged ISystem (Burst-compatible)
-public partial struct MovementSystem : ISystem {
-    public void OnCreate(ref SystemState state) { }
+// Coroutine (still valid)
+private IEnumerator WaitAndLoad()
+{
+    yield return new WaitForSecondsRealtime(2f);  // wall-clock time, unaffected by timeScale
+    LoadNext();
+}
 
-    public void OnUpdate(ref SystemState state) {
-        foreach (var (transform, speed) in
-            SystemAPI.Query<RefRW<LocalTransform>, RefRO<MoveSpeed>>()) {
-            transform.ValueRW.Position += speed.ValueRO.Value * SystemAPI.Time.DeltaTime;
-        }
-    }
+// async/await (preferred for new code)
+private async void LoadAsync()
+{
+    await Task.Delay(2000);  // or use UniTask if package available
+    LoadNext();
 }
 ```
 
-### Use IJobEntity for Parallel Jobs
+## Mobile Audio
 
 ```csharp
-// ✅ IJobEntity (replaces IJobForEach)
-[BurstCompile]
-public partial struct DamageJob : IJobEntity {
-    public float DeltaTime;
+// AudioMixer volume control — unchanged API
+[SerializeField] private AudioMixer _masterMixer;
 
-    void Execute(ref Health health, in DamageOverTime dot) {
-        health.Value -= dot.DamagePerSecond * DeltaTime;
-    }
-}
-
-// Schedule it
-var job = new DamageJob { DeltaTime = SystemAPI.Time.DeltaTime };
-job.ScheduleParallel();
-```
-
----
-
-## Input
-
-### Use Input System Package (Not Legacy Input)
-
-```csharp
-// ✅ Input Actions (rebindable, cross-platform)
-using UnityEngine.InputSystem;
-
-public class PlayerInput : MonoBehaviour {
-    private PlayerControls controls;
-
-    void Awake() {
-        controls = new PlayerControls();
-        controls.Gameplay.Jump.performed += ctx => Jump();
-    }
-
-    void OnEnable() => controls.Enable();
-    void OnDisable() => controls.Disable();
+public void SetSFXVolume(float normalizedVolume)
+{
+    // AudioMixer expects dB — convert from 0-1 linear
+    float db = normalizedVolume > 0.001f ? Mathf.Log10(normalizedVolume) * 20f : -80f;
+    _masterMixer.SetFloat("SFXVolume", db);
 }
 ```
 
-Create Input Actions asset in editor, generate C# class via inspector.
-
----
-
-## UI
-
-### Use UI Toolkit for Runtime UI (Production-Ready in Unity 6)
+## PlayerPrefs — mobile persistence
 
 ```csharp
-// ✅ UI Toolkit (replaces UGUI for new projects)
-using UnityEngine.UIElements;
-
-public class MainMenu : MonoBehaviour {
-    void OnEnable() {
-        var root = GetComponent<UIDocument>().rootVisualElement;
-
-        var playButton = root.Q<Button>("play-button");
-        playButton.clicked += StartGame;
-
-        var scoreLabel = root.Q<Label>("score");
-        scoreLabel.text = $"High Score: {PlayerPrefs.GetInt("HighScore")}";
-    }
-}
+// PlayerPrefs for simple values (audio settings, quality tier)
+PlayerPrefs.SetFloat("audio.sfx_volume", volume);
+PlayerPrefs.GetFloat("audio.sfx_volume", 1.0f);  // second arg = default
+PlayerPrefs.Save();  // call explicitly on mobile to flush
 ```
 
-**UXML** (UI structure) + **USS** (styling) = HTML/CSS-like workflow.
+## Android Icon Requirements (6.3+)
 
----
+- **Adaptive icons required** — round and legacy icon types deprecated
+- Configure via Player Settings > Android > Adaptive Icons
+- Foreground + background layers required
 
-## Asset Management
-
-### Use Addressables (Not Resources)
+## Canvas / UI (unchanged for 2D games)
 
 ```csharp
-// ✅ Addressables (async, memory-efficient)
-using UnityEngine.AddressableAssets;
-
-public async Task SpawnEnemyAsync(string enemyKey) {
-    var handle = Addressables.InstantiateAsync(enemyKey);
-    var enemy = await handle.Task;
-
-    // Cleanup: release when destroyed
-    Addressables.ReleaseInstance(enemy);
-}
+// Screen Space - Overlay Canvas (HUD)
+// Set via Inspector: Canvas component → Render Mode = Screen Space - Overlay
+// Safe area handling for notch/home indicator:
+var safeArea = Screen.safeArea;
+var anchorMin = safeArea.position;
+var anchorMax = safeArea.position + safeArea.size;
+anchorMin.x /= Screen.width;
+anchorMin.y /= Screen.height;
+anchorMax.x /= Screen.width;
+anchorMax.y /= Screen.height;
+rectTransform.anchorMin = anchorMin;
+rectTransform.anchorMax = anchorMax;
 ```
 
-**Benefits:** Async loading, remote content delivery, better memory control.
-
----
-
-## Rendering
-
-### Use RenderGraph API for Custom Passes (URP/HDRP)
+## Atomic File Write (Save System)
 
 ```csharp
-// ✅ RenderGraph API (Unity 6+)
-public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData) {
-    using (var builder = renderGraph.AddRasterRenderPass<PassData>("My Pass", out var passData)) {
-        // Setup pass
-        builder.SetRenderFunc((PassData data, RasterGraphContext context) => {
-            // Execute commands
-        });
-    }
-}
+// Write-then-rename for atomic save (prevents corruption)
+var tmpPath = savePath + ".tmp";
+File.WriteAllText(tmpPath, json);
+if (File.Exists(savePath)) File.Delete(savePath);
+File.Move(tmpPath, savePath);
 ```
 
-**Replaces:** Old `CommandBuffer.Execute()` pattern.
+## Quality Tier / Script Execution Order
 
----
-
-## Performance
-
-### Use Burst Compiler + Jobs System
-
-```csharp
-// ✅ Burst-compiled job (massive performance gain)
-[BurstCompile]
-struct ParticleUpdateJob : IJobParallelFor {
-    public NativeArray<float3> Positions;
-    public NativeArray<float3> Velocities;
-    public float DeltaTime;
-
-    public void Execute(int index) {
-        Positions[index] += Velocities[index] * DeltaTime;
-    }
-}
-
-// Schedule
-var job = new ParticleUpdateJob {
-    Positions = positions,
-    Velocities = velocities,
-    DeltaTime = Time.deltaTime
-};
-job.Schedule(positions.Length, 64).Complete();
-```
-
-**20-100x faster** than equivalent C# code.
-
----
-
-### Use GPU Instancing for Repeated Objects
-
-```csharp
-// ✅ GPU Instancing (thousands of objects, minimal draw calls)
-Graphics.RenderMeshInstanced(
-    new RenderParams(material),
-    mesh,
-    0,
-    matrices // NativeArray<Matrix4x4>
-);
-```
-
----
-
-## Memory Management
-
-### Use NativeContainers (Not Managed Arrays in Jobs)
-
-```csharp
-// ✅ NativeArray (no GC, Burst-compatible)
-NativeArray<int> data = new NativeArray<int>(1000, Allocator.TempJob);
-// ... use in job
-data.Dispose(); // Manual cleanup required
-
-// ✅ Or use using statement
-using var data = new NativeArray<int>(1000, Allocator.TempJob);
-// Auto-disposed
-```
-
----
-
-## Multiplayer
-
-### Use Netcode for GameObjects (Official)
-
-```csharp
-// ✅ Unity's official netcode
-using Unity.Netcode;
-
-public class Player : NetworkBehaviour {
-    private NetworkVariable<int> health = new NetworkVariable<int>(100);
-
-    [ServerRpc]
-    public void TakeDamageServerRpc(int damage) {
-        health.Value -= damage;
-    }
-}
-```
-
-**Replaces:** UNet (deprecated), MLAPI (renamed to Netcode for GameObjects).
-
----
-
-## Testing
-
-### Use Unity Test Framework (NUnit-based)
-
-```csharp
-// ✅ Play Mode Test
-[UnityTest]
-public IEnumerator Player_TakesDamage_HealthDecreases() {
-    var player = new GameObject().AddComponent<Player>();
-    player.Health = 100;
-
-    player.TakeDamage(25);
-    yield return null; // Wait one frame
-
-    Assert.AreEqual(75, player.Health);
-}
-```
-
----
-
-## Debugging
-
-### Use Logging Best Practices
-
-```csharp
-// ✅ Structured logging (Unity 6+)
-using UnityEngine;
-
-Debug.Log($"Player {playerName} scored {score} points");
-
-// ✅ Conditional compilation for debug code
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-    Debug.DrawRay(transform.position, direction, Color.red);
-#endif
-```
-
----
-
-## Summary: Unity 6 Tech Stack
-
-| Feature | Use This (2026) | Avoid This (Legacy) |
-|---------|------------------|----------------------|
-| **Input** | Input System package | `Input` class |
-| **UI** | UI Toolkit | UGUI (Canvas) |
-| **ECS** | ISystem + IJobEntity | ComponentSystem |
-| **Rendering** | URP + RenderGraph | Built-in pipeline |
-| **Assets** | Addressables | Resources |
-| **Jobs** | Burst + IJobParallelFor | Coroutines for heavy work |
-| **Multiplayer** | Netcode for GameObjects | UNet |
-
----
-
-**Sources:**
-- https://docs.unity3d.com/6000.0/Documentation/Manual/BestPracticeGuides.html
-- https://docs.unity3d.com/Packages/com.unity.entities@1.3/manual/index.html
-- https://docs.unity3d.com/Packages/com.unity.inputsystem@1.11/manual/index.html
+- Set in **Edit > Project Settings > Script Execution Order**
+- Drag singleton manager scripts to run before Default Time (negative order values)
+- Example: QualityTierSystem at -100, SaveSystem at -90, GameStateManager at -50
