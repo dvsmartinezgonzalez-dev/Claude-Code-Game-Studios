@@ -1,7 +1,7 @@
 # Story 003: Win Detection and COMPLETE State
 
 > **Epic**: Game State Manager
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Core
 > **Type**: Logic
 > **Estimate**: Small (2h)
@@ -89,9 +89,9 @@ private void HandlePuzzleSolved()
 ## Test Evidence
 
 **Story Type**: Logic
-**Required evidence**: `tests/unit/game-state-manager/win_detection_test.cs` — must exist and pass
+**Required evidence**: `tests/unit/game-state-manager/WinDetection_Test.cs` — must exist and pass
 
-**Status**: [ ] Not yet created
+**Status**: [x] Exists — `tests/unit/game-state-manager/WinDetection_Test.cs` (9 test methods covering all AC-GSM-08 sub-conditions)
 
 ---
 
@@ -99,3 +99,13 @@ private void HandlePuzzleSolved()
 
 - Depends on: Story 001 (DONE) — board state mutation established; ACTIVE state required for WIN transition
 - Unlocks: Story 007 (EC-05: deferred undo discarded on `puzzle_solved()`)
+
+---
+
+## Completion Notes
+**Completed**: 2026-05-15
+**Criteria**: 1/1 (AC-GSM-08, all 5 sub-conditions covered by 9 unit tests)
+**Deviations**: INFO — `OnLevelComplete` uses `Action<int,int,int,long>` (correct per EC-12/long seqId); ADR-0006 interface sketch had `int` for sequenceId — sketch predates the long decision. Advisory Debug.LogWarning added to null-LDS branch in HandlePuzzleSolved.
+**Test Evidence**: Logic — `tests/unit/game-state-manager/WinDetection_Test.cs` (9 tests; APPROVED by /code-review 2026-05-15). Gap-fill test `Test_HandleUndoRequested_AfterWin_WinningValuesAreFrozen` added during code review to match QA spec exactly.
+**Code Review**: Complete — APPROVED. Additional scope: Tests.Unit.GameStateManager.asmdef updated with Newtonsoft.Json reference for StubLds.
+**Implementation**: HandlePuzzleSolved() in GameStateManager.cs — WIN-01/EC-15 path. _currentLevelId and _levelDataSystem fields added (Story 005 will set in production via LoadLevel). OnLevelComplete event added to IGameStateManager interface.

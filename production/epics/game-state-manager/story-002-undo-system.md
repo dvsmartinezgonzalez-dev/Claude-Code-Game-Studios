@@ -1,7 +1,7 @@
 # Story 002: Undo System and Move Count Formula
 
 > **Epic**: Game State Manager
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Core
 > **Type**: Logic
 > **Estimate**: Small (2–3h)
@@ -115,9 +115,9 @@ public void UndoRequested()
 ## Test Evidence
 
 **Story Type**: Logic
-**Required evidence**: `tests/unit/game-state-manager/undo_system_test.cs` — must exist and pass
+**Required evidence**: `tests/unit/game-state-manager/UndoSystem_Test.cs` — must exist and pass
 
-**Status**: [ ] Not yet created
+**Status**: [x] Exists — `tests/unit/game-state-manager/UndoSystem_Test.cs` (9 test methods covering AC-GSM-04/05/06/07/19)
 
 ---
 
@@ -125,3 +125,13 @@ public void UndoRequested()
 
 - Depends on: Story 001 (DONE) — undo stack is populated by `move_committed` in Story 001
 - Unlocks: Story 007 (deferred undo builds on the synchronous undo path)
+
+---
+
+## Completion Notes
+**Completed**: 2026-05-15
+**Criteria**: 5/5 passing (all covered by automated unit tests)
+**Deviations**: INFO — Story pseudocode used `_undoStack.Pop()`/`Source`/`Destination`; implementation correctly adapts to `List<UndoEntry>` with `From`/`To` per existing struct. Advisory S-1/S-2 from code review noted below.
+**Test Evidence**: Logic — `tests/unit/game-state-manager/UndoSystem_Test.cs` (9 tests; APPROVED WITH SUGGESTIONS by /code-review 2026-05-15)
+**Code Review**: Complete — APPROVED WITH SUGGESTIONS. Advisory items: (S-1) clarify commit vs undo observation mechanics in AC-GSM-07 test comment; (S-2) add explicit Assert.Greater for UND-06 "never decrement" in AC-GSM-04 test.
+**Implementation**: `UndoRequested()` in GameStateManager.cs — UND-01/02/05/06 synchronous path only. UND-03 deferred undo deferred to Story 007.

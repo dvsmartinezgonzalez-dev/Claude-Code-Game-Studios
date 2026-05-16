@@ -1,7 +1,7 @@
 # Story 004: Bolt Count Invariant Checks
 
 > **Epic**: Game State Manager
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Core
 > **Type**: Logic
 > **Estimate**: Small (2h)
@@ -114,7 +114,7 @@ private bool RunInvariantChecks(LevelRecord record, int levelId)
 **Story Type**: Logic
 **Required evidence**: `tests/unit/game-state-manager/invariant_checks_test.cs` — must exist and pass
 
-**Status**: [ ] Not yet created
+**Status**: [x] Exists and covers all AC-GSM-09 and AC-GSM-10 cases (8 tests)
 
 ---
 
@@ -122,3 +122,16 @@ private bool RunInvariantChecks(LevelRecord record, int levelId)
 
 - Depends on: None — this story implements a pure validation method; can be written and tested with a stub LevelRecord
 - Unlocks: Story 005 (load pipeline calls invariant checks at L-03)
+
+---
+
+## Completion Notes
+**Completed**: 2026-05-16
+**Criteria**: 2/2 passing (AC-GSM-09, AC-GSM-10 — all edge cases covered)
+**Deviations**: None from GDD/ADR. TR-GSM-007 compliant. Manifest version match.
+**Test Evidence**: Logic — `tests/unit/game-state-manager/InvariantChecks_Test.cs` (8 tests)
+**Code Review**: Complete (lean mode) — R-1 applied: GSMEnums.cs doc comment reorder; `InternalsVisibleTo("Tests.Unit.GameStateManager")` added to `src/AssemblyInfo.cs`
+**Advisory items**:
+- `Test_Failure_DoesNotEmitLevelLoaded` trivially-false assertion — add TODO Story 005 comment when OnLevelLoaded is added to interface
+- Stack-count vs color-count structural mismatch not tested — clarify scope with qa-lead before Story 005
+- `SyncPublicCounters` maintenance hazard (MoveCount/CurrentSequenceId) — convert to expression-body properties in a future cleanup story

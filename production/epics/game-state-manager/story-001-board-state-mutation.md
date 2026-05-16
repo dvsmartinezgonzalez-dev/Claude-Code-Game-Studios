@@ -1,7 +1,7 @@
 # Story 001: Board State Mutation
 
 > **Epic**: Game State Manager
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Core
 > **Type**: Logic
 > **Estimate**: Small (2–3h)
@@ -108,9 +108,9 @@ private void HandleMoveCommitted(int src, int dst, int colorId, long seqId)
 ## Test Evidence
 
 **Story Type**: Logic
-**Required evidence**: `tests/unit/game-state-manager/board_mutation_test.cs` — must exist and pass
+**Required evidence**: `tests/unit/game-state-manager/BoardMutation_Test.cs` — must exist and pass
 
-**Status**: [ ] Not yet created
+**Status**: [x] Exists — `tests/unit/game-state-manager/BoardMutation_Test.cs` (16 test methods covering AC-GSM-01, AC-GSM-02, AC-GSM-03)
 
 ---
 
@@ -118,3 +118,13 @@ private void HandleMoveCommitted(int src, int dst, int colorId, long seqId)
 
 - Depends on: None — this is the foundational GSM story
 - Unlocks: Story 002 (undo uses the undo stack established here), Story 003 (win detection reads board state), Story 005 (load pipeline populates board state), Story 006 (watchdog starts on move_committed)
+
+---
+
+## Completion Notes
+**Completed**: 2026-05-15
+**Criteria**: 3/3 passing (all covered by automated unit tests)
+**Deviations**: None blocking. Advisory: test evidence path corrected from snake_case to PascalCase (BoardMutation_Test.cs per project naming convention).
+**Test Evidence**: Logic — `tests/unit/game-state-manager/BoardMutation_Test.cs` (16 tests; APPROVED by /code-review 2026-05-15)
+**Code Review**: Complete — APPROVED (two passes; all BLOCKING/REQUIRED issues resolved before approval)
+**Changes applied during story close**: `readonly List<UndoEntry>` restored; expression-body config properties (StackDepth etc.); `UndoStackDepth`/`TryPeekUndoStack` internal test seams added; lambda event unsubscription corrected; undo stack depth asserted in AC-GSM-01/02 tests; Tests.Unit.GameStateManager.asmdef created.

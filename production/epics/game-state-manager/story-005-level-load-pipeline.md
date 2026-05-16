@@ -1,7 +1,7 @@
 # Story 005: Level Load Pipeline
 
 > **Epic**: Game State Manager
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Core
 > **Type**: Logic
 > **Estimate**: Medium (3–4h)
@@ -88,12 +88,12 @@ public void LoadLevel(int levelId)
     _undoStack.Clear();
     _moveCount = 0;
 
+    // L-07: Transition to ACTIVE before emitting — subscribers must see Active state
+    _state = GsmState.Active;
+
     // L-06: Emit level_loaded
     OnLevelLoaded?.Invoke(levelId, record.ColorCount, record.StackDepth,
                           record.TempSlotCount, record.TempSlotDepth, 0L);
-
-    // L-07: Transition to ACTIVE
-    _state = GsmState.Active;
 }
 ```
 
@@ -101,7 +101,34 @@ public void LoadLevel(int levelId)
 
 **L-04 pre-won board**: GSM logs a warning but continues to L-05. Win detection is owned by Sort Mechanic; it will fire `puzzle_solved()` on the `level_loaded` handler if appropriate. GSM must not auto-win here.
 
+**`CheckWinCondition` semantics (L-04 helper — private, this story)**: A board is pre-won when every color stack has exactly `stackDepth` bolts and all bolt IDs in each stack are equal. Implement as:
+```csharp
+private static bool CheckWinCondition(int[][] colorStacks, int stackDepth)
+{
+    foreach (var stack in colorStacks)
+    {
+        if (stack.Length != stackDepth) return false;
+        int first = stack[0];
+        foreach (var id in stack)
+            if (id != first) return false;
+    }
+    return true;
+}
+```
+This method is only used by L-04 to emit the warning log. It does NOT trigger a COMPLETE transition — win detection during gameplay is exclusively SortMechanic's responsibility.
+
 **EC-09**: `if (_state != GsmState.Unloaded) return` — this guard handles LOADING, ACTIVE, and COMPLETE. All three must silently reject `load_level` with no event emitted.
+
+**Interface extension required (this story)**: Add the following to `IGameStateManager`:
+```csharp
+/// <summary>
+/// Fired once when a level load completes (L-06). Carries all board dimensions
+/// so subscribers never need to query LDS independently.
+/// Parameters: (int levelId, int colorCount, int stackDepth, int tempSlotCount, int tempSlotDepth, long sequenceId)
+/// </summary>
+event Action<int, int, int, int, int, long> OnLevelLoaded;
+```
+Also add the matching `public event Action<int, int, int, int, int, long> OnLevelLoaded;` field declaration to `GameStateManager.cs`. Parameter order matches the `OnLevelLoaded?.Invoke(...)` call in L-06 above.
 
 ---
 
@@ -150,7 +177,7 @@ public void LoadLevel(int levelId)
 **Story Type**: Logic
 **Required evidence**: `tests/unit/game-state-manager/level_load_pipeline_test.cs` — must exist and pass
 
-**Status**: [ ] Not yet created
+**Status**: [x] Exists and passes — `tests/unit/game-state-manager/LevelLoadPipeline_Test.cs` (15 tests covering AC-GSM-11, 12, 13, 17, 20)
 
 ---
 
@@ -158,3 +185,15 @@ public void LoadLevel(int levelId)
 
 - Depends on: Story 004 (DONE) — invariant checks called at L-03; Story 001 (DONE) — board state structures established
 - Unlocks: Story 008 (TEARDOWN and app lifecycle builds on ACTIVE state from this pipeline)
+
+---
+
+## Completion Notes
+**Completed**: 2026-05-16
+**Criteria**: 5/5 passing (AC-GSM-11, 12, 13, 17, 20 — all edge cases covered)
+**Deviations**:
+- ADVISORY: `OnLevelLoaded` uses 6-param signature; ADR-0006 Key Interfaces sketch shows 2 params — story AC-GSM-20 supersedes. Flag for ADR-0006 amendment.
+- ADVISORY: L-07/L-06 ordering corrected during dev (unity-specialist BLOCKING finding) — story doc code block updated to match.
+**Test Evidence**: Logic — `tests/unit/game-state-manager/LevelLoadPipeline_Test.cs` (15 tests)
+**Code Review**: Complete (lean mode) — R-1: `CheckWinCondition` stackDepth=0 guard added; R-2: L-03 invariant failure pipeline test added; S-1: story doc L-07/L-06 code block corrected; S-3: AC-GSM-17 levelId assertion added
+**Open follow-ups**: Extract `AllocateBoardArrays` private method before Story 007 (LoadLevel ~80 lines); update ADR-0006 Key Interfaces `OnLevelLoaded` signature from 2-param to 6-param

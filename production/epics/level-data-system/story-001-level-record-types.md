@@ -119,7 +119,7 @@ Small — 3–4 hours
 **Story Type**: Logic
 **Required evidence**: `tests/unit/level-data-system/level_record_types_test.cs` — must exist and pass
 
-**Status**: [ ] Not yet created
+**Status**: [x] Exists — `tests/unit/level-data-system/LevelDataSystem_LevelRecordTypes_Test.cs` (29 tests)
 
 ---
 

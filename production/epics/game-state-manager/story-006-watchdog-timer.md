@@ -1,7 +1,7 @@
 # Story 006: Watchdog Timer
 
 > **Epic**: Game State Manager
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Core
 > **Type**: Logic
 > **Estimate**: Small (2h)
@@ -30,6 +30,8 @@
 *From GDD `design/gdd/game-state-manager.md`, scoped to this story:*
 
 - [ ] **AC-GSM-18** — `move_committed(sequenceId=N)` fires and no `OnMoveExecutingExited` arrives within `watchdog_timeout_ms`: (1) `current_sequence_id=N+1`; (2) `board_refresh_forced(sequenceId=N+1)` emitted; (3) committed bolt is present in `stack_contents[destination]` — no rollback occurs
+- [ ] **AC-GSM-19** — `OnMoveExecutingExited` arrives before watchdog fires: watchdog timer is cancelled; `board_refresh_forced` is NOT emitted; `current_sequence_id` is unchanged
+- [ ] **AC-GSM-20** — Stale `animation_complete(seqId=N)` arrives AFTER `board_refresh_forced(seqId=N+1)` has fired: no second `board_refresh_forced` emitted; `_watchdogCoroutine` reference is already null (watchdog already cleared itself)
 
 ---
 
@@ -84,6 +86,8 @@ private void OnDestroy()
 
 **Unit testing the watchdog**: Use `UnityTest` with `[UnityTest]` attribute and `yield return new WaitForSecondsRealtime(2f)` to trigger the watchdog asynchronously in Unity Test Framework. Alternatively, inject the timeout as a constructor parameter for a synchronous test seam.
 
+**Performance impact**: Minimal. The watchdog is a single `Coroutine` object alive only during `MOVE_EXECUTING` (≤ 1500ms per move). No allocation on the hot path after the coroutine starts. No CPU cost when idle. `WaitForSecondsRealtime` polling is engine-internal and negligible at 60fps on mobile.
+
 ---
 
 ## Out of Scope
@@ -111,7 +115,7 @@ private void OnDestroy()
 **Story Type**: Logic
 **Required evidence**: `tests/unit/game-state-manager/watchdog_timer_test.cs` — must exist and pass (use `[UnityTest]` for async path, or inject timeout seam for synchronous testing)
 
-**Status**: [ ] Not yet created
+**Status**: [x] Exists and passes — `tests/unit/game-state-manager/WatchdogTimer_Test.cs` (12 tests covering AC-GSM-18, 19, 20 + 2 edge cases)
 
 ---
 
@@ -119,3 +123,15 @@ private void OnDestroy()
 
 - Depends on: Story 001 (DONE) — watchdog starts after BSM-01 mutation
 - Unlocks: Story 007 (watchdog exit is one of the deferred-undo processing paths)
+
+---
+
+## Completion Notes
+**Completed**: 2026-05-16
+**Criteria**: 3/3 passing (AC-GSM-18, AC-GSM-19, AC-GSM-20 — all edge cases covered)
+**Deviations**:
+- ADVISORY: Test file created as `WatchdogTimer_Test.cs` (PascalCase per project convention); story doc had `watchdog_timer_test.cs` — filename is authoritative.
+- ADVISORY: `_watchdogTimeoutSec = 1.5f` is a float literal (injectable via seam, not [SerializeField]). Expose as [SerializeField] if designer-accessible tuning is needed later.
+**Test Evidence**: Logic — `tests/unit/game-state-manager/WatchdogTimer_Test.cs` (12 tests)
+**Code Review**: Complete (lean mode) — R-1: `HandlePuzzleSolved` missing `CancelWatchdog()` on WIN path found and fixed (ADR-0006 WDG-03 compliance); `docs/architecture/ADR-0006.md` created to resolve story-readiness blocker before implementation
+**Open follow-ups**: `HandleMoveExecutingExited(long seqId)` — `seqId` param unused until Story 007 wires deferred undo; consider `_seqId` naming if strict Roslyn analyzer rules are enabled

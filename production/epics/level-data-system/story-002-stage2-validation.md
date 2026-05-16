@@ -145,7 +145,7 @@ Small — 3–4 hours
 **Story Type**: Logic
 **Required evidence**: `tests/unit/level-data-system/stage2_validation_test.cs` — must exist and pass
 
-**Status**: [ ] Not yet created
+**Status**: [x] Exists — `tests/unit/level-data-system/stage2_validation_test.cs` (20 tests)
 
 ---
 

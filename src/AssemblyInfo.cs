@@ -4,3 +4,5 @@ using System.Runtime.CompilerServices;
 // (LoadCatalogueTextAsync on LevelDataSystem, ClearInstanceForTesting, etc.)
 [assembly: InternalsVisibleTo("Tests.Unit.LevelData")]
 [assembly: InternalsVisibleTo("Tests.Integration.LevelData")]
+[assembly: InternalsVisibleTo("Tests.Unit.GameStateManager")]
+[assembly: InternalsVisibleTo("Tests.Integration.GameStateManager")]

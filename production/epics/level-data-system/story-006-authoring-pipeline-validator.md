@@ -132,7 +132,7 @@ The validator also serves as the entry point for integrating CI-level validation
 **Story Type**: Logic (editor tooling)
 **Required evidence**: `tests/unit/level-data-system/authoring_validator_test.cs` — must exist and pass (can run via Unity Test Framework in Editor mode)
 
-**Status**: [ ] Not yet created
+**Status**: [x] Exists — `tests/unit/level-data-system/authoring_validator_test.cs` (8 tests)
 
 ---
 

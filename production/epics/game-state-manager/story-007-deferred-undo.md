@@ -1,7 +1,7 @@
 # Story 007: Deferred Undo and MOVE_EXECUTING Exit Ordering
 
 > **Epic**: Game State Manager
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Core
 > **Type**: Logic
 > **Estimate**: Medium (3–4h)
@@ -92,6 +92,8 @@ private void HandlePuzzleSolved()
 
 **`_isAnimationInFlight` flag**: Set to `true` when `move_committed` is processed (BSM-01). Cleared in `HandleMoveExecutingExited` and in the watchdog. Used to distinguish deferred (animation in flight) from synchronous (animation complete) undo requests.
 
+**Performance impact**: Negligible — deferred undo is a single boolean flag check on every `UndoRequested()` call and a conditional `ExecuteUndo()` call on `MOVE_EXECUTING` exit. No allocation. No per-frame cost.
+
 ---
 
 ## Out of Scope
@@ -107,11 +109,13 @@ private void HandlePuzzleSolved()
 ## QA Test Cases
 
 - **AC-GSM-14**: Deferred undo fires before win evaluation
-  - Given: `color_count=2, stack_depth=2`; board state where one move wins (`stacks=[[1],[2,2]]`); `move_committed(src=0, dst=1, colorId=1)` processed (now `stacks=[[],[2,2,1]]` — not win yet since [2,2,1] not monochromatic); wait — actually this needs careful setup. Let me re-read...
-  - Given: board where placing the final bolt satisfies win condition; `move_committed` processed (animation in flight); `undo_requested` arrives; event spy
-  - When: `HandleMoveExecutingExited` called (animation completion simulated)
-  - Then: spy order: `board_state_changed` (from undo) emitted BEFORE any `level_complete`; `level_complete` NOT in spy; GSM state = ACTIVE
-  - Edge cases: animation completes before undo arrives (synchronous path via Story 002 — no deferred undo fired)
+  - Given: `color_count=2, stack_depth=2`; board `stacks=[[1,2],[2]]`; event spy
+  - When: `SimulateMoveCommitted(src=0, dst=1, colorId=2, seqId=N)`
+          [board becomes `[[1],[2,2]]` — stack 1 is full+monochromatic; would trigger win if evaluated now]
+          `UndoRequested()` → deferred (`_pendingUndo=true`)
+          `SimulateMoveExecutingExited(N+1)`
+  - Then: `board_state_changed` emitted (from deferred undo); board reverts to `[[1,2],[2]]`; `level_complete` NOT in spy; `GSM.LifecycleState == Active`
+  - Edge cases: animation completes before undo arrives (synchronous path via Story 002 — `_pendingUndo` is false, deferred path not taken)
 
 - **AC-GSM-15**: puzzle_solved discards deferred undo
   - Given: MOVE_EXECUTING active; `undo_requested` deferred (`_pendingUndo=true`); `puzzle_solved()` received
@@ -135,7 +139,7 @@ private void HandlePuzzleSolved()
 **Story Type**: Logic
 **Required evidence**: `tests/unit/game-state-manager/deferred_undo_test.cs` — must exist and pass
 
-**Status**: [ ] Not yet created
+**Status**: [x] Exists — `tests/unit/game-state-manager/DeferredUndo_Test.cs` (14 tests covering AC-GSM-14, 15, 16, 21)
 
 ---
 
@@ -143,3 +147,16 @@ private void HandlePuzzleSolved()
 
 - Depends on: Story 001 (DONE), Story 002 (DONE), Story 003 (DONE), Story 006 (DONE) — deferred undo integrates all four: board mutation, synchronous undo, COMPLETE state, watchdog
 - Unlocks: None — this is the last runtime Logic story for the GSM epic
+
+---
+
+## Completion Notes
+**Completed**: 2026-05-16
+**Criteria**: 4/4 passing (AC-GSM-14, AC-GSM-15, AC-GSM-16, AC-GSM-21 — all edge cases covered)
+**Deviations**:
+- ADVISORY: `Test_SecondUndoRequest_OnlyOneUndoFires_BoardRevertsExactlyOneMove` unnecessarily re-creates GSM inside test body using same board as SetUp — cosmetic only.
+- ADVISORY: Minor comment inaccuracy in `Test_UndoRequested_WhenNotInFlight_ExecutesSynchronously` — test logic correct, comment says "FlushDeferredUndo fires" but it's a no-op in that path.
+- ADVISORY: Test file created as `DeferredUndo_Test.cs` (PascalCase per project convention); story doc had `deferred_undo_test.cs` — filename is authoritative.
+**Test Evidence**: Logic — `tests/unit/game-state-manager/DeferredUndo_Test.cs` (14 tests)
+**Code Review**: Complete (lean mode) — APPROVED WITH SUGGESTIONS; no required changes; `FlushDeferredUndo()` and `ExecuteUndo()` extraction validated; EC-11 event ordering test noted as excellent coverage
+**Open follow-ups**: `Test_SecondUndoRequest_OnlyOneUndoFires` test body re-creates GSM unnecessarily — consider simplifying to reuse standard SetUp board in a future cleanup pass

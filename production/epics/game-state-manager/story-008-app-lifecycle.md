@@ -1,7 +1,7 @@
 # Story 008: App Lifecycle and Board Serialization
 
 > **Epic**: Game State Manager
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Core
 > **Type**: Integration
 > **Estimate**: Medium (3–4h)
@@ -10,7 +10,7 @@
 ## Context
 
 **GDD**: `design/gdd/game-state-manager.md`
-**Requirement**: `TR-GSM-008`
+**Requirement**: `TR-GSM-008`, `TR-GSM-011`
 *(Requirement text lives in `docs/architecture/tr-registry.yaml` — read fresh at review time)*
 
 **ADR Governing Implementation**: ADR-0001 (DDOL lifecycle, `OnApplicationPause`); ADR-0006 (SER-01/02/03, EC-06)
@@ -33,6 +33,9 @@
 - [ ] **SER-02** — Serialized state with `gsm_state=ACTIVE`; foreground restore (`OnApplicationPause(false)`): board state deserialized correctly; `board_state_changed(sequenceId, moveCount)` emitted; GSM in ACTIVE state
 - [ ] **SER-03** — Corrupt or missing save data on foreground restore: `session_load_failed(SAVE_CORRUPT, levelId)` emitted; GSM → UNLOADED; all partial state cleared
 - [ ] **EC-06** — GSM ACTIVE while Sort Mechanic is known to be in BOLT_SELECTED at background time (signal injected via test seam); foreground restore: `current_sequence_id` incremented; `board_state_changed` emitted with new seqId
+
+- [ ] **L-08** — `ExitLevel()` received while GSM is in ACTIVE or COMPLETE: (1) `stack_contents` and `temp_slot_contents` arrays cleared; (2) undo stack depth = 0; (3) `move_count` = 0; (4) `OnLevelUnloaded(levelId)` emitted with the level's ID; (5) `GSM.LifecycleState == Unloaded`; (6) `LoadLevel` accepted again after teardown completes (test each starting state — ACTIVE and COMPLETE — as separate sub-cases)
+- [ ] **L-08-LOADING** — `ExitLevel()` received while GSM is in LOADING (load cancellation): (1) partial state discarded; (2) `OnLevelUnloaded(null)` emitted (null level ID — cancelled before L-02); (3) GSM → UNLOADED; (4) `OnLevelLoaded` NOT emitted; (5) `OnSessionLoadFailed` NOT emitted
 
 ---
 
@@ -83,6 +86,45 @@ private void OnApplicationPause(bool paused)
 
 **`async void OnApplicationPause` is forbidden** — control returns to the OS at the first `await`. Any pending I/O is cancelled. All Save & Persistence calls in this handler must be synchronous.
 
+**Interface additions required (this story)**:
+
+Add to `IGameStateManager`:
+```csharp
+/// <summary>
+/// Initiates TEARDOWN: clears board state, emits OnLevelUnloaded, transitions to UNLOADED.
+/// If called during LOADING, cancels the load and emits OnLevelUnloaded(null).
+/// No-op in UNLOADED state. Called exclusively by Level Progression.
+/// </summary>
+void ExitLevel();
+
+/// <summary>
+/// Fired when TEARDOWN completes (L-08) or a LOADING cancellation completes.
+/// Carries levelId (null if cancellation during LOADING). Level Progression waits
+/// for this before issuing the next LoadLevel call.
+/// Parameters: (int? levelId)
+/// </summary>
+event Action<int?> OnLevelUnloaded;
+```
+
+Also add to `IGameStateManager`:
+```csharp
+/// <summary>
+/// Test seam for EC-06: injects the Sort Mechanic BOLT_SELECTED flag before OnApplicationPause.
+/// In production, Sort Mechanic calls this before its own OnApplicationPause returns (SEO ordering).
+/// </summary>
+void SetSortMechanicWasInBoltSelectedForTesting(bool value);
+```
+
+**Save & Persistence interface**: This story creates a minimal `IBoardSnapshotSystem` in `src/GameStateManager/` for GSM injection:
+```csharp
+public interface IBoardSnapshotSystem
+{
+    void WriteBoardSnapshotSync(BoardSnapshot snapshot); // W-2 synchronous path
+    BoardSnapshot? ReadBoardSnapshot();
+}
+```
+The full `SaveSystem` implementation is out of scope (Save & Persistence epic). The integration test provides a stub.
+
 ---
 
 ## Out of Scope
@@ -90,7 +132,8 @@ private void OnApplicationPause(bool paused)
 *Handled by neighbouring stories:*
 
 - Story 005: Normal level load pipeline (L-01 through L-07) — this story handles restoration from serialized state only
-- Save & Persistence epic: the `WriteBoardSnapshot` / `ReadBoardSnapshot` API implementation
+- Save & Persistence epic: the full `ISaveSystem` / `SaveSystem` implementation — this story creates only `IBoardSnapshotSystem` (minimal interface for GSM injection)
+- Undo stack serialization — undo history is session-only and is never persisted (GDD SER-01 explicit)
 
 ---
 
@@ -116,6 +159,16 @@ private void OnApplicationPause(bool paused)
   - When: background then foreground restore
   - Then: restored seqId = snapshot's seqId + 1; `board_state_changed` emitted with incremented seqId
 
+- **L-08**: ExitLevel from ACTIVE clears all state
+  - Given: GSM ACTIVE with known board state (2 moves committed, undo stack depth=2); event spy
+  - When: `ExitLevel()` called
+  - Then: `StackContents` all empty; `UndoStackDepth=0`; `MoveCount=0`; `OnLevelUnloaded(levelId)` in spy; `GSM.LifecycleState==Unloaded`; subsequent `LoadLevel(id)` accepted without error
+
+- **L-08-LOADING**: ExitLevel during LOADING cancels load
+  - Given: GSM in LOADING (state injected via seam — simulates mid-load); event spy
+  - When: `ExitLevel()` called
+  - Then: `OnLevelUnloaded(null)` in spy; `OnLevelLoaded` NOT in spy; `OnSessionLoadFailed` NOT in spy; `GSM.LifecycleState==Unloaded`
+
 ---
 
 ## Test Evidence
@@ -123,7 +176,7 @@ private void OnApplicationPause(bool paused)
 **Story Type**: Integration
 **Required evidence**: `tests/integration/game-state-manager/app_lifecycle_test.cs` — must exist and pass (uses Save & Persistence stub)
 
-**Status**: [ ] Not yet created
+**Status**: [x] Created — `tests/integration/game-state-manager/AppLifecycle_Test.cs`
 
 ---
 
@@ -131,3 +184,14 @@ private void OnApplicationPause(bool paused)
 
 - Depends on: Story 005 (DONE) — ACTIVE state and level load pipeline established; Save & Persistence stub interface available
 - Unlocks: None — this is the last story for the Game State Manager epic
+
+---
+
+## Completion Notes
+
+**Completed**: 2026-05-16
+**Criteria**: 6/6 passing
+**Deviations**: ADVISORY — `GSMLifecycleState.Teardown` declared but never assigned as intermediate state; `ExitLevel` transitions directly ACTIVE→UNLOADED (synchronous teardown). Enum value reserved for future use. Tests assert `Unloaded` — functionally correct.
+**Test Evidence**: Integration test at `tests/integration/game-state-manager/AppLifecycle_Test.cs` (20 tests; includes S-1/S-2 advisory tests added at review time)
+**Code Review**: Complete — R-1 applied: null guard on `_levelDataSystem` in `LoadLevel` (line 212) prevents NRE when LDS is unavailable; S-1/S-2 advisory tests added
+**Code Review (GetByFilter)**: `src/LevelData/LevelDataSystem.cs:265` null guard was pre-existing — no action required
