@@ -356,3 +356,120 @@ After all 11 ADRs: run `/gate-check pre-production`.
 - Story: production/epics/level-data-system/story-006-authoring-pipeline-validator.md — Authoring Pipeline Validator (Editor-Only)
 - Tech debt logged: None (advisory items noted in Completion Notes)
 - Next recommended: No sprint file — check production/epics/ for next ready story
+
+## Session Extract — /dev-story 2026-05-15
+- Story: production/epics/game-state-manager/story-001-board-state-mutation.md — Board State Mutation
+- Files changed: src/GameStateManager/GameStateManager.cs (pre-existing), src/GameStateManager/IGameStateManager.cs (pre-existing), src/GameStateManager/GSMEnums.cs (pre-existing), src/GameStateManager/UndoEntry.cs (pre-existing)
+- Files created: tests/unit/game-state-manager/Tests.Unit.GameStateManager.asmdef (missing asmdef added), tests/unit/game-state-manager/BoardMutation_Test.cs (pre-existing — one assertion bug fixed: count=0→2)
+- Test written: tests/unit/game-state-manager/BoardMutation_Test.cs (13 tests covering AC-GSM-01, AC-GSM-02, AC-GSM-03)
+- Blockers: None — implementation was pre-existing; asmdef and assertion fix applied in this session
+- Next: /code-review src/GameStateManager/GameStateManager.cs tests/unit/game-state-manager/BoardMutation_Test.cs then /story-done production/epics/game-state-manager/story-001-board-state-mutation.md
+
+## Session Extract — /story-done 2026-05-15
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/game-state-manager/story-001-board-state-mutation.md — Board State Mutation
+- Tech debt logged: None
+- Next recommended: Story 002 (undo processing) — run /story-readiness production/epics/game-state-manager/story-002-*.md
+
+## Session Extract — /dev-story 2026-05-15
+- Story: production/epics/game-state-manager/story-002-undo-system.md — Undo System and Move Count Formula
+- Files changed: src/GameStateManager/GameStateManager.cs (UndoRequested() implemented)
+- Test written: tests/unit/game-state-manager/UndoSystem_Test.cs (9 tests covering AC-GSM-04/05/06/07/19)
+- Blockers: None
+- Note: Test file path corrected from snake_case (undo_system_test.cs) to PascalCase (UndoSystem_Test.cs) per project convention
+- Next: /code-review src/GameStateManager/GameStateManager.cs tests/unit/game-state-manager/UndoSystem_Test.cs then /story-done production/epics/game-state-manager/story-002-undo-system.md
+
+## Session Extract — /story-done 2026-05-15
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/game-state-manager/story-002-undo-system.md — Undo System and Move Count Formula
+- Tech debt logged: None
+- Next recommended: Story 003 (puzzle_solved / WIN state) — run /story-readiness production/epics/game-state-manager/story-003-*.md
+
+## Session Extract — /dev-story 2026-05-15
+- Story: production/epics/game-state-manager/story-003-win-detection.md — Win Detection and COMPLETE State
+- Files changed: src/GameStateManager/GameStateManager.cs (HandlePuzzleSolved() implemented; _currentLevelId + _levelDataSystem fields added; OnLevelComplete event added; SeedLevelForTesting + SimulatePuzzleSolved test seams), src/GameStateManager/IGameStateManager.cs (OnLevelComplete event added)
+- Test written: tests/unit/game-state-manager/WinDetection_Test.cs (8 tests covering all AC-GSM-08 sub-cases)
+- Blockers: None
+- Note: Test file path corrected from snake_case (win_detection_test.cs) to PascalCase (WinDetection_Test.cs) per project convention
+- Note: Tests.Unit.GameStateManager.asmdef updated with Newtonsoft.Json reference for StubLds JSON deserialization
+- Next: /code-review then /story-done (both completed in same session)
+
+## Session Extract — /story-done 2026-05-15
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/game-state-manager/story-003-win-detection.md — Win Detection and COMPLETE State
+- Tech debt logged: None
+- Next recommended: Story 004 or Story 005 — check production/epics/game-state-manager/ for next Ready story
+
+## Session Extract — /dev-story 2026-05-16
+- Story: production/epics/game-state-manager/story-004-invariant-checks.md — Bolt Count Invariant Checks
+- Files changed: src/GameStateManager/GSMEnums.cs (GsmSessionLoadFailReason enum added), src/GameStateManager/IGameStateManager.cs (OnSessionLoadFailed event added), src/GameStateManager/GameStateManager.cs (OnSessionLoadFailed event, RunInvariantChecks, EmitSessionLoadFailed, SimulateRunInvariantChecks test seam)
+- Test written: tests/unit/game-state-manager/InvariantChecks_Test.cs (9 tests covering AC-GSM-09, AC-GSM-10, edge cases)
+- Blockers: None
+- Note: LdsErrorCode.InvariantViolation does not exist — defined GsmSessionLoadFailReason enum in GSMEnums.cs instead
+- Note: Test file path corrected from snake_case to PascalCase (InvariantChecks_Test.cs) per project convention
+- Next: /code-review src/GameStateManager/GameStateManager.cs src/GameStateManager/GSMEnums.cs src/GameStateManager/IGameStateManager.cs tests/unit/game-state-manager/InvariantChecks_Test.cs then /story-done production/epics/game-state-manager/story-004-invariant-checks.md
+
+## Session Extract — /story-done 2026-05-16
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/game-state-manager/story-004-invariant-checks.md — Bolt Count Invariant Checks
+- Code review fixes: GSMEnums.cs doc comment reorder (R-1); src/AssemblyInfo.cs InternalsVisibleTo("Tests.Unit.GameStateManager") added
+- LevelData R-1/S-1/S-2 already applied in previous session (LevelDataSystem.cs:265, getter_methods_test.cs:226–252)
+- Tech debt logged: None (advisory items noted in story Completion Notes)
+- Next recommended: Story 005 — Level Load Pipeline (production/epics/game-state-manager/story-005-level-load-pipeline.md)
+
+## Session Extract — /dev-story 2026-05-16
+- Story: production/epics/game-state-manager/story-005-level-load-pipeline.md — Level Load Pipeline
+- Files changed: src/GameStateManager/IGameStateManager.cs (OnLevelLoaded event added), src/GameStateManager/GameStateManager.cs (LoadLevel implemented L-01–L-07, CheckWinCondition added, LDS wired in Awake, InjectLevelDataSystemForTesting seam added)
+- Test written: tests/unit/game-state-manager/LevelLoadPipeline_Test.cs (14 tests covering AC-GSM-11, 12, 13, 17, 20)
+- Deviations: OnLevelLoaded signature uses 6 params (ADR-0006 sketch shows 2) — story AC-GSM-20 explicit requirement supersedes ADR sketch; L-07/L-06 ordering fixed per unity-specialist review (ACTIVE before OnLevelLoaded emit)
+- Blockers: None
+- Next: /code-review src/GameStateManager/GameStateManager.cs src/GameStateManager/IGameStateManager.cs tests/unit/game-state-manager/LevelLoadPipeline_Test.cs then /story-done production/epics/game-state-manager/story-005-level-load-pipeline.md
+
+## Session Extract — /story-done 2026-05-16
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/game-state-manager/story-005-level-load-pipeline.md — Level Load Pipeline
+- Tech debt logged: None (follow-ups noted in Completion Notes: AllocateBoardArrays refactor, ADR-0006 amendment)
+- Next recommended: Story 006 — Watchdog Timer (production/epics/game-state-manager/story-006-watchdog-timer.md)
+
+## Session Extract — /dev-story 2026-05-16
+- Story: production/epics/game-state-manager/story-006-watchdog-timer.md — Watchdog Timer
+- Files changed: src/GameStateManager/IGameStateManager.cs, src/GameStateManager/GameStateManager.cs
+- Test written: tests/unit/game-state-manager/WatchdogTimer_Test.cs (12 tests)
+- Blockers: None
+- Next: /code-review src/GameStateManager/GameStateManager.cs src/GameStateManager/IGameStateManager.cs tests/unit/game-state-manager/WatchdogTimer_Test.cs then /story-done production/epics/game-state-manager/story-006-watchdog-timer.md
+
+## Session Extract — /story-done 2026-05-16
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/game-state-manager/story-006-watchdog-timer.md — Watchdog Timer
+- Tech debt logged: None
+- Next recommended: Story 007 (Deferred Undo) — production/epics/game-state-manager/story-007-deferred-undo.md
+
+## Session Extract — /dev-story 2026-05-16
+- Story: production/epics/game-state-manager/story-007-deferred-undo.md — Deferred Undo and MOVE_EXECUTING Exit Ordering
+- Files changed: src/GameStateManager/GameStateManager.cs
+- Test written: tests/unit/game-state-manager/DeferredUndo_Test.cs (14 tests)
+- Blockers: None
+- Next: /code-review src/GameStateManager/GameStateManager.cs tests/unit/game-state-manager/DeferredUndo_Test.cs then /story-done production/epics/game-state-manager/story-007-deferred-undo.md
+
+## Session Extract — /story-done 2026-05-16
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/game-state-manager/story-007-deferred-undo.md — Deferred Undo and MOVE_EXECUTING Exit Ordering
+- Tech debt logged: None
+- Next recommended: Story 008 (App Lifecycle and Board Serialization) — production/epics/game-state-manager/story-008-app-lifecycle.md
+
+## Session Extract — /dev-story 2026-05-16
+- Story: production/epics/game-state-manager/story-008-app-lifecycle.md — App Lifecycle and Board Serialization
+- Files changed: src/GameStateManager/BoardSnapshot.cs (new), src/GameStateManager/IBoardSnapshotSystem.cs (new), src/GameStateManager/IGameStateManager.cs, src/GameStateManager/GameStateManager.cs, src/AssemblyInfo.cs
+- Test written: tests/integration/game-state-manager/AppLifecycle_Test.cs (19 tests)
+- Blockers: None
+- Next: /code-review src/GameStateManager/GameStateManager.cs src/GameStateManager/IGameStateManager.cs src/GameStateManager/BoardSnapshot.cs src/GameStateManager/IBoardSnapshotSystem.cs tests/integration/game-state-manager/AppLifecycle_Test.cs then /story-done production/epics/game-state-manager/story-008-app-lifecycle.md
+
+## Session Extract — /story-done 2026-05-16
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/game-state-manager/story-008-app-lifecycle.md — App Lifecycle and Board Serialization
+- R-1 fix applied: null guard on `_levelDataSystem` in `LoadLevel` (GameStateManager.cs:212)
+- S-1/S-2 advisory tests added: `Test_SER01_NullSaveSystem_InActive_NoThrowNoWrite`, `Test_SER02_OnResume_RestoresCompleteState`
+- GetByFilter guard pre-existing at LevelDataSystem.cs:265 — no action required
+- Advisory: `GSMLifecycleState.Teardown` declared but never assigned as intermediate state
+- Tech debt logged: None
+- Next recommended: Game State Manager epic complete — all 8 stories Done. Run `/smoke-check sprint` → `/team-qa sprint` → `/gate-check` to close Sprint 1
