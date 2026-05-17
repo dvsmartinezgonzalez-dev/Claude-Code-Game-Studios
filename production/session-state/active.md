@@ -473,3 +473,5 @@ After all 11 ADRs: run `/gate-check pre-production`.
 - Advisory: `GSMLifecycleState.Teardown` declared but never assigned as intermediate state
 - Tech debt logged: None
 - Next recommended: Game State Manager epic complete — all 8 stories Done. Run `/smoke-check sprint` → `/team-qa sprint` → `/gate-check` to close Sprint 1
+
+<!-- QA RUN: 2026-05-16 | Sprint: Sprint 1 | Verdict: APPROVED WITH CONDITIONS | Report: production/qa/qa-signoff-sprint1-2026-05-16.md -->
