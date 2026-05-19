@@ -1,6 +1,10 @@
 # Source Directory
 
-When writing or editing game code in this directory, follow these standards.
+> **NOTE**: Game source files have moved to `My project/Assets/_Project/Scripts/`.
+> This directory now contains only this CLAUDE.md. Edit source files at their new
+> location inside the Unity project.
+
+When writing or editing game code, follow these standards.
 
 ## Engine Version Warning
 
@@ -25,7 +29,7 @@ When in doubt, use the primary engine specialist configured in `CLAUDE.md`.
 
 ## Tests
 
-Tests live in `tests/` — not in `src/`.
+Tests live in `My project/Assets/_Project/Tests/` — not alongside source files.
 Run `/test-setup` to scaffold the test framework if it doesn't exist yet.
 Every gameplay system should have unit tests covering its formulas and edge cases.
 
