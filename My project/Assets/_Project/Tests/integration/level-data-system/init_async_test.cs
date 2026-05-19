@@ -29,7 +29,7 @@ namespace BoltSort.Tests.Integration.LevelData
         [TearDown]
         public void TearDown()
         {
-            Object.DestroyImmediate(_go); // triggers OnDestroy → Instance = null
+            UnityEngine.Object.DestroyImmediate(_go); // triggers OnDestroy → Instance = null
         }
 
         // ── Helpers ────────────────────────────────────────────────────────────

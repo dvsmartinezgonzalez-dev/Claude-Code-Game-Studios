@@ -49,7 +49,7 @@ namespace BoltSort.SortMechanic
         /// <see cref="InjectForTesting"/> before tests call <see cref="InitializeBoard"/>.
         /// </summary>
         [SerializeField]
-        private GameStateManager _gsmComponent;
+        private global::BoltSort.GameStateManager.GameStateManager _gsmComponent;
 
         private IGameStateManager _gsm;
         private IDiagnosticLogger _logger;
