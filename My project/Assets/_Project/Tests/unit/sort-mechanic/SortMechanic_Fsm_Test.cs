@@ -232,9 +232,9 @@ namespace BoltSort.Tests.Unit.SortMechanic
         [Test]
         public void Test_Init_StackLengthMismatch_EmitsLevelLoadFailed()
         {
-            // Arrange
-            _gsm.ColorCount = 3; // declared 3 colors
-            _gsm.SetColorStacks(new[] { 1, 1 }, new[] { 2 }); // but only 2 stacks
+            // Arrange: 2 stacks but ColorCount overridden to 3 → length mismatch
+            _gsm.SetColorStacks(new[] { 1, 1 }, new[] { 2 }); // sets ColorCount=2, stacks.Length=2
+            _gsm.ColorCount = 3; // override: ColorCount=3 but stacks.Length=2 → assertion fails
             var sm = CreateFresh();
             sm.InjectForTesting(_gsm, _logger);
             var spy = new EventSpy();
@@ -257,9 +257,9 @@ namespace BoltSort.Tests.Unit.SortMechanic
         [Test]
         public void Test_Init_StackLengthMismatch_LoggerPayloadCarriesReason()
         {
-            // Arrange
-            _gsm.ColorCount = 3;
-            _gsm.SetColorStacks(new[] { 1 }, new[] { 2 });
+            // Arrange: 2 stacks but ColorCount overridden to 3 → mismatch → logger payload
+            _gsm.SetColorStacks(new[] { 1 }, new[] { 2 }); // sets ColorCount=2
+            _gsm.ColorCount = 3;                             // override: ColorCount=3, stacks.Length=2
             var sm = CreateFresh();
             sm.InjectForTesting(_gsm, _logger);
             sm.InitializeBoard();
@@ -280,9 +280,9 @@ namespace BoltSort.Tests.Unit.SortMechanic
         [Test]
         public void Test_Init_StackLengthMismatch_BlocksAllInput()
         {
-            // Arrange — mismatched board
-            _gsm.ColorCount = 3;
-            _gsm.SetColorStacks(new[] { 1 }, new[] { 2 });
+            // Arrange — mismatched board: 2 stacks but ColorCount=3
+            _gsm.SetColorStacks(new[] { 1 }, new[] { 2 }); // sets ColorCount=2
+            _gsm.ColorCount = 3;                             // override: mismatch
             var sm = CreateFresh();
             sm.InjectForTesting(_gsm, _logger);
             var spy = new EventSpy();
@@ -546,12 +546,17 @@ namespace BoltSort.Tests.Unit.SortMechanic
         [Test]
         public void Test_BoltSelected_LegalDestination_EmitsMoveCommitted()
         {
-            // Arrange: lift bolt from stack 0 (color 1)
-            _sm.InjectTapForTesting(0);
+            // Arrange: board with empty stack 1 so any color is a legal destination
+            _gsm.SetColorStacks(new[] { 1, 1 }, Array.Empty<int>());
+            _gsm.TempSlotCount = 0;
+            _gsm.TempSlotContents = null;
+            _sm.InjectForTesting(_gsm, _logger);
+            _sm.InitializeBoard();
+            _spy = new EventSpy();
+            _spy.Subscribe(_sm);
 
-            // Act: tap stack 1 (color 2) — Story 001 commits without validation guard;
-            // Story 003 adds is_legal_move. At this tier we verify the committed path.
-            _sm.InjectTapForTesting(1);
+            _sm.InjectTapForTesting(0); // lift color 1 from stack 0
+            _sm.InjectTapForTesting(1); // stack 1 is empty → legal → MoveCommitted
 
             // Assert
             Assert.AreEqual(1, _spy.MoveCommittedCount, "move_committed must be emitted");
@@ -584,9 +589,18 @@ namespace BoltSort.Tests.Unit.SortMechanic
         [Test]
         public void Test_MoveCommitted_SequenceId_IsPositiveAndIncrementing()
         {
-            // Arrange + Act: commit two moves
+            // Arrange: board with empty stack 1 for legal move
+            _gsm.SetColorStacks(new[] { 1, 1 }, Array.Empty<int>());
+            _gsm.TempSlotCount = 0;
+            _gsm.TempSlotContents = null;
+            _sm.InjectForTesting(_gsm, _logger);
+            _sm.InitializeBoard();
+            _spy = new EventSpy();
+            _spy.Subscribe(_sm);
+
+            // Act: commit two moves
             _sm.InjectTapForTesting(0); // lift from 0
-            _sm.InjectTapForTesting(1); // commit to 1 → seq = 1; now in MoveExecuting
+            _sm.InjectTapForTesting(1); // stack 1 empty → legal → seq = 1; now in MoveExecuting
             long firstSeq = _spy.LastCommit.seq;
 
             // Simulate animation_complete to exit MoveExecuting, then commit again.
@@ -610,9 +624,18 @@ namespace BoltSort.Tests.Unit.SortMechanic
         [Test]
         public void Test_MoveExecuting_AdditionalTaps_Discarded()
         {
-            // Arrange: enter MoveExecuting
+            // Arrange: board with empty stack 1 so move 0→1 is legal
+            _gsm.SetColorStacks(new[] { 1, 1 }, Array.Empty<int>());
+            _gsm.TempSlotCount = 0;
+            _gsm.TempSlotContents = null;
+            _sm.InjectForTesting(_gsm, _logger);
+            _sm.InitializeBoard();
+            _spy = new EventSpy();
+            _spy.Subscribe(_sm);
+
+            // Enter MoveExecuting
             _sm.InjectTapForTesting(0); // BoltSelected
-            _sm.InjectTapForTesting(1); // MoveExecuting
+            _sm.InjectTapForTesting(1); // stack 1 empty → legal → MoveExecuting
             Assert.AreEqual(SortMechState.MoveExecuting, _sm.CurrentStateForTesting);
             int emissionsAtEntry = _spy.TotalEvents;
 
@@ -637,12 +660,21 @@ namespace BoltSort.Tests.Unit.SortMechanic
         [Test]
         public void Test_RoundTrip_CancelThenCommit_StateClean()
         {
+            // Arrange: board with empty stack 1 so move 0→1 is legal
+            _gsm.SetColorStacks(new[] { 1, 1 }, Array.Empty<int>());
+            _gsm.TempSlotCount = 0;
+            _gsm.TempSlotContents = null;
+            _sm.InjectForTesting(_gsm, _logger);
+            _sm.InitializeBoard();
+            _spy = new EventSpy();
+            _spy.Subscribe(_sm);
+
             // First interaction: lift stack 0, cancel
             _sm.InjectTapForTesting(0);
             _sm.InjectTapForTesting(0); // cancel
             Assert.AreEqual(SortMechState.Idle, _sm.CurrentStateForTesting);
 
-            // Second interaction: lift stack 0 again, commit to stack 1
+            // Second interaction: lift stack 0 again, commit to stack 1 (empty → legal)
             _sm.InjectTapForTesting(0);
             _sm.InjectTapForTesting(1);
 

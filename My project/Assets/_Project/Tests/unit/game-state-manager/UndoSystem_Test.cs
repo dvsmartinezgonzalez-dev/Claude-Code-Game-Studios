@@ -78,8 +78,10 @@ namespace BoltSort.Tests.Unit.GameStateManager
 
             // Move A: src=0, dst=1, colorId=2 (top of stack0) → stack0=[1], stack1=[3,2]
             _gsm.SimulateMoveCommitted(src: 0, dst: 1, colorId: 2, seqId: 0L);
+            _gsm.SimulateMoveExecutingExited(0L); // clear _isAnimationInFlight so UndoRequested executes
             // Move B: src=1, dst=2, colorId=2 (top of stack1) → stack1=[3], stack2=[2]
             _gsm.SimulateMoveCommitted(src: 1, dst: 2, colorId: 2, seqId: 1L);
+            _gsm.SimulateMoveExecutingExited(0L); // clear _isAnimationInFlight
 
             Assert.AreEqual(2L, _gsm.CurrentSequenceId, "Precondition: seqId=2 after two commits");
             Assert.AreEqual(2,  _gsm.MoveCount,          "Precondition: moveCount=2 after two commits");
@@ -141,6 +143,7 @@ namespace BoltSort.Tests.Unit.GameStateManager
             };
             SeedAndActivate(combined, initialSeqId: 0, initialMoveCount: 0);
             _gsm.SimulateMoveCommitted(src: 0, dst: 1, colorId: 5, seqId: 0L);
+            _gsm.SimulateMoveExecutingExited(0L); // clear _isAnimationInFlight so UndoRequested executes
 
             Assert.AreEqual(1, _gsm.UndoStackDepth, "Precondition: one entry in undo stack");
 
@@ -180,6 +183,7 @@ namespace BoltSort.Tests.Unit.GameStateManager
             };
             SeedAndActivate(combined);
             _gsm.SimulateMoveCommitted(src: 0, dst: 2, colorId: 7, seqId: 0L);
+            _gsm.SimulateMoveExecutingExited(0L); // clear _isAnimationInFlight so UndoRequested executes
 
             // Verify setup: bolt is in temp slot
             Assert.AreEqual(1, _gsm.TempSlotContents[0].Count, "Precondition: temp slot has bolt 7");
@@ -329,22 +333,27 @@ namespace BoltSort.Tests.Unit.GameStateManager
             // (5 commits total, 3 undos — any valid interleaving)
 
             _gsm.SimulateMoveCommitted(src: 0, dst: 1, colorId: 5, seqId: 0L);
+            _gsm.SimulateMoveExecutingExited(0L);
             observed.Add(_gsm.CurrentSequenceId);  // 1
 
             _gsm.SimulateMoveCommitted(src: 0, dst: 1, colorId: 4, seqId: 1L);
+            _gsm.SimulateMoveExecutingExited(0L);
             observed.Add(_gsm.CurrentSequenceId);  // 2
 
             _gsm.SimulateMoveCommitted(src: 0, dst: 1, colorId: 3, seqId: 2L);
+            _gsm.SimulateMoveExecutingExited(0L);
             observed.Add(_gsm.CurrentSequenceId);  // 3
 
             _gsm.UndoRequested(); // spy fires → observed adds 4
 
             _gsm.SimulateMoveCommitted(src: 0, dst: 1, colorId: 2, seqId: 4L);
+            _gsm.SimulateMoveExecutingExited(0L);
             observed.Add(_gsm.CurrentSequenceId);  // 5
 
             _gsm.UndoRequested(); // spy fires → observed adds 6
 
             _gsm.SimulateMoveCommitted(src: 0, dst: 1, colorId: 1, seqId: 6L);
+            _gsm.SimulateMoveExecutingExited(0L);
             observed.Add(_gsm.CurrentSequenceId);  // 7
 
             _gsm.UndoRequested(); // spy fires → observed adds 8
@@ -390,10 +399,12 @@ namespace BoltSort.Tests.Unit.GameStateManager
 
             // 1. move_committed: moveCount = 0+1 = 1
             _gsm.SimulateMoveCommitted(src: 0, dst: 1, colorId: 3, seqId: 0L);
+            _gsm.SimulateMoveExecutingExited(0L);
             moveCountLog.Add(_gsm.MoveCount);  // expected: 1
 
             // 2. move_committed: moveCount = 1+1 = 2
             _gsm.SimulateMoveCommitted(src: 0, dst: 1, colorId: 2, seqId: 1L);
+            _gsm.SimulateMoveExecutingExited(0L);
             moveCountLog.Add(_gsm.MoveCount);  // expected: 2
 
             // 3. move_cancelled: moveCount unchanged = 2
@@ -410,6 +421,7 @@ namespace BoltSort.Tests.Unit.GameStateManager
 
             // 6. move_committed: moveCount = 1+1 = 2
             _gsm.SimulateMoveCommitted(src: 0, dst: 1, colorId: 2, seqId: 5L);
+            _gsm.SimulateMoveExecutingExited(0L);
             moveCountLog.Add(_gsm.MoveCount);  // expected: 2
 
             // Assert — final value

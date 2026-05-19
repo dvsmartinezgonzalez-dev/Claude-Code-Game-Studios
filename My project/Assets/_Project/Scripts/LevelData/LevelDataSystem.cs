@@ -88,8 +88,9 @@ namespace BoltSort.LevelData
             _state = LdsState.Loading;
             IsReady = false;
             _reloadTcs = new TaskCompletionSource<bool>();
+            var reloadTask = _reloadTcs.Task; // capture before ReloadCatalogueAsync may null _reloadTcs
             ReloadCatalogueAsync();
-            return _reloadTcs.Task;
+            return reloadTask;
         }
 
         private async void LoadCatalogueAsync()

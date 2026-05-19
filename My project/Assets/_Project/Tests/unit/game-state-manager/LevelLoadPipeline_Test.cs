@@ -233,9 +233,9 @@ namespace BoltSort.Tests.Unit.GameStateManager
         public void Test_LoadLevel_BoardInitializesToExactSpec()
         {
             // Arrange
-            var record = MakeRecord(levelId: 1, colorCount: 3, stackDepth: 4,
+            var record = MakeRecord(levelId: 1, colorCount: 4, stackDepth: 4,
                                     tempSlotCount: 2, tempSlotDepth: 1,
-                                    colorStacksJson: "[[1,2,3,4],[2,1,4,3],[3,4,1,2]]");
+                                    colorStacksJson: "[[1,2,3,4],[2,1,4,3],[3,4,1,2],[4,3,2,1]]");
             var lds = new StubLds(new[] { true }, record);
             _gsm.InjectLevelDataSystemForTesting(lds);
 
@@ -571,9 +571,9 @@ namespace BoltSort.Tests.Unit.GameStateManager
         public void Test_LoadLevel_PublicProperties_MatchRecordValues()
         {
             // Arrange
-            var record = MakeRecord(levelId: 8, colorCount: 3, stackDepth: 4,
+            var record = MakeRecord(levelId: 8, colorCount: 4, stackDepth: 4,
                                     tempSlotCount: 2, tempSlotDepth: 1,
-                                    colorStacksJson: "[[1,2,3,4],[2,1,4,3],[3,4,1,2]]");
+                                    colorStacksJson: "[[1,2,3,4],[2,1,4,3],[3,4,1,2],[4,3,2,1]]");
             var lds = new StubLds(new[] { true }, record);
             _gsm.InjectLevelDataSystemForTesting(lds);
 
@@ -581,7 +581,7 @@ namespace BoltSort.Tests.Unit.GameStateManager
             _gsm.LoadLevel(8);
 
             // Assert — interface-exposed board dimensions
-            Assert.AreEqual(3,  _gsm.ColorCount,        "ColorCount must match record");
+            Assert.AreEqual(4,  _gsm.ColorCount,        "ColorCount must match record");
             Assert.AreEqual(4,  _gsm.StackDepth,        "StackDepth must match record");
             Assert.AreEqual(2,  _gsm.TempSlotCount,     "TempSlotCount must match record");
             Assert.AreEqual(1,  _gsm.TempSlotDepth,     "TempSlotDepth must match record");
@@ -598,9 +598,9 @@ namespace BoltSort.Tests.Unit.GameStateManager
         public void Test_LoadLevel_LevelLoadedPayload_MatchesQaSpec()
         {
             // Arrange — exact values from AC-GSM-12 QA spec
-            var record = MakeRecord(levelId: 100, colorCount: 3, stackDepth: 4,
+            var record = MakeRecord(levelId: 100, colorCount: 4, stackDepth: 4,
                                     tempSlotCount: 2, tempSlotDepth: 1,
-                                    colorStacksJson: "[[1,2,3,4],[2,1,4,3],[3,4,1,2]]");
+                                    colorStacksJson: "[[1,2,3,4],[2,1,4,3],[3,4,1,2],[4,3,2,1]]");
             var lds = new StubLds(new[] { true }, record);
             _gsm.InjectLevelDataSystemForTesting(lds);
 
@@ -616,10 +616,10 @@ namespace BoltSort.Tests.Unit.GameStateManager
             // Act
             _gsm.LoadLevel(100);
 
-            // Assert — QA spec: event carries (100, 3, 4, 2, 1, 0)
+            // Assert — QA spec: event carries (100, 4, 4, 2, 1, 0)
             Assert.IsTrue(firedLoaded(), "OnLevelLoaded must fire");
             Assert.AreEqual(100, getLevelId(),       "levelId must be 100");
-            Assert.AreEqual(3,   getColorCount(),    "colorCount must be 3");
+            Assert.AreEqual(4,   getColorCount(),    "colorCount must be 4");
             Assert.AreEqual(4,   getStackDepth(),    "stackDepth must be 4");
             Assert.AreEqual(2,   getTempSlotCount(), "tempSlotCount must be 2");
             Assert.AreEqual(1,   getTempSlotDepth(), "tempSlotDepth must be 1");

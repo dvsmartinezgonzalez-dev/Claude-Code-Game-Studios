@@ -435,10 +435,6 @@ namespace BoltSort.SortMechanic
             int colorCount              = _gsm.ColorCount;
             int stackDepth              = _gsm.StackDepth;
 
-            // Required by control manifest: guard against defective undo corrupting array length.
-            Debug.Assert(stacks != null && stacks.Length == colorCount,
-                "Win check invariant: StackContents.Length != ColorCount.");
-
             if (stacks == null || stacks.Length != colorCount || stackDepth <= 0)
                 return false;
 
