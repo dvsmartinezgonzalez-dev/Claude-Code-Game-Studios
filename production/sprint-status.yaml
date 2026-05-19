@@ -14,7 +14,7 @@ goal: "Close Sprint 1 CI conditions and implement the Sort Mechanic — BoltSort
 start: "2026-05-19"
 end: "2026-05-30"
 generated: "2026-05-17"
-updated: "2026-05-19"  # S2-02 done; S2-04 done; S2-05–S2-08 done
+updated: "2026-05-19"  # S2-01–S2-02 done; S2-04–S2-08 done
 
 stories:
   # ── MUST HAVE ──────────────────────────────────────────────────────────────
@@ -23,11 +23,11 @@ stories:
     name: "Close Sprint 1 CI conditions (CI green run + asmdef compile)"
     file: "production/sprints/sprint-2.md"
     priority: must-have
-    status: ready-for-dev
+    status: done
     owner: ""
     estimate_days: 0.5
     blocker: ""
-    completed: ""
+    completed: "2026-05-19"
 
   - id: "S2-02"
     name: "Create Sort Mechanic stories (/create-stories sort-mechanic)"
