@@ -1,7 +1,9 @@
 {
     "name": "Tests.Integration.LevelData",
     "rootNamespace": "BoltSort.Tests.Integration.LevelData",
-    "references": [],
+    "references": [
+        "BoltSort.LevelData"
+    ],
     "includePlatforms": [
         "Editor"
     ],

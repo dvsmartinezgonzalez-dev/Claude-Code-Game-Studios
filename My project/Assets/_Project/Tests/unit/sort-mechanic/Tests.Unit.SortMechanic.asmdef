@@ -2,6 +2,8 @@
     "name": "Tests.Unit.SortMechanic",
     "rootNamespace": "BoltSort.Tests.Unit.SortMechanic",
     "references": [
+        "BoltSort.SortMechanic",
+        "BoltSort.GameStateManager",
         "Tests.Helpers.SortMechanicFixtures"
     ],
     "includePlatforms": [

@@ -2,6 +2,8 @@
     "name": "Tests.Integration.GsmSortMechanic",
     "rootNamespace": "BoltSort.Tests.Integration.GsmSortMechanic",
     "references": [
+        "BoltSort.SortMechanic",
+        "BoltSort.GameStateManager",
         "Tests.Helpers.SortMechanicFixtures"
     ],
     "includePlatforms": [

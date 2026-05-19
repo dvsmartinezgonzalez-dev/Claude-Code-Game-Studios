@@ -1,10 +1,4 @@
-using System.Runtime.CompilerServices;
-
-// Grants internal access to test assemblies so they can use testing seams
-// (LoadCatalogueTextAsync on LevelDataSystem, ClearInstanceForTesting, etc.)
-[assembly: InternalsVisibleTo("Tests.Unit.LevelData")]
-[assembly: InternalsVisibleTo("Tests.Integration.LevelData")]
-[assembly: InternalsVisibleTo("Tests.Unit.GameStateManager")]
-[assembly: InternalsVisibleTo("Tests.Integration.GameStateManager")]
-[assembly: InternalsVisibleTo("Tests.Unit.SortMechanic")]
-[assembly: InternalsVisibleTo("Tests.Integration.GsmSortMechanic")]
+// InternalsVisibleTo grants live in each source asmdef's AssemblyInfo.cs:
+//   Scripts/SortMechanic/AssemblyInfo.cs  — BoltSort.SortMechanic grants
+//   Scripts/GameStateManager/AssemblyInfo.cs — BoltSort.GameStateManager grants
+//   Scripts/LevelData/AssemblyInfo.cs     — BoltSort.LevelData grants

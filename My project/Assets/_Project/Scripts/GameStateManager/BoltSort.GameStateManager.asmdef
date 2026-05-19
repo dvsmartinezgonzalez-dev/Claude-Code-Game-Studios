@@ -1,0 +1,16 @@
+{
+    "name": "BoltSort.GameStateManager",
+    "rootNamespace": "BoltSort.GameStateManager",
+    "references": [
+        "BoltSort.LevelData"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

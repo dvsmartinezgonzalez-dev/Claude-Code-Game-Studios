@@ -1,8 +1,7 @@
 {
-    "name": "Tests.Unit.GameStateManager",
-    "rootNamespace": "BoltSort.Tests.Unit.GameStateManager",
+    "name": "BoltSort.LevelData.Editor",
+    "rootNamespace": "BoltSort.Editor.LevelData",
     "references": [
-        "BoltSort.GameStateManager",
         "BoltSort.LevelData"
     ],
     "includePlatforms": [
@@ -12,11 +11,8 @@
     "allowUnsafeCode": false,
     "overrideReferences": false,
     "precompiledReferences": [],
-    "autoReferenced": false,
+    "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
-    "noEngineReferences": false,
-    "optionalUnityReferences": [
-        "TestAssembly"
-    ]
+    "noEngineReferences": false
 }

@@ -1,7 +1,10 @@
 {
     "name": "Tests.Integration.GameStateManager",
     "rootNamespace": "BoltSort.Tests.Integration.GameStateManager",
-    "references": [],
+    "references": [
+        "BoltSort.GameStateManager",
+        "BoltSort.LevelData"
+    ],
     "includePlatforms": [
         "Editor"
     ],

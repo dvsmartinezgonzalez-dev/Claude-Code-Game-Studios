@@ -2,6 +2,8 @@
     "name": "Tests.Unit.LevelData",
     "rootNamespace": "BoltSort.Tests.Unit.LevelData",
     "references": [
+        "BoltSort.LevelData",
+        "BoltSort.LevelData.Editor",
         "Unity.Newtonsoft.Json"
     ],
     "includePlatforms": [
