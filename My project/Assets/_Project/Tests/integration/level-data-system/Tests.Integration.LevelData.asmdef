@@ -1,15 +1,13 @@
 {
     "name": "Tests.Integration.LevelData",
     "rootNamespace": "BoltSort.Tests.Integration.LevelData",
-    "references": [
-        "com.unity.nuget.newtonsoft-json"
-    ],
+    "references": [],
     "includePlatforms": [
         "Editor"
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
-    "overrideReferences": true,
+    "overrideReferences": false,
     "precompiledReferences": [],
     "autoReferenced": false,
     "defineConstraints": [],

@@ -1,9 +1,7 @@
 {
     "name": "Tests.Unit.GameStateManager",
     "rootNamespace": "BoltSort.Tests.Unit.GameStateManager",
-    "references": [
-        "com.unity.nuget.newtonsoft-json"
-    ],
+    "references": [],
     "includePlatforms": [
         "Editor"
     ],
