@@ -27,7 +27,7 @@ namespace BoltSort.Tests.Unit.LevelData
         [TearDown]
         public void TearDown()
         {
-            Object.DestroyImmediate(_go);
+            UnityEngine.Object.DestroyImmediate(_go);
             LevelDataSystem.ClearInstanceForTesting();
         }
 

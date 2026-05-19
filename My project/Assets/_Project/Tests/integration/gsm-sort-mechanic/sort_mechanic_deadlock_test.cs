@@ -166,7 +166,7 @@ namespace BoltSort.Tests.Integration.GsmSortMechanic
             public event Action<long>              OnBoardRefreshForced { add { } remove { } }
             public event Action<long, int>         OnBoardStateChanged  { add { } remove { } }
             public event Action<GsmSessionLoadFailReason, int> OnSessionLoadFailed { add { } remove { } }
-            public event Action<int, int, int, int>            OnLevelComplete     { add { } remove { } }
+            public event Action<int, int, int, long>           OnLevelComplete     { add { } remove { } }
             public event Action<int?>              OnLevelUnloaded      { add { } remove { } }
 
             public void LoadLevel(int levelId)   { }

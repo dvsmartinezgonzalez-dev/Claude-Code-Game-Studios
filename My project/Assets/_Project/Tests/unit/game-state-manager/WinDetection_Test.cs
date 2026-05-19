@@ -69,7 +69,7 @@ namespace BoltSort.Tests.Unit.GameStateManager
         [TearDown]
         public void TearDown()
         {
-            Object.DestroyImmediate(_go);
+            UnityEngine.Object.DestroyImmediate(_go);
             global::BoltSort.GameStateManager.GameStateManager.ClearInstanceForTesting();
         }
 

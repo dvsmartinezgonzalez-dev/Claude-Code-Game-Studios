@@ -219,7 +219,7 @@ namespace BoltSort.Tests.Unit.SortMechanic
         public void TearDown()
         {
             foreach (var go in _toDestroy)
-                if (go != null) Object.DestroyImmediate(go);
+                if (go != null) UnityEngine.Object.DestroyImmediate(go);
             _toDestroy.Clear();
         }
 

@@ -35,7 +35,7 @@ namespace BoltSort.Tests.Unit.GameStateManager
         [TearDown]
         public void TearDown()
         {
-            Object.DestroyImmediate(_go);
+            UnityEngine.Object.DestroyImmediate(_go);
             global::BoltSort.GameStateManager.GameStateManager.ClearInstanceForTesting();
         }
 
@@ -84,7 +84,7 @@ namespace BoltSort.Tests.Unit.GameStateManager
             public LevelRecord GetLevel(int levelId)
             {
                 if (_throwOnGetLevel)
-                    throw new LevelDataException($"Stub: level {levelId} not found.");
+                    throw new LevelDataException($"Stub: level {levelId} not found.", LdsErrorCode.NotFound);
                 return _record;
             }
 
@@ -431,7 +431,7 @@ namespace BoltSort.Tests.Unit.GameStateManager
             var lds = new StubLds(new[] { false, true }, record);
             _gsm.InjectLevelDataSystemForTesting(lds);
 
-            var (cleanupFail, getReason, _)                    = AttachFailSpy();
+            var (cleanupFail, getReason, getFailLevelId)       = AttachFailSpy();
             var (cleanupLoaded, firedLoaded, _, _, _, _, _, _) = AttachLevelLoadedSpy();
 
             // Act — first attempt
