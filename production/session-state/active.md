@@ -1,8 +1,8 @@
 # Session State — BoltSort
 
-**Last Updated**: 2026-05-13
-**Current Stage**: Pre-Production (advanced 2026-05-10 — gate verdict CONCERNS, user accepted)
-**Current Task**: Sprint 1 must-haves — B-01 test framework, B-02 ADR-0006 serialization, B-03 traceability-index sync. Then: /art-bible, 4 remaining GDD reviews, /create-control-manifest, /create-epics.
+**Last Updated**: 2026-05-17
+**Current Stage**: **Production** (advanced 2026-05-17 — gate verdict CONCERNS, user accepted)
+**Current Task**: Sprint 2 begins 2026-05-19. First tasks: S2-01 (CI green run), S2-02 (/create-stories sort-mechanic), S2-03 (/qa-plan sprint).
 
 ## Progress Checklist
 
@@ -475,3 +475,109 @@ After all 11 ADRs: run `/gate-check pre-production`.
 - Next recommended: Game State Manager epic complete — all 8 stories Done. Run `/smoke-check sprint` → `/team-qa sprint` → `/gate-check` to close Sprint 1
 
 <!-- QA RUN: 2026-05-16 | Sprint: Sprint 1 | Verdict: APPROVED WITH CONDITIONS | Report: production/qa/qa-signoff-sprint1-2026-05-16.md -->
+
+## Session Extract — /gate-check 2026-05-17
+- Gate: Pre-Production → Production
+- Verdict: FAIL (2 directors NOT READY, 2 CONCERNS)
+- Report: production/gate-checks/gate-check-pre-production-to-production-2026-05-17.md
+- Blockers resolved this session:
+  - [x] B-2: AD-ART-BIBLE sign-off recorded in design/art/art-bible.md
+  - [x] B-6: architecture.md updated (Last Updated, ADRs Referenced, GSM events table, ADR Audit, Accepted ADRs, Open Questions)
+  - [x] C-2: ADR contract conflicts already resolved (ADR-0002/0006 fixed during Story 008); architecture.md now reflects reality
+  - [x] B-3: design/ux/main-menu.md authored (Committed)
+  - [x] B-4: design/ux/pause-menu.md authored (Committed) — OQ-01 CRITICAL: pause button missing from hud.md
+- Remaining blockers (next session):
+  - B-5: /ux-review all (main-menu.md, pause-menu.md)
+  - B-1: /sprint-plan new (Sprint 2)
+  - C-3: Confirm CI green run
+- Critical open question: pause-menu.md OQ-01 — pause button trigger must be added to hud.md before pause menu can be implemented
+- OQ-01 RESOLVED: pause button added to hud.md (Element 6) + in-game-hud.md GDD updated 2026-05-17
+
+## Session Extract — /ux-review 2026-05-17
+- Reviewed: hud.md, interaction-patterns.md, main-menu.md, pause-menu.md
+- hud.md: NEEDS REVISION → APPROVED (pause button Element 6 added; visual budget added)
+- interaction-patterns.md: NEEDS REVISION → APPROVED (Pattern #18 Destructive Action Confirm added; Animation + Sound Standards sections added)
+- main-menu.md: APPROVED
+- pause-menu.md: APPROVED
+- All 4 UX specs: APPROVED — B-5 complete
+
+## Session Extract — /sprint-plan 2026-05-17
+- Sprint 2 plan written: production/sprints/sprint-2.md
+- Sprint status yaml: production/sprint-status.yaml
+- Sprint 2 goal: Close Sprint 1 CI conditions + implement Sort Mechanic
+- Sprint 2 dates: 2026-05-19 → 2026-05-30
+- Must Have: S2-01 (CI), S2-02 (create stories), S2-03 (QA plan), S2-04–S2-07 (Sort Mechanic core)
+- Remaining gate blocker: C-3 (CI green run) — requires Unity Editor + GitHub Actions
+- B-1 complete ✅
+
+## Session Extract — /dev-story 2026-05-17
+- Story: production/epics/sort-mechanic/story-001-fsm-core-initialization.md — SortMechanic FSM Core + Initialization
+- Files changed: src/SortMechanic/SortMechanic.cs (created), src/SortMechanic/SortMechEnums.cs (created), src/SortMechanic/IDiagnosticLogger.cs (created), src/SortMechanic/BoltStackIndex.cs (created)
+- Test written: tests/unit/sort-mechanic/SortMechanic_Fsm_Test.cs (18 tests covering AC-07, AC-09, AC-15a, AC-17, AC-18b, AC-18c, AC-21, AC-27 + seqId + round-trip)
+- Asmdef created: tests/unit/sort-mechanic/Tests.Unit.SortMechanic.asmdef
+- AssemblyInfo.cs updated: InternalsVisibleTo("Tests.Unit.SortMechanic") added
+- S2-02 marked done; S2-04 marked in_progress in sprint-status.yaml
+- Blockers: None
+- Next: /code-review src/SortMechanic/SortMechanic.cs then /story-done production/epics/sort-mechanic/story-001-fsm-core-initialization.md
+
+## Session Extract — /story-done 2026-05-17
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/sort-mechanic/story-001-fsm-core-initialization.md — SortMechanic FSM Core + Initialization
+- Tech debt logged: None
+- Next recommended: Story 002 (Input Handling) or Story 003 (Move Validation) — both unblocked
+
+## Session Extract — /dev-story 2026-05-18
+- Story: production/epics/sort-mechanic/story-002-input-handling.md — Input Handling: Touch, Back Gesture, One-Tap Buffer
+- Files changed: src/SortMechanic/SortMechanic.cs (modified — buffer fields, buffer logic, ProcessPendingTap/DiscardPendingTap, ProcessInvalidMovePendingTap, OnRejectionAnimationComplete, ForceEnterMoveExecutingForTesting, TriggerBoardRefreshForcedForTesting, ForceEnterInvalidMoveForTesting, TriggerBackGestureForTesting seams)
+- Test written: tests/unit/sort-mechanic/sort_mechanic_input_test.cs (24 tests covering AC-08a/b/c, AC-12, AC-29b, AC-30, AC-30b + buffer correctness + watchdog + advisory AC-14)
+- S2-05 marked in-progress in sprint-status.yaml
+- Blockers: None
+- Next: /code-review src/SortMechanic/SortMechanic.cs then /story-done production/epics/sort-mechanic/story-002-input-handling.md
+
+## Session Extract — /story-done 2026-05-18
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/sort-mechanic/story-002-input-handling.md — Input Handling: Touch, Back Gesture, One-Tap Buffer
+- Tech debt logged: None (advisory SortMechanic_Fsm_Test.cs edit — EventSpy fix, acceptable)
+- Next recommended: Story 003 (Move Validation) — production/epics/sort-mechanic/story-003-move-validation.md
+
+## Session Extract — /dev-story 2026-05-18
+- Story: production/epics/sort-mechanic/story-003-move-validation.md — Move Validation + Column Cap Assertion
+- Files changed: src/SortMechanic/SortMechanic.cs (modified — IsLegalMove, EnterInvalidMove, DispatchBoltSelectedIndexedTap with validation, AssertColumnCapValid assertion 4, AssertNoPhantomColorIds refactored to return bool), tests/unit/sort-mechanic/sort_mechanic_validation_test.cs (created)
+- Test written: tests/unit/sort-mechanic/sort_mechanic_validation_test.cs (15 tests covering AC-01, AC-02, AC-03, AC-04, AC-11, AC-16, TR-SORT-010 + boundary values)
+- S2-06 marked in-progress in sprint-status.yaml
+- Blockers: None
+- Next: /code-review src/SortMechanic/SortMechanic.cs tests/unit/sort-mechanic/sort_mechanic_validation_test.cs then /story-done production/epics/sort-mechanic/story-003-move-validation.md
+
+## Session Extract — /story-done 2026-05-18
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/sort-mechanic/story-003-move-validation.md — Move Validation + Column Cap Assertion
+- Tech debt logged: None (advisory null-slot gap — accepted)
+- Next recommended: Story 004 (Win Detection + seqId guard) — production/epics/sort-mechanic/story-004-win-condition-seqid.md
+
+## Session Extract — /dev-story 2026-05-18
+- Story: production/epics/sort-mechanic/story-004-win-condition-seqid.md — Win Condition + Sequence ID Guard + OnMoveExecutingExited
+- Files changed: src/SortMechanic/SortMechanic.cs (modified — IsWon(), AllSameColor(), EnterWin(), OnAnimationComplete win check, HandleBoardRefreshForced win check), tests/unit/sort-mechanic/sort_mechanic_win_condition_test.cs (created)
+- Test written: tests/unit/sort-mechanic/sort_mechanic_win_condition_test.cs (15 tests covering AC-05a, AC-06, AC-18a, AC-24, AC-29a, TR-SORT-003/006/007)
+- S2-07 marked in-progress in sprint-status.yaml
+- Blockers: None
+- Next: /code-review src/SortMechanic/SortMechanic.cs tests/unit/sort-mechanic/sort_mechanic_win_condition_test.cs then /story-done production/epics/sort-mechanic/story-004-win-condition-seqid.md
+
+## Session Extract — /story-done 2026-05-18
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/sort-mechanic/story-004-win-condition-seqid.md — Win Condition + Sequence ID Guard + OnMoveExecutingExited
+- Tech debt logged: None
+- Next recommended: Story 005 (Deadlock Detection) — production/epics/sort-mechanic/story-005-deadlock-detection.md
+
+## Session Extract — /dev-story 2026-05-18
+- Story: production/epics/sort-mechanic/story-005-deadlock-detection.md — Deadlock Detection
+- Files changed: src/SortMechanic/SortMechanic.cs (HasLegalMove(), HandleLevelLoaded deadlock, OnAnimationComplete IDLE deadlock, SubscribeToGsmForTesting seam), src/AssemblyInfo.cs (Tests.Integration.GsmSortMechanic added), tests/unit/sort-mechanic/Tests.Unit.SortMechanic.asmdef (fixture reference added), tests/helpers/sort-mechanic-fixtures/DeadlockFixtures.cs (created), tests/helpers/sort-mechanic-fixtures/Tests.Helpers.SortMechanicFixtures.asmdef (created), tests/integration/gsm-sort-mechanic/Tests.Integration.GsmSortMechanic.asmdef (created)
+- Test written: tests/unit/sort-mechanic/sort_mechanic_deadlock_test.cs (7 tests, AC-22), tests/integration/gsm-sort-mechanic/sort_mechanic_deadlock_test.cs (5 tests, AC-10/AC-25)
+- S2-08 marked in-progress in sprint-status.yaml
+- Blockers: None
+- Next: /code-review src/SortMechanic/SortMechanic.cs tests/unit/sort-mechanic/sort_mechanic_deadlock_test.cs tests/integration/gsm-sort-mechanic/sort_mechanic_deadlock_test.cs then /story-done production/epics/sort-mechanic/story-005-deadlock-detection.md
+
+## Session Extract — /story-done 2026-05-19
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/sort-mechanic/story-005-deadlock-detection.md — Deadlock Detection
+- Tech debt logged: None (advisory items noted in story Completion Notes)
+- Next recommended: Story 006 (App-Pause Cancellation) — production/epics/sort-mechanic/story-006-app-pause-cancellation.md

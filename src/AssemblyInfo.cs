@@ -6,3 +6,5 @@ using System.Runtime.CompilerServices;
 [assembly: InternalsVisibleTo("Tests.Integration.LevelData")]
 [assembly: InternalsVisibleTo("Tests.Unit.GameStateManager")]
 [assembly: InternalsVisibleTo("Tests.Integration.GameStateManager")]
+[assembly: InternalsVisibleTo("Tests.Unit.SortMechanic")]
+[assembly: InternalsVisibleTo("Tests.Integration.GsmSortMechanic")]

@@ -5,7 +5,19 @@
 > **Architecture Module**: SortMechanic
 > **Status**: Ready
 > **Manifest Version**: 2026-05-12
-> **Stories**: Not yet created — run `/create-stories sort-mechanic`
+> **Stories**: 7 stories (Ready)
+
+## Stories
+
+| # | Story | Type | Status | ADR |
+|---|-------|------|--------|-----|
+| 001 | [FSM Core + Initialization](story-001-fsm-core-initialization.md) | Logic | Ready | ADR-0006, ADR-0007 |
+| 002 | [Input Handling — Touch, Back Gesture, One-Tap Buffer](story-002-input-handling.md) | Logic | Ready | ADR-0007, ADR-0006 |
+| 003 | [Move Validation + Column Cap Assertion](story-003-move-validation.md) | Logic | Ready | ADR-0006, ADR-0013 |
+| 004 | [Win Condition + Sequence ID Guard + OnMoveExecutingExited](story-004-win-condition-seqid.md) | Logic | Ready | ADR-0006, ADR-0002 |
+| 005 | [Deadlock Detection](story-005-deadlock-detection.md) | Integration | Ready | ADR-0006 |
+| 006 | [App-Pause Cancellation + SEO Contract](story-006-app-pause-cancellation.md) | Integration | Ready | ADR-0006, ADR-0007 |
+| 007 | [GSM Full Integration — Board Reads, Watchdog, Error Cases](story-007-gsm-integration.md) | Integration | Ready | ADR-0006, ADR-0007, ADR-0013 |
 
 ## Overview
 
@@ -69,5 +81,4 @@ This epic is complete when:
 
 ## Next Step
 
-Run `/create-stories sort-mechanic` to break this epic into implementable stories.
-Run `/create-epics game-state-manager` first — GSM is a blocking dependency.
+Stories created 2026-05-17. Run `/story-readiness production/epics/sort-mechanic/story-001-fsm-core-initialization.md` then `/dev-story` to begin implementation. Work through stories in dependency order (001 → 002/003/006 → 004 → 005 → 007).

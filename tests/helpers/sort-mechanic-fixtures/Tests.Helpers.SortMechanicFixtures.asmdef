@@ -1,0 +1,17 @@
+{
+    "name": "Tests.Helpers.SortMechanicFixtures",
+    "rootNamespace": "BoltSort.Tests.Helpers.SortMechanic",
+    "references": [],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true,
+    "optionalUnityReferences": []
+}

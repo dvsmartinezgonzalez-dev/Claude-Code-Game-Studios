@@ -5,12 +5,12 @@
 | Field | Value |
 |-------|-------|
 | **Version** | 1.0 |
-| **Last Updated** | 2026-05-01 |
+| **Last Updated** | 2026-05-17 |
 | **Engine** | Unity 6.3 LTS — URP 2D Renderer |
 | **Language** | C# |
 | **Target Platforms** | iOS, Android |
 | **GDDs Covered** | sort-mechanic, game-state-manager, level-data-system, animation-system, audio-system, in-game-hud, level-complete-ui, save-persistence, coin-economy, quality-tier-system, level-progression |
-| **ADRs Referenced** | None yet — 11 required (see Required ADRs section) |
+| **ADRs Referenced** | ADR-0001 through ADR-0013 (13 ADRs, all Accepted — see `docs/architecture/`) |
 | **Technical Director Sign-Off** | 2026-05-01 — APPROVED |
 | **Lead Programmer Feasibility** | LP-FEASIBILITY skipped — Lean mode |
 
@@ -180,11 +180,12 @@ All singletons reside on GameObjects in a `[DontDestroyOnLoad]` manager scene lo
 
 **Events exposed by GSM:**
 ```
-event Action<int, int>     OnLevelLoaded         // (levelId, colorCount)
-event Action<int, int>     OnBoardStateChanged   // (sequenceId, moveCount) — on undo, board snap
-event Action<int>          OnBoardRefreshForced  // (sequenceId) — watchdog fired
-event Action<int, int>     OnLevelComplete       // (levelId, moveCount)
-event Action               OnSessionLoadFailed
+event Action<int, int>          OnLevelLoaded         // (levelId, colorCount)
+event Action<int, int>          OnBoardStateChanged   // (sequenceId, moveCount) — on undo, board snap
+event Action<int>               OnBoardRefreshForced  // (sequenceId) — watchdog fired
+event Action<int, int, int, int> OnLevelComplete      // (levelId, moveCount, parMoves, sequenceId) — canonical per ADR-0012
+event Action<int>               OnLevelUnloaded       // (levelId) — emitted on TEARDOWN; consumers release level-scoped resources
+event Action                    OnSessionLoadFailed
 ```
 
 **Events consumed by GSM (from SortMechanic):**
@@ -470,45 +471,47 @@ public enum MoveRejectReason { DestinationFull, ColorMismatch }
 
 ## ADR Audit
 
-**Existing ADRs: None.** TR Registry is empty. All 56 technical requirements are uncovered.
+**13 ADRs written, all status: Accepted.** TR registry at 72 active entries, 100% covered. Last full review: `architecture-review-2026-05-12.md` (verdict: CONCERNS — 2 localized contract conflicts; 0 coverage gaps).
 
 | TR Coverage | Count |
 |-------------|-------|
-| Requirements in baseline | 56 |
-| Requirements covered by ADRs | 0 |
-| GAP | 56 (100%) |
+| Requirements in baseline | 72 |
+| Requirements covered by ADRs | 72 |
+| GAP | 0 (0%) |
 
 ---
 
-## Required ADRs
+## Accepted ADRs
 
-All 11 ADRs must be written before implementation begins. Foundation ADRs 1–5 are blocking for all code; Core ADRs 6–8 are blocking for Sprint 1; Feature ADRs 9–11 are blocking for their respective system sprints.
+All 13 ADRs written and Accepted. See `docs/architecture/` for full text. Governing each layer:
 
-### Foundation Layer — BLOCKING for all code
+### Foundation Layer
 
-| # | ADR Title | TR IDs Covered | Command |
-|---|-----------|---------------|---------|
-| 1 | Singleton Architecture and Boot Sequence | TR-QTS-002, TR-SP-004, TR-CE-001, TR-GSM-008, TR-LDS-003 | `/architecture-decision singleton-architecture-and-boot-sequence` |
-| 2 | Event and Signal Architecture (C# events pattern) | TR-SORT-006, TR-SORT-007, TR-GSM-009, TR-ANIM-006, TR-HUD-007 | `/architecture-decision event-and-signal-architecture` |
-| 3 | Save System Design (atomic write + thread safety) | TR-SP-001, TR-SP-002, TR-SP-003, TR-SP-004, TR-SP-005, TR-SP-006, TR-SP-007, TR-SP-008 | `/architecture-decision save-system-design` |
-| 4 | Level Data Loading Strategy (Addressables) | TR-LDS-001, TR-LDS-003 | `/architecture-decision level-data-loading-strategy` |
-| 5 | Rendering Pipeline Configuration (URP 2D + mobile) | TR-ANIM-005, TR-QTS-001, TR-QTS-002 | `/architecture-decision rendering-pipeline-configuration` |
+| ADR | Title |
+|-----|-------|
+| ADR-0001 | Singleton Architecture and Boot Sequence |
+| ADR-0002 | Event and Signal Architecture |
+| ADR-0003 | Save System Design |
+| ADR-0004 | Level Data Loading Strategy |
+| ADR-0005 | Rendering Pipeline Configuration |
 
-### Core Layer — BLOCKING for Sprint 1
+### Core Layer
 
-| # | ADR Title | TR IDs Covered | Command |
-|---|-----------|---------------|---------|
-| 6 | Board State Representation and GSM Design | TR-GSM-001, TR-GSM-002, TR-GSM-003, TR-GSM-004, TR-GSM-005, TR-GSM-006, TR-GSM-007, TR-GSM-009 | `/architecture-decision board-state-representation` |
-| 7 | Input Handling Strategy (Input System + Physics2D) | TR-SORT-008, TR-SORT-009, TR-HUD-001 | `/architecture-decision input-handling-strategy` |
-| 8 | UI Hierarchy and Safe Area (UGUI Canvas layering) | TR-HUD-001, TR-HUD-002, TR-LCUI-001 | `/architecture-decision ui-hierarchy-and-safe-area` |
+| ADR | Title |
+|-----|-------|
+| ADR-0006 | Board State Representation and GSM Design |
+| ADR-0007 | Input Handling Strategy |
+| ADR-0008 | UI Hierarchy and Safe Area |
 
-### Feature Layer — BLOCKING for respective system sprints
+### Feature / Presentation Layer
 
-| # | ADR Title | TR IDs Covered | Command |
-|---|-----------|---------------|---------|
-| 9 | Bolt Animation Strategy (Coroutine Tween architecture) | TR-ANIM-001, TR-ANIM-002, TR-ANIM-004, TR-ANIM-007 | `/architecture-decision bolt-animation-strategy` |
-| 10 | VFX Graph and Bloom on Mobile (Low-tier fallback) | TR-ANIM-002, TR-ANIM-005, TR-QTS-002 | `/architecture-decision vfx-graph-and-bloom-mobile` |
-| 11 | Audio Architecture (Mixer groups + pool + ADPCM) | TR-AUDIO-001, TR-AUDIO-002, TR-AUDIO-003, TR-AUDIO-004, TR-AUDIO-005, TR-AUDIO-006 | `/architecture-decision audio-architecture` |
+| ADR | Title |
+|-----|-------|
+| ADR-0009 | Bolt Animation Strategy |
+| ADR-0010 | VFX Graph and Bloom on Mobile |
+| ADR-0011 | Audio Architecture |
+| ADR-0012 | HUD and Level Complete UI Business Logic |
+| ADR-0013 | Level Layout Column Cap |
 
 ---
 
@@ -586,10 +589,12 @@ All 56 requirements extracted from 11 GDDs. Full list maintained here as the tra
 
 ## Open Questions
 
-| Question | Owner | Blocks |
-|----------|-------|--------|
-| Does VFX Graph work in URP 2D Renderer on Low-tier Android (GPU compute availability)? If not, sprite-based fallback required. | Unity specialist + Technical Artist | ADR-10, Animation System sprint |
-| `MainThreadDispatcher` implementation: use a package (UnityMainThreadDispatcher) or custom implementation? | Lead Programmer | ADR-3, SaveSystem sprint |
-| Android back gesture: hardware Back button vs predictive back gesture (Android 13+)? Which mechanism is reachable in Unity Input System? | Platform specialist / Android | ADR-7, Sort Mechanic sprint |
-| DOTween vs Unity built-in Tween API vs custom Coroutine for bolt animation: which satisfies the 80–300ms precision requirement at lowest overhead on mobile? | Lead Programmer + Performance Analyst | ADR-9, Animation System sprint |
-| `LevelCompleteUI`: Unity IAP SDK not integrated at MVP — how does the Level Complete UI handle ad SDK absence during MVP testing? | Unity specialist | LevelCompleteUI sprint |
+All open questions from initial authoring (2026-05-01) resolved in ADR-0003, ADR-0007, ADR-0009, ADR-0010.
+
+| Question | Resolution | ADR |
+|----------|-----------|-----|
+| VFX Graph in URP 2D on Low-tier Android | Sprite-based VFX fallback for Low tier; VFX Graph on Medium/High | ADR-0010 |
+| MainThreadDispatcher: package vs custom | Custom single-file implementation (no external dependency) | ADR-0003 |
+| Android back gesture mechanism | `InputSystem.EnhancedTouch` + `Keyboard.current` back simulation; Android 13+ predictive back handled via manifest flag | ADR-0007 |
+| DOTween vs built-in Tween vs Coroutine | Custom Coroutine tween — satisfies 80–300ms precision, zero GC on mobile | ADR-0009 |
+| LevelCompleteUI during MVP without IAP | Ad SDK presence checked at runtime; graceful no-op when absent | ADR-0012 |

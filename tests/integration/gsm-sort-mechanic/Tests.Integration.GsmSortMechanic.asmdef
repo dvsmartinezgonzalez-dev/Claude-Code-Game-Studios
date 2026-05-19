@@ -1,0 +1,21 @@
+{
+    "name": "Tests.Integration.GsmSortMechanic",
+    "rootNamespace": "BoltSort.Tests.Integration.GsmSortMechanic",
+    "references": [
+        "Tests.Helpers.SortMechanicFixtures"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false,
+    "optionalUnityReferences": [
+        "TestAssembly"
+    ]
+}

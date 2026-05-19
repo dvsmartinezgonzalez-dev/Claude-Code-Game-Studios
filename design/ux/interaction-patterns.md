@@ -51,6 +51,7 @@ All patterns in this library obey three global rules:
 | 15 | [Skippable Animation Overlay](#15-skippable-animation-overlay) | Overlay / Flow | Level Complete UI |
 | 16 | [Primary / Secondary Navigation Hierarchy](#16-primary--secondary-navigation-hierarchy) | Overlay / Flow | Level Complete UI (Next / Retry / Menu) |
 | 17 | [Opt-In Ad Offer](#17-opt-in-ad-offer) | Overlay / Flow | Level Complete UI |
+| 18 | [Destructive Action Confirm](#18-destructive-action-confirm) | Modal / Safety | Pause Menu (restart, exit) |
 
 ---
 
@@ -519,12 +520,81 @@ All patterns in this library obey three global rules:
 
 ---
 
+---
+
+### 18. Destructive Action Confirm
+
+**Category**: Modal / Safety
+**Used In**: Pause Menu (Restart Level, Exit to Menu)
+
+**Description**: A two-step confirmation flow for actions that are irreversible or destructive (e.g., losing level progress, navigating away mid-game). The first tap shows a confirmation dialog; the action only fires on a second explicit tap of CONFIRM. A single tap can never accidentally trigger a destructive action.
+
+**Specification**:
+- **Trigger**: Player taps a button marked as destructive (e.g., RESTART LEVEL, EXIT TO MENU).
+- **Dialog appearance**: Modal panel scales in (0.85→1.0, opacity 0→1, 180ms ease-out) centered on screen, above the current overlay. Backdrop of current screen dims by additional 20% opacity.
+- **Dialog content**:
+  - Title: One short sentence stating the consequence. ("Restart level?" / "Exit to main menu?")
+  - Body (optional): One short sentence clarifying the loss. ("Your progress will be lost." — omit if title is already explicit.)
+  - Two buttons: **CANCEL** (left/top) and **CONFIRM** (right/bottom).
+- **Button hierarchy**: CANCEL is the **primary visual weight** or equal weight — never smaller than CONFIRM. The safer option is visually dominant or equal.
+- **CANCEL**: Outline style (`CHROME-04` border, `CHROME-04` label). Tap dismisses dialog; returns to parent screen unchanged.
+- **CONFIRM**: Outline style, same visual weight as CANCEL. Tap executes the destructive action and dismisses both dialog and parent overlay.
+- **Backdrop tap = CANCEL**: Tapping anywhere outside the dialog panel triggers CANCEL. Consistent with the global tap-outside-to-dismiss convention.
+- **No timeout**: Dialog does not auto-dismiss. Player must make a choice.
+- **Dialog exit animation**: Scale-out (1.0→0.85, opacity 1→0, 140ms ease-in).
+
+**Accessibility**:
+- Focus order: CANCEL before CONFIRM (keyboard/screen reader — safer default first).
+- Screen reader announces dialog content on open: title + body text as an alert.
+- Both buttons ≥48×48pt; 16dp gap minimum between them.
+- No color-only differentiation: both buttons use the same `CHROME-04` outline treatment — neither is "red/destructive" color.
+
+**When to Use**: Any action that cannot be undone and causes loss of data or progress — level restart, mid-level exit, account deletion (future).
+**When NOT to Use**: Actions that can be undone (undo a move, cancel a hint — these are reversible so no confirm needed). Navigation to screens where the player can return (e.g., opening settings — no progress lost).
+
+---
+
+## Animation Standards
+
+Cross-pattern timing reference. All durations in milliseconds. Use `Time.unscaledDeltaTime` for UI animations to survive pause/timeScale changes.
+
+| Animation type | Duration | Easing | Notes |
+|---|---|---|---|
+| Button tap-down (scale) | 60ms | EaseInCubic | Scale 1.0 → 0.94 |
+| Button tap-up (scale return) | 80ms | EaseOutCubic | Scale 0.94 → 1.0 |
+| Overlay / dialog enter (scale-in) | 180ms | EaseOutCubic | 0.85 → 1.0 + opacity 0 → 1 |
+| Overlay / dialog exit (scale-out) | 140ms | EaseInCubic | 1.0 → 0.85 + opacity 1 → 0 |
+| Screen enter (slide from right) | 200ms | EaseOut | Navigation forward |
+| Screen exit (slide to left) | 200ms | EaseIn | Navigation forward |
+| Screen enter (fade from black) | 250ms | Linear | Cold launch / transition from splash |
+| Coin balance pulse (positive) | 300ms total | Custom | CHROME-04→CHROME-03 100ms, return 200ms |
+| Toast appear / disappear | 200ms / 300ms | EaseOut / EaseIn | See Pattern #10 |
+
+---
+
+## Sound Standards
+
+> **Status**: Deferred — assignments pending Audio System GDD authoring.
+> **Owner**: audio-director
+> **Deadline**: Before HUD implementation sprint
+
+| Interaction | Sound slot | Bus | Notes |
+|---|---|---|---|
+| Button tap (HUD buttons) | `ui_tap` | UIVolume | Shared clip for undo, hint, pause; distinct from bolt settle |
+| Button tap (nav buttons) | `ui_tap_nav` | UIVolume | Main menu PLAY, pause menu buttons |
+| Coin pulse (positive) | `coin_gain` | UIVolume | Short chime; fires at pulse start |
+| Toast appear | `toast_chime` | UIVolume | Soft, non-intrusive |
+| Overlay open | *(silence or ambient duck)* | — | Pause menu: ambient hum ducks; no discrete SFX |
+
+---
+
 ## Gaps & Patterns Needed
 
 The following interaction patterns have been identified as needed based on planned screens and systems not yet specced. They should be formalized when the relevant UX spec is authored.
 
 | # | Pattern Name | Needed For | Priority |
 |---|---|---|---|
+| ~~18~~ | ~~Destructive Action Confirm~~ | ~~Pause Menu~~ | *Formalized 2026-05-17 — see Pattern #18* |
 | A | **Animated Counter (Counting Up)** | Level Complete UI coin reward animation, future: score displays | High — needed before Level Complete UX spec |
 | B | **Bolt Color Differentiation (Colorblind Mode)** | All board screens; critical for Standard accessibility tier | **Blocking** — must be designed before colorblind modes can be implemented. Decision: icon/number/pattern on bolt face. |
 | C | **Hint Highlight / Arrow Overlay** | In-Game HUD (hint result — bolt and destination highlighted) | High — needed before Hint System implementation sprint |

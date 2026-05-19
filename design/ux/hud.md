@@ -70,8 +70,8 @@ From Art Bible 7.1. The layout is fixed — not an option being proposed, but th
 ┌──────────────────────────────────────────────────┐
 │ ← safe area top inset + 16pt padding →           │
 │ ┌────────────────────────────────────────────┐   │
-│ │  ●  142          [MOVE: 000]              │   │  ← GLANCE ZONE
-│ │  COIN CHIP       MOVE COUNTER             │   │     CHROME-02 @ 60–70% opacity
+│ │  ●  142          [MOVE: 000]     [‖]     │   │  ← GLANCE ZONE
+│ │  COIN CHIP       MOVE COUNTER   PAUSE    │   │     CHROME-02 @ 60–70% opacity
 │ └────────────────────────────────────────────┘   │
 │  ── hairline 1px #1E2A38 ──────────────────────  │
 │                                                  │
@@ -89,12 +89,13 @@ From Art Bible 7.1. The layout is fixed — not an option being proposed, but th
 ```
 
 **Zone rules:**
-- **Glance zone** (top): Display-only. Coin chip at top-left. Move counter at top-center (isolated — Gestalt separation signals primary read). No top-right element.
+- **Glance zone** (top): Primarily display. Coin chip at top-left. Move counter at top-center. Pause button at top-right — only interactive element in the glance zone; small footprint, low visual weight (instrument register, not action register).
 - **Content zone** (center): Board area. No HUD element intrudes. The board is sovereign.
 - **Thumb zone** (bottom): Interactive only. Undo at bottom-left, Hint at bottom-right. ~200pt separation on a 390pt screen eliminates inter-button mis-tap and reinforces semantic distinction: undo is escape (left), hint is resource (right).
 - **Hairlines**: 1px `#1E2A38` at glance-zone bottom and thumb-zone top. Only drawn boundaries in the layout.
 - **HUD panel**: CHROME-02 `#141C24` at 60–70% opacity behind all HUD elements. Not floating text over board content — always a panel layer.
 - **Safe area**: `Screen.safeArea` applied via `SafeAreaPanel` (ADR-0008). All zone measurements from safe area edges.
+- **Visual Budget**: Maximum 5 simultaneous HUD elements (coin, move counter, pause, undo, hint). Error overlay is mutually exclusive with all play states — not counted against budget. HUD panels (glance + thumb zones) occupy ≤20% of screen height combined. Board area ≥60% screen height unobstructed.
 
 ---
 
@@ -195,6 +196,30 @@ From Art Bible 7.1. The layout is fixed — not an option being proposed, but th
 | **Tap to dismiss** | Tap anywhere on overlay → dismiss overlay → re-trigger level load (LevelProgression re-requests `GSM.LoadLevel()`). |
 | **Retry cap** | No cap in MVP. If retry also fails, overlay reappears. Future: add max retry count with "Something's wrong — please restart the app." after 3 failures. |
 | **Animation** | Overlay fades in over 200ms. On tap: fades out over 150ms simultaneously as retry begins. |
+
+---
+
+### Element 6 — Pause Button
+
+| Attribute | Value |
+|---|---|
+| **Category** | Must Show |
+| **Pattern** | #6 (Button Press Feedback), #8 (Disabled State) |
+| **Position** | Top-right, glance zone (safe area inset + 16pt padding, right-aligned) |
+| **Hit area** | 48×48pt minimum; recommended 48×48pt (consistent with minimum — this is a secondary control, not a primary thumb-zone control) |
+| **Icon** | Two vertical bars (‖), 2dp stroke, CHROME-04 `#C8D8E8`. Geometric pause symbol. No circle border — bare icon only, consistent with minimalist instrument aesthetic. |
+| **Icon box** | 50% of button interior |
+| **Icon opacity** | 60% at rest (lower than undo/hint at their emission 0.4 level — pause is less frequently used; lower weight preserves board focus) |
+| **Enabled condition** | HUD state == IDLE or HINT_PROCESSING |
+| **Disabled condition** | HUD state == FROZEN (level complete — no pause during celebration) |
+| **Tap-down feedback** | Pattern #6: scale 94% / 60ms ease-in-cubic; icon opacity 60% → 100% instant. No glow surge (no CHROME-03 glow on pause button — it is not a game action, it is a navigation action). |
+| **Outcome** | Opens pause menu overlay (`PauseMenuUI.Show()`). GSM does not pause — board state is preserved but no `Time.timeScale` change at MVP. |
+| **Disabled appearance** | Pattern #8: icon opacity ~25%, no tap response. |
+| **FROZEN** | Same as DISABLED — Pattern #9 severity; emission 0.0. |
+
+**Design note**: The pause button is intentionally lower visual weight than undo and hint. It does not use CHROME-03 cyan because it is not a game action — it is a system navigation. This is consistent with the "instrument panel" philosophy: the pause button is infrastructure, not feature.
+
+**GDD update required**: `design/gdd/in-game-hud.md` UI Requirements section must be updated to add: "Pause button: tap during IDLE or HINT_PROCESSING opens pause overlay. Disabled in FROZEN."
 
 ---
 
@@ -352,6 +377,7 @@ All blocking ACs from HUD GDD (AC-01 through AC-35) are inherited. The following
 
 | Question | Owner | Deadline | Resolution |
 |---|---|---|---|
+| OQ-00 — Pause button trigger | Lead programmer | Before pause-menu implementation sprint | Element 6 added to this spec 2026-05-17. Requires GDD update (in-game-hud.md UI Requirements). |
 | OQ-01 — GSM payload contracts (delta_move_count, undo_stack_depth in board_state_changed; par_moves in level_complete; level_id in level_loaded) | Lead programmer | Before HUD implementation sprint | ADR-0006 documents these; verify against actual GSM implementation before story sign-off |
 | OQ-03 — HINT_PROCESSING visual treatment | ux-designer + art-director | Resolved | Spinning arc, 2dp CHROME-03, 90°, 1.0s/rev, sine in/out — Art Bible 7.4 |
 | OQ-06 — Error overlay content and dismiss | ux-designer | Resolved this session | Tap to retry — "Unable to load level." + "Tap anywhere to retry." |

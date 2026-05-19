@@ -226,8 +226,17 @@ Audio cue assignments pending Audio System GDD cross-reference.
 ## UI Requirements
 
 **Gate: UX Designer spec required before UI implementation sprint.**
-Pending `design/ux/in-game-hud.md` for: element layout/positioning, safe-area anchoring diagram, error overlay content and dismiss behavior (OQ-06).
-Platform constraints already captured in AC-25 through AC-27.
+UX spec committed: `design/ux/hud.md` (2026-05-12, revised 2026-05-17).
+
+**Elements specified in UX spec:**
+- Move counter: top-center glance zone. Display-only. Resets to 0 on `level_loaded`.
+- Coin balance chip: top-left glance zone. Live (`coin_balance_changed`). Pity grant triggers toast then pulse.
+- **Pause button** *(added 2026-05-17)*: top-right glance zone. 48×48pt. Opens `PauseMenuUI` overlay on tap during IDLE or HINT_PROCESSING. Disabled (Pattern #8) in FROZEN state. See `design/ux/hud.md` Element 6 and `design/ux/pause-menu.md`.
+- Undo button: bottom-left thumb zone. 56×56pt. Optimistic lock. Disabled when stack empty or MOVE_EXECUTING.
+- Hint button: bottom-right thumb zone. 56×56pt. Coin-gated (≥50 coins AND IDLE). Three states: ENABLED / DISABLED / HINT_PROCESSING.
+- Error overlay: full-screen on `session_load_failed`. Tap-to-retry.
+
+Platform constraints captured in AC-25 through AC-27.
 
 ## Acceptance Criteria
 

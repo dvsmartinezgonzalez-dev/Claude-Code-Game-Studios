@@ -196,12 +196,12 @@ public event Action<int, int> OnCoinBalanceChanged;  // (newBalance, delta)
 // FEATURE LAYER
 
 // SortMechanic
-public event Action<int, int, int, int>              OnMoveCommitted;       // (src, dst, colorId, seqId)
+public event Action<int, int, int, long>             OnMoveCommitted;       // (src, dst, colorId, seqId) — seqId is long (int64): int32 wrapping causes softlock (Story 004)
 public event Action<int, int>                        OnMoveCancelled;       // (src, colorId)
 public event Action<int, int, int, MoveRejectReason> OnMoveRejected;        // (src, dst, colorId, reason)
 public event Action<int>                             OnPuzzleSolved;        // (moveCount)
 public event Action                                  OnDeadlockDetected;
-public event Action<int>                             OnMoveExecutingExited; // (seqId) — IDLE exit path ONLY
+public event Action<long>                            OnMoveExecutingExited; // (seqId) — IDLE exit path ONLY; seqId is long
 
 // AnimationSystem
 public event Action<int> OnAnimationComplete;  // (seqId)

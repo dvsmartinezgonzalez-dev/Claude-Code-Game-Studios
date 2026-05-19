@@ -4,7 +4,7 @@
 > **Author**: Art Director session (2026-05-10, revised 2026-05-11)
 > **Engine**: Unity 6.3 LTS — URP 2D Renderer
 > **Platform**: iOS & Android
-> **Art Director Sign-Off (AD-ART-BIBLE)**: Pending
+> **Art Director Sign-Off (AD-ART-BIBLE)**: APPROVED — 2026-05-17
 
 ---
 
