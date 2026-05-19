@@ -603,11 +603,13 @@ namespace BoltSort.Tests.Unit.SortMechanic
             _sm.InjectTapForTesting(1); // stack 1 empty → legal → seq = 1; now in MoveExecuting
             long firstSeq = _spy.LastCommit.seq;
 
-            // Simulate animation_complete to exit MoveExecuting, then commit again.
+            // Exit MoveExecuting, then commit a second move.
+            // MockGsm is static — stack 0 still shows [1,1] and stack 1 still shows empty,
+            // so the same valid move (0→1) can be committed again.
             _sm.OnAnimationComplete(firstSeq);
 
-            _sm.InjectTapForTesting(1); // lift from 1 (now has a bolt)
-            _sm.InjectTapForTesting(0); // commit to 0 → seq = 2
+            _sm.InjectTapForTesting(0); // lift color 1 from stack 0 (static board unchanged)
+            _sm.InjectTapForTesting(1); // stack 1 still empty in MockGsm → legal → seq = 2
             long secondSeq = _spy.LastCommit.seq;
 
             // Assert
