@@ -581,3 +581,32 @@ After all 11 ADRs: run `/gate-check pre-production`.
 - Story: production/epics/sort-mechanic/story-005-deadlock-detection.md — Deadlock Detection
 - Tech debt logged: None (advisory items noted in story Completion Notes)
 - Next recommended: Story 006 (App-Pause Cancellation) — production/epics/sort-mechanic/story-006-app-pause-cancellation.md
+
+## Session Extract — /code-review + /story-done 2026-05-20
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/sort-mechanic/story-005-deadlock-detection.md — Deadlock Detection
+- Code Review: APPROVED WITH SUGGESTIONS — HasLegalMove() allocation-free confirmed; test name AC10_..._DeadlockBefore_MoveExecutingExited misleading (suggests rename); corrupt-board suppression untested; SubscribeToGsmForTesting() fragile for PlayMode
+- Tech debt logged: None (advisories in story Completion Notes)
+- Next recommended: Story 006 (App-Pause Cancellation) — production/epics/sort-mechanic/story-006-app-pause-cancellation.md
+
+## Session Extract — /story-done 2026-05-20
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/sort-mechanic/story-006-app-pause-cancellation.md — App-Pause Cancellation + SEO Contract
+- Tech debt logged: None (advisories in story Completion Notes: TR-ID mismatch, SEO physical device verify)
+- Next recommended: Sprint 2 close-out — all Must Have + Should Have stories done; run /smoke-check then /team-qa
+
+<!-- QA-PLAN: 2026-05-19 | System: Sprint 2 / Sort Mechanic | Plan written: production/qa/qa-plan-sprint2-2026-05-19.md -->
+
+## Session Extract — /team-qa sprint 2026-05-21
+- Verdict: APPROVED WITH CONDITIONS
+- Sprint: Sprint 2 — Sort Mechanic (S2-04 through S2-09)
+- Smoke check: PASS WITH WARNINGS (production/qa/smoke-2026-05-20.md)
+- Automated coverage: 303/303 CI green (2026-05-19); S2-09 adds 6 tests (CI re-run pending ~309/309)
+- Manual QA: BLOCKED for S2-05 and S2-09 (no physical device available)
+- Bugs filed: 0
+- QA plan updated: production/qa/qa-plan-sprint2-2026-05-21.md
+- Sign-off report: production/qa/qa-signoff-sprint2-2026-05-21.md
+- Open conditions: (1) CI re-run ~309/309 green; (2) device evidence docs for S2-05 + S2-09 before Alpha gate
+- Next recommended: CI re-run to confirm ~309/309; carry device evidence into Sprint 3 backlog; then /gate-check for sprint advancement
+
+<!-- QA RUN: 2026-05-21 | Sprint: sprint-2 | Verdict: APPROVED WITH CONDITIONS | Report: production/qa/qa-signoff-sprint2-2026-05-21.md -->

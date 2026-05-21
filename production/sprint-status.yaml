@@ -14,7 +14,7 @@ goal: "Close Sprint 1 CI conditions and implement the Sort Mechanic — BoltSort
 start: "2026-05-19"
 end: "2026-05-30"
 generated: "2026-05-17"
-updated: "2026-05-19"  # S2-01–S2-02 done; S2-04–S2-08 done
+updated: "2026-05-20"  # S2-01–S2-09 done; S2-03 ready-for-dev
 
 stories:
   # ── MUST HAVE ──────────────────────────────────────────────────────────────
@@ -103,13 +103,13 @@ stories:
 
   - id: "S2-09"
     name: "Sort Mechanic: App-pause cancellation + SEO integration"
-    file: "production/epics/sort-mechanic/EPIC.md"
+    file: "production/epics/sort-mechanic/story-006-app-pause-cancellation.md"
     priority: should-have
-    status: backlog
+    status: done
     owner: ""
     estimate_days: 0.5
-    blocker: "S2-04"
-    completed: ""
+    blocker: ""
+    completed: "2026-05-20"
 
   # ── NICE TO HAVE ───────────────────────────────────────────────────────────
 

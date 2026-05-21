@@ -23,9 +23,8 @@ namespace BoltSort.SortMechanic
     /// Stories 002–006 extend this class: input buffering, INVALID_MOVE / MOVE_EXECUTING
     /// full paths, win condition, deadlock detection, and app-pause cancellation.
     ///
-    /// Script Execution Order: SEO 0 (lower priority than GSM at −50, higher priority required
-    /// for OnApplicationPause ordering per EC-14 — Story 006 will move SEO to −100 to satisfy
-    /// ADR-0001 OnApplicationPause contract).
+    /// Script Execution Order: SEO −55 (more negative than GSM at −50; ensures
+    /// OnApplicationPause fires Sort Mechanic before GSM per EC-14 and ADR-0001 SEO contract).
     ///
     /// ADR-0006: GSM is sole board owner; SortMechanic reads synchronously via IGameStateManager.
     /// ADR-0007: EnhancedTouchSupport for all tap input; Keyboard.current null guard for Android back.
@@ -174,6 +173,20 @@ namespace BoltSort.SortMechanic
 
             if (_gsm != null)
                 UnsubscribeFromGsm();
+        }
+
+        /// <summary>
+        /// Cancels any in-progress bolt hold synchronously when the app is backgrounded (EC-14, AC-28).
+        /// Must complete before GameStateManager serialises board state — enforced by SEO −55 being
+        /// more negative (higher priority) than GSM's −50 (ADR-0001 OnApplicationPause ordering).
+        /// Synchronous only — async void is forbidden here (control manifest, ADR-0007).
+        /// No-op in all states other than BoltSelected; held state is never persisted across sessions.
+        /// </summary>
+        private void OnApplicationPause(bool pauseStatus)
+        {
+            if (!pauseStatus) return;
+            if (_currentState != SortMechState.BoltSelected) return;
+            ExecuteCancellation();
         }
 
         // ── GSM Event Subscriptions ───────────────────────────────────────────────
@@ -853,6 +866,16 @@ namespace BoltSort.SortMechanic
             if (_inputBlocked) return;
             if (_currentState == SortMechState.BoltSelected)
                 ExecuteCancellation();
+        }
+
+        /// <summary>
+        /// Invokes <see cref="OnApplicationPause"/> directly from test code.
+        /// Unity calls this automatically at runtime; this seam bypasses OS-level backgrounding
+        /// for integration tests that cannot trigger real app suspension (AC-28).
+        /// </summary>
+        internal void TriggerApplicationPauseForTesting(bool pauseStatus)
+        {
+            OnApplicationPause(pauseStatus);
         }
     }
 }

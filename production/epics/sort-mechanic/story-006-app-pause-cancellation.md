@@ -1,12 +1,12 @@
 # Story 006: App-Pause Cancellation + SEO Contract
 
 > **Epic**: Sort Mechanic
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Feature
 > **Type**: Integration
 > **Estimate**: 0.5d
 > **Manifest Version**: 2026-05-12
-> **Last Updated**: —
+> **Last Updated**: 2026-05-20
 
 ## Context
 
@@ -76,3 +76,12 @@
 
 - Depends on: Story 001 must be DONE
 - Unlocks: Story 007
+
+---
+
+## Completion Notes
+**Completed**: 2026-05-20
+**Criteria**: 1/1 passing (AC-28)
+**Deviations**: Advisory: (1) Story references TR-SORT-009 (board read synchrony) — no dedicated TR for app-pause cancellation (EC-14); TR registry cleanup recommended; (2) SEO −55 physical device verification required before ship — untestable in EditMode; (3) OnApplicationPause(false) path tested indirectly only.
+**Test Evidence**: Integration: `tests/integration/gsm-sort-mechanic/sort_mechanic_app_pause_test.cs` (6 tests)
+**Code Review**: Complete — APPROVED (lean mode, user confirmed)

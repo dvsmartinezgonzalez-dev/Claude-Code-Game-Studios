@@ -6,7 +6,7 @@
 > **Type**: Integration
 > **Estimate**: 1.0d
 > **Manifest Version**: 2026-05-12
-> **Last Updated**: 2026-05-19
+> **Last Updated**: 2026-05-20
 
 ## Context
 
@@ -80,9 +80,9 @@
 ## Completion Notes
 **Completed**: 2026-05-19
 **Criteria**: 3/3 passing (AC-22, AC-10, AC-25)
-**Deviations**: None blocking. Advisory: INVALID_MOVE exit no-deadlock behavior untested; watchdog integration path comment absent; corrupt-board-on-level-loaded suppression untested; ADR-0006 has typo `MoveRejectReason` → `MoveRejectedReason`.
+**Deviations**: None blocking. Advisory: (1) Test name `AC10_..._DeadlockBefore_MoveExecutingExited` misleading — impl emits OnMoveExecutingExited before deadlock; test verifies deadlock-before-buffered-tap (correct per spec) — suggest rename; (2) Corrupt-board AC-25 suppression path untested; (3) SubscribeToGsmForTesting() fragile if PlayMode tests introduced — add `_gsmSubscribed` guard first; (4) ADR-0006 typo `MoveRejectReason` → `MoveRejectedReason`.
 **Test Evidence**: Unit: `tests/unit/sort-mechanic/sort_mechanic_deadlock_test.cs` (8 tests); Integration: `tests/integration/gsm-sort-mechanic/sort_mechanic_deadlock_test.cs` (5 tests); Fixture: `tests/helpers/sort-mechanic-fixtures/DeadlockFixtures.cs`
-**Code Review**: Complete — APPROVED WITH SUGGESTIONS (lean mode, run this session)
+**Code Review**: Complete 2026-05-20 — APPROVED WITH SUGGESTIONS (lean mode)
 
 ---
 

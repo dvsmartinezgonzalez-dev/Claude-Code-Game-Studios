@@ -1,6 +1,7 @@
 # Sprint 2 — 2026-05-19 to 2026-05-30
 
 > **Generated**: 2026-05-17
+> **Updated**: 2026-05-19
 > **Review mode**: lean
 
 ## Sprint Goal
@@ -13,11 +14,30 @@ Close Sprint 1 CI conditions and implement the Sort Mechanic — BoltSort's core
 - Buffer (20%): 2 days reserved for unplanned work
 - Available: 8 days
 
-> **Note on story files**: Sort Mechanic stories do not yet exist. Task S2-02
-> (`/create-stories sort-mechanic`) creates them on Day 1. Tasks S2-04–S2-07
-> reference provisional story groupings drawn from Sort Mechanic TR-IDs in
-> `production/epics/sort-mechanic/EPIC.md`. Actual story file paths will be
-> known and linked after S2-02 completes.
+---
+
+## Sprint Progress (as of 2026-05-19)
+
+**7/11 stories done — ~2.0d remaining work**
+
+| ID | Story | Status |
+|----|-------|--------|
+| S2-01 | Close Sprint 1 CI conditions | ✅ Done (2026-05-19) |
+| S2-02 | Create Sort Mechanic stories | ✅ Done (2026-05-17) |
+| S2-03 | QA plan for Sprint 2 | 🔲 Ready — run `/qa-plan sprint` now |
+| S2-04 | FSM core + board state read | ✅ Done (2026-05-17) |
+| S2-05 | Input handling + back gesture | ✅ Done (2026-05-18) |
+| S2-06 | Move validation + column cap | ✅ Done (2026-05-18) |
+| S2-07 | Win detection + seqId guard | ✅ Done (2026-05-18) |
+| S2-08 | Deadlock detection | ✅ Done (2026-05-19) |
+| S2-09 | App-pause cancellation + SEO | 🔲 Backlog — unblocked |
+| S2-10 | Create Save & Persistence stories | 🔲 Backlog — deferred to Sprint 3 |
+| S2-11 | GSM ↔ Sort Mechanic integration | 🔲 Backlog — blocked on S2-09 |
+
+**Remaining execution order:**
+1. **S2-03** — Run `/qa-plan sprint` (required for DoD; unblocked since Day 1)
+2. **S2-09** — App-pause cancellation + SEO contract (Story 006, 0.5d)
+3. **S2-11** — GSM full integration test (Story 007, 0.5d) — blocked on S2-09
 
 ---
 
@@ -27,7 +47,7 @@ Close Sprint 1 CI conditions and implement the Sort Mechanic — BoltSort's core
 
 | ID | Task | Est. | Dependencies | Acceptance Criteria |
 |----|------|------|-------------|-------------------|
-| S2-01 | **Close Sprint 1 CI conditions** — run `game-ci/unity-test-runner@v4` on main; confirm ~203 tests PASS in CI; confirm `Tests.Integration.GameStateManager.asmdef` compiles without error in Unity Editor; update `production/qa/smoke-2026-05-16.md` with results | 0.5d | CI secrets live (commit ddfdf1c) | CI shows green; no compile errors; smoke log updated |
+| S2-01 | **Close Sprint 1 CI conditions** — run `game-ci/unity-test-runner@v4` on main; confirm all tests PASS in CI; confirm `Tests.Integration.GameStateManager.asmdef` compiles without error in Unity Editor; update `production/qa/smoke-2026-05-16.md` with results | 0.5d | CI secrets live (commit ddfdf1c) | CI shows green; no compile errors; smoke log updated |
 | S2-02 | **Create Sort Mechanic stories** — run `/create-stories sort-mechanic` → story files at `production/epics/sort-mechanic/`; update `production/epics/index.md` | 0.5d | `sort-mechanic/EPIC.md` Ready; GSM Done | Story files exist with TR-IDs, ADR refs, ACs |
 | S2-03 | **QA plan for Sprint 2** — run `/qa-plan sprint` before any implementation begins; defines test evidence requirements per story | 0.5d | S2-02 (stories exist) | `production/qa/qa-plan-sprint2-YYYY-MM-DD.md` exists covering all Sort Mechanic stories |
 | S2-04 | **Sort Mechanic: FSM core + board state read** — IDLE / BOLT_SELECTED / MOVE_EXECUTING / CANCELLATION / INVALID_MOVE / WIN state machine; synchronous `IReadOnlyList<int>[]` read from GSM (`StackContents[]`, `TempSlotContents[]`) (TR-SORT-001, TR-SORT-009) | 1.5d | S2-02; GSM Done | All 6 FSM states transition correctly; unit tests pass for each state and transition; `int64` seqId used (not int32 — overflow softlock prevention) |
@@ -47,7 +67,7 @@ Close Sprint 1 CI conditions and implement the Sort Mechanic — BoltSort's core
 | ID | Task | Est. | Dependencies | Acceptance Criteria |
 |----|------|------|-------------|-------------------|
 | S2-10 | **Create Save & Persistence stories** — run `/create-stories save-persistence` → story files at `production/epics/save-persistence/` | 0.5d | `save-persistence/EPIC.md` Ready | Story files exist; linked from `production/epics/index.md` |
-| S2-11 | **GSM ↔ Sort Mechanic integration test** — full move cycle (tap → GSM mutation → `OnBoardStateChanged` → IDLE) verified end-to-end in `tests/integration/gsm-sort-mechanic/` | 0.5d | S2-04–S2-07 | Integration test passes; board state changes confirmed via GSM events triggered by Sort Mechanic |
+| S2-11 | **GSM ↔ Sort Mechanic integration test** — full move cycle (tap → GSM mutation → `OnBoardStateChanged` → IDLE) verified end-to-end in `tests/integration/gsm-sort-mechanic/` | 0.5d | S2-04–S2-09 | Integration test passes; board state changes confirmed via GSM events triggered by Sort Mechanic |
 
 ---
 
@@ -55,8 +75,8 @@ Close Sprint 1 CI conditions and implement the Sort Mechanic — BoltSort's core
 
 | Task | Reason | Action |
 |------|--------|--------|
-| CI green run | Not executed before QA signoff | → S2-01 (Must Have) |
-| `Tests.Integration.GameStateManager.asmdef` compile confirmation | New asmdef created during Sprint 1, not confirmed in Unity Editor | → S2-01 (Must Have) |
+| CI green run | Not executed before QA signoff | → S2-01 ✅ Done |
+| `Tests.Integration.GameStateManager.asmdef` compile confirmation | New asmdef created during Sprint 1, not confirmed in Unity Editor | → S2-01 ✅ Done |
 | LDS-005 coverage gaps (AC-25, AC-26, failed-reload path, `OnLevelDataReady` non-emission on failure) | Advisory from Sprint 1 QA signoff | → Sprint 3 backlog |
 
 ---
@@ -83,20 +103,19 @@ Close Sprint 1 CI conditions and implement the Sort Mechanic — BoltSort's core
 
 ## Definition of Done for Sprint 2
 
-- [ ] All Must Have tasks (S2-01 through S2-07) complete
-- [ ] CI passes green on `main` — all ~203 Sprint 1 tests + new Sort Mechanic tests
-- [ ] Sort Mechanic FSM, input handling, move validation, and win detection have passing unit tests in `tests/unit/sort-mechanic/`
-- [ ] QA plan exists at `production/qa/qa-plan-sprint2-*.md`
-- [ ] All Logic stories have BLOCKING unit tests; Integration stories have tests in `tests/integration/`
+- [x] All Must Have tasks (S2-01 through S2-07) complete
+- [x] CI passes green on `main` — 303 tests passing (Sprint 1 + Sort Mechanic stories 001–005)
+- [x] Sort Mechanic FSM, input handling, move validation, win detection, and deadlock detection have passing unit/integration tests
+- [ ] QA plan exists at `production/qa/qa-plan-sprint2-*.md` — **run `/qa-plan sprint` (S2-03)**
+- [x] All Logic stories have BLOCKING unit tests; Integration stories have tests in `tests/integration/`
 - [ ] Smoke check passes: `/smoke-check sprint` — PASS or PASS WITH WARNINGS
 - [ ] QA sign-off: `/team-qa sprint` — APPROVED or APPROVED WITH CONDITIONS
 - [ ] No S1 or S2 bugs in delivered features
-- [ ] Story files updated with final status and test counts via `/story-done`
-- [ ] `production/sprint-status.yaml` updated at sprint close
+- [x] Story files updated with final status and test counts via `/story-done`
+- [x] `production/sprint-status.yaml` updated at sprint close
 
 ---
 
 ## QA Plan
 
-> ⚠️ **No QA Plan yet for Sprint 2.** Run `/qa-plan sprint` as task S2-03 before starting any implementation.
-> QA sign-off at sprint end requires a QA plan to have been run first.
+> ⚠️ **No QA Plan yet for Sprint 2.** Run `/qa-plan sprint` as task S2-03 now — this is required before the sprint can reach DoD sign-off.
