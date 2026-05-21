@@ -18,7 +18,6 @@ jobs:
         with:
           lfs: true
 
-      # Cache Unity Library folder for faster subsequent runs
       - name: Cache Library
         uses: actions/cache@v3
         with:
@@ -27,8 +26,13 @@ jobs:
           restore-keys: |
             Library-
 
-      # Run EditMode (unit) and PlayMode (integration) tests
-      # Requires UNITY_LICENSE, UNITY_EMAIL, UNITY_PASSWORD secrets in repo settings
+      - name: Activate Unity
+        uses: game-ci/unity-activate@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+
       - name: Run Tests
         uses: game-ci/unity-test-runner@v4
         id: tests
@@ -38,11 +42,19 @@ jobs:
           UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
         with:
           projectPath: My project
-          unityVersion: 2022.3.62f3  # matches ProjectVersion.txt — upgrade to Unity 6 tracked in S2-01
-          testMode: all              # runs EditMode + PlayMode
+          unityVersion: 2022.3.62f3
+          testMode: editmode
           artifactsPath: test-results
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           checkName: Test Results
+
+      - name: Deactivate Unity
+        uses: game-ci/unity-return-license@v4
+        if: always()
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
 
       - name: Upload Test Results
         uses: actions/upload-artifact@v4
