@@ -1,0 +1,22 @@
+{
+    "name": "Tests.Unit.SaveSystem",
+    "rootNamespace": "BoltSort.Tests.Unit.SaveSystem",
+    "references": [
+        "BoltSort.SaveSystem",
+        "Tests.Helpers.SavePersistence"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false,
+    "optionalUnityReferences": [
+        "TestAssembly"
+    ]
+}

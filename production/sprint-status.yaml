@@ -9,113 +9,123 @@
 #   done           <-> Complete
 #   blocked        <-> Blocked
 
-sprint: 2
-goal: "Close Sprint 1 CI conditions and implement the Sort Mechanic — BoltSort's core interactive system — delivering a playable game loop from tap input to win detection."
-start: "2026-05-19"
-end: "2026-05-30"
-generated: "2026-05-17"
-updated: "2026-05-20"  # S2-01–S2-09 done; S2-03 ready-for-dev
+sprint: 3
+goal: "Deliver the Save & Persistence system and scaffold the Quality Tier System, completing BoltSort's boot-time infrastructure and unblocking Level Progression and Coin Economy."
+start: "2026-05-30"
+end: "2026-06-13"
+generated: "2026-05-22"
+updated: "2026-05-22"  # S3-01 done (stories created), S3-02 done (Story 001), S3-03 done (Story 002)
 
 stories:
   # ── MUST HAVE ──────────────────────────────────────────────────────────────
 
-  - id: "S2-01"
-    name: "Close Sprint 1 CI conditions (CI green run + asmdef compile)"
-    file: "production/sprints/sprint-2.md"
-    priority: must-have
-    status: done
-    owner: ""
-    estimate_days: 0.5
-    blocker: ""
-    completed: "2026-05-19"
-
-  - id: "S2-02"
-    name: "Create Sort Mechanic stories (/create-stories sort-mechanic)"
-    file: "production/epics/sort-mechanic/EPIC.md"
-    priority: must-have
-    status: done
-    owner: ""
-    estimate_days: 0.5
-    blocker: ""
-    completed: "2026-05-17"
-
-  - id: "S2-03"
-    name: "QA plan for Sprint 2 (/qa-plan sprint)"
-    file: "production/sprints/sprint-2.md"
+  - id: "S3-01"
+    name: "Create Save & Persistence stories (/create-stories save-persistence)"
+    file: "production/epics/save-persistence/EPIC.md"
     priority: must-have
     status: ready-for-dev
     owner: ""
     estimate_days: 0.5
-    blocker: "S2-02 must complete first — stories needed for QA plan scope"
+    blocker: ""
     completed: ""
 
-  - id: "S2-04"
-    name: "Sort Mechanic: FSM core + board state read (TR-SORT-001, TR-SORT-009)"
-    file: "production/epics/sort-mechanic/story-001-fsm-core-initialization.md"
+  - id: "S3-02"
+    name: "SP: SaveData schema + SaveSystem boot (SEO -90, IsReady, OnSaveReady)"
+    file: "production/epics/save-persistence/story-001-boot-schema-isready.md"
     priority: must-have
     status: done
     owner: ""
     estimate_days: 1.5
     blocker: ""
-    completed: "2026-05-17"
+    completed: "2026-05-22"
 
-  - id: "S2-05"
-    name: "Sort Mechanic: Input handling + back gesture + tap buffer (TR-SORT-004, TR-SORT-008)"
-    file: "production/epics/sort-mechanic/story-002-input-handling.md"
-    priority: must-have
-    status: done
-    owner: ""
-    estimate_days: 1.5
-    blocker: ""
-    completed: "2026-05-18"
-
-  - id: "S2-06"
-    name: "Sort Mechanic: Move validation + column cap (TR-SORT-002, TR-SORT-010)"
-    file: "production/epics/sort-mechanic/story-003-move-validation.md"
+  - id: "S3-03"
+    name: "SP: Atomic write — W-1 background thread (Awaitable.BackgroundThreadAsync)"
+    file: "production/epics/save-persistence/story-002-atomic-write-w1.md"
     priority: must-have
     status: done
     owner: ""
     estimate_days: 1.0
     blocker: ""
-    completed: "2026-05-18"
+    completed: "2026-05-22"
 
-  - id: "S2-07"
-    name: "Sort Mechanic: Win detection + seqId guard + OnMoveExecutingExited (TR-SORT-003, TR-SORT-006, TR-SORT-007)"
-    file: "production/epics/sort-mechanic/story-004-win-condition-seqid.md"
+  - id: "S3-04"
+    name: "SP: iOS cold-start file protection retry (UnauthorizedAccessException, 250ms, 5s timeout)"
+    file: "production/epics/save-persistence/story-003.md"
     priority: must-have
-    status: done
+    status: backlog
     owner: ""
     estimate_days: 1.0
-    blocker: ""
-    completed: "2026-05-18"
+    blocker: "S3-02"
+    completed: ""
+
+  - id: "S3-05"
+    name: "SP: W-2 synchronous OnApplicationPause write"
+    file: "production/epics/save-persistence/story-004.md"
+    priority: must-have
+    status: backlog
+    owner: ""
+    estimate_days: 0.5
+    blocker: "S3-03"
+    completed: ""
+
+  - id: "S3-06"
+    name: "SP: Schema versioning + migration runner"
+    file: "production/epics/save-persistence/story-005.md"
+    priority: must-have
+    status: backlog
+    owner: ""
+    estimate_days: 1.0
+    blocker: "S3-02"
+    completed: ""
 
   # ── SHOULD HAVE ────────────────────────────────────────────────────────────
 
-  - id: "S2-08"
-    name: "Sort Mechanic: Deadlock check + canonical fixture (TR-SORT-005)"
-    file: "production/epics/sort-mechanic/story-005-deadlock-detection.md"
+  - id: "S3-07"
+    name: "SP: PlayerPrefs audio prefs integration"
+    file: "production/epics/save-persistence/story-006.md"
     priority: should-have
-    status: done
+    status: backlog
     owner: ""
-    estimate_days: 1.0
-    blocker: ""
-    completed: "2026-05-19"
+    estimate_days: 0.5
+    blocker: "S3-02"
+    completed: ""
 
-  - id: "S2-09"
-    name: "Sort Mechanic: App-pause cancellation + SEO integration"
-    file: "production/epics/sort-mechanic/story-006-app-pause-cancellation.md"
+  - id: "S3-08"
+    name: "SP <-> GSM integration test: board persistence round-trip"
+    file: "tests/integration/save-persistence/"
     priority: should-have
-    status: done
+    status: backlog
+    owner: ""
+    estimate_days: 0.5
+    blocker: "S3-03,S3-05"
+    completed: ""
+
+  - id: "S3-09"
+    name: "Create Quality Tier System stories (/create-stories quality-tier-system)"
+    file: "production/epics/quality-tier-system/EPIC.md"
+    priority: should-have
+    status: backlog
     owner: ""
     estimate_days: 0.5
     blocker: ""
-    completed: "2026-05-20"
+    completed: ""
+
+  - id: "S3-10"
+    name: "QTS: GPU tier detection + adaptive quality settings"
+    file: "production/epics/quality-tier-system/story-001.md"
+    priority: should-have
+    status: backlog
+    owner: ""
+    estimate_days: 1.0
+    blocker: "S3-09"
+    completed: ""
 
   # ── NICE TO HAVE ───────────────────────────────────────────────────────────
 
-  - id: "S2-10"
-    name: "Create Save & Persistence stories (/create-stories save-persistence)"
-    file: "production/epics/save-persistence/EPIC.md"
+  - id: "S3-11"
+    name: "Create Audio System stories (/create-stories audio-system)"
+    file: "production/epics/audio-system/EPIC.md"
     priority: nice-to-have
     status: backlog
     owner: ""
@@ -123,12 +133,12 @@ stories:
     blocker: ""
     completed: ""
 
-  - id: "S2-11"
-    name: "GSM <-> Sort Mechanic integration test (full move cycle)"
-    file: "production/epics/sort-mechanic/EPIC.md"
+  - id: "S3-12"
+    name: "TD-CI-001: GameCI license root-cause investigation (no CI changes)"
+    file: "production/tech-debt.md"
     priority: nice-to-have
     status: backlog
     owner: ""
     estimate_days: 0.5
-    blocker: "S2-04, S2-05, S2-06, S2-07"
+    blocker: ""
     completed: ""

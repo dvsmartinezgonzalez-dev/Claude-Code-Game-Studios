@@ -5,7 +5,18 @@
 > **Architecture Module**: SaveSystem
 > **Status**: Ready
 > **Manifest Version**: 2026-05-12
-> **Stories**: Not yet created — run `/create-stories save-persistence`
+> **Stories**: 6 stories created (2026-05-22)
+
+## Stories
+
+| # | Story | Type | Status | ADR |
+|---|-------|------|--------|-----|
+| 001 | [SaveSystem Boot, Schema v1, and IsReady Contract](story-001-boot-schema-isready.md) | Logic | Ready | ADR-0001, ADR-0003 |
+| 002 | [WriteCompletionAtomic — W-1 Background Write](story-002-atomic-write-w1.md) | Logic | Ready | ADR-0003 |
+| 003 | [W-2 Synchronous Pause Write and Dirty Flag](story-003-w2-pause-write.md) | Integration | Ready | ADR-0003 |
+| 004 | [Cold-Start Read Cases R-4 and iOS Protection Retry](story-004-ios-retry-corruption-recovery.md) | Logic | Ready | ADR-0003 |
+| 005 | [Schema Version Migration Runner](story-005-schema-migration.md) | Logic | Ready | ADR-0003 |
+| 006 | [PlayerPrefs Namespace, SetCoinBalance, and Backup Exclusion](story-006-playerprefs-setcoinbalance.md) | Logic | Ready | ADR-0003 |
 
 ## Overview
 

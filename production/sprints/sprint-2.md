@@ -24,15 +24,15 @@ Close Sprint 1 CI conditions and implement the Sort Mechanic — BoltSort's core
 |----|-------|--------|
 | S2-01 | Close Sprint 1 CI conditions | ✅ Done (2026-05-19) |
 | S2-02 | Create Sort Mechanic stories | ✅ Done (2026-05-17) |
-| S2-03 | QA plan for Sprint 2 | 🔲 Ready — run `/qa-plan sprint` now |
+| S2-03 | QA plan for Sprint 2 | ✅ Done (2026-05-21) |
 | S2-04 | FSM core + board state read | ✅ Done (2026-05-17) |
 | S2-05 | Input handling + back gesture | ✅ Done (2026-05-18) |
 | S2-06 | Move validation + column cap | ✅ Done (2026-05-18) |
 | S2-07 | Win detection + seqId guard | ✅ Done (2026-05-18) |
 | S2-08 | Deadlock detection | ✅ Done (2026-05-19) |
-| S2-09 | App-pause cancellation + SEO | 🔲 Backlog — unblocked |
+| S2-09 | App-pause cancellation + SEO | ✅ Done (2026-05-22) — local 309/309 pass; device evidence deferred to Sprint 3 backlog |
 | S2-10 | Create Save & Persistence stories | 🔲 Backlog — deferred to Sprint 3 |
-| S2-11 | GSM ↔ Sort Mechanic integration | 🔲 Backlog — blocked on S2-09 |
+| S2-11 | GSM ↔ Sort Mechanic integration | ✅ Done (2026-05-22) — local tests pass; CI unblocked per user instruction |
 
 **Remaining execution order:**
 1. **S2-03** — Run `/qa-plan sprint` (required for DoD; unblocked since Day 1)

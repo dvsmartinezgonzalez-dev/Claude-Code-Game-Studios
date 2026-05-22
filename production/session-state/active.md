@@ -610,3 +610,45 @@ After all 11 ADRs: run `/gate-check pre-production`.
 - Next recommended: CI re-run to confirm ~309/309; carry device evidence into Sprint 3 backlog; then /gate-check for sprint advancement
 
 <!-- QA RUN: 2026-05-21 | Sprint: sprint-2 | Verdict: APPROVED WITH CONDITIONS | Report: production/qa/qa-signoff-sprint2-2026-05-21.md -->
+
+## Session Extract — Sprint 2 Close 2026-05-22
+
+- **Sprint 2 STATUS: CLOSED**
+- All 9 sprint stories Done (S2-01 through S2-11, S2-10 deferred to Sprint 3)
+- CI conditions WAIVED per user instruction — CI pipeline instability logged as TD-CI-001 (`production/tech-debt.md`)
+- Source of truth: local EditMode suite 309/309 passing
+- Open carry-forwards to Sprint 3 backlog:
+  - Device evidence for S2-05 (input coordinate space on physical Android)
+  - Device evidence for S2-09 (app-pause on physical iOS/Android)
+  - S2-10: Create Save & Persistence stories (`/create-stories save-persistence`)
+  - TD-CI-001: Fix GameCI Unity license activation in CI pipeline
+- **Next action**: Story 001 COMPLETE. Next: `/story-readiness save-persistence/story-002-atomic-write-w1.md` then `/dev-story` it.
+
+<!-- SPRINT-CLOSE: 2026-05-22 | Sprint: sprint-2 | Status: CLOSED | CI: WAIVED (TD-CI-001) -->
+
+<!-- QA-PLAN: 2026-05-22 | System: Sprint 3 / Save & Persistence + QTS | Plan written: production/qa/qa-plan-sprint3-2026-05-22.md -->
+## Session Extract — /dev-story 2026-05-22
+- Story: production/epics/save-persistence/story-001-boot-schema-isready.md — SaveSystem Boot, Schema v1, IsReady Contract
+- Files changed: Scripts/SaveSystem/SaveSystem.cs (created), ISaveSystem.cs (created), IFileSystem.cs (created), ProductionFileSystem.cs (created), SaveData.cs (created), AssemblyInfo.cs (created), BoltSort.SaveSystem.asmdef (created)
+- Test written: Tests/unit/save-persistence/SaveSystem_Boot_Test.cs (15 test methods), Tests/helpers/save-persistence/FakeFileSystem.cs (created), Tests.Unit.SaveSystem.asmdef (created), Tests.Helpers.SavePersistence.asmdef (created)
+- Blockers: None
+- Next: /code-review Scripts/SaveSystem/SaveSystem.cs then /story-done story-001
+
+## Session Extract — /story-done 2026-05-22
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/save-persistence/story-001-boot-schema-isready.md — SaveSystem Boot, Schema v1, IsReady Contract
+- Tech debt logged: None (2 advisory deviations in Completion Notes: PlayerPrefs.Save() deferred to Story 006, JsonUtility null-check comment)
+- Next recommended: /story-readiness production/epics/save-persistence/story-002-atomic-write-w1.md
+
+## Session Extract — /dev-story 2026-05-22
+- Story: production/epics/save-persistence/story-002-atomic-write-w1.md — WriteCompletionAtomic W-1 Background Write
+- Files changed: Scripts/SaveSystem/SaveSystem.cs (WriteCompletionAtomic, WriteAtomicCore, ApplyCompletionToMemory, CaptureSnapshot, PushUndoMove, GetUndoStack, _writeLock), Scripts/SaveSystem/ISaveSystem.cs (already had PushUndoMove/GetUndoStack)
+- Test written: Tests/unit/save-persistence/SaveSystem_AtomicWrite_Test.cs (20 test methods)
+- Blockers: AC-43 background-thread assertion and AC-05 concurrent W-1 are PlayMode only; EditMode proxies written
+- Next: /code-review Scripts/SaveSystem/SaveSystem.cs then /story-done story-002
+
+## Session Extract — /story-done 2026-05-22
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/save-persistence/story-002-atomic-write-w1.md — WriteCompletionAtomic W-1 Background Write
+- Tech debt logged: 4 items (TD-SP-001 volatile fields, TD-SP-002 AC-35 no test, TD-SP-003 PlayMode tests deferred, TD-SP-004 method length)
+- Next recommended: /story-readiness production/epics/save-persistence/story-003-w2-pause-write.md
