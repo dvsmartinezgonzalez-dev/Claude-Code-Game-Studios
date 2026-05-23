@@ -182,6 +182,7 @@ Implement as a `[UnityTest]` PlayMode test in the SP↔GSM integration story (S3
 ### Resolution Plan
 
 Add a static pre-boot override following the `SetFileSystemForTesting` pattern:
+
 ```csharp
 internal static void SetRetryParametersForTesting(int intervalMs, int timeoutMs)
 {
@@ -190,3 +191,65 @@ internal static void SetRetryParametersForTesting(int intervalMs, int timeoutMs)
 }
 ```
 Read these in `ReadWithIosRetry` (e.g. `int interval = s_testRetryIntervalMs > 0 ? s_testRetryIntervalMs : RetryIntervalMs;`). Clear in `ClearInstanceForTesting()`. Update the two affected tests to use 10ms/100ms timing. Implement in Story 005 or as a standalone cleanup story before Alpha gate. The test uses `FakeFileSystem.WriteDelay` to hold the W-1 lock, fires `HandleApplicationPause(true, ...)` on the main thread which blocks on `Wait()`, then lets W-1 complete. Assert no redundant file write from W-2. This is a **blocking open item** for S3-08 — not merely advisory.
+
+---
+
+## TD-SP-008 — SaveSystem: PlayerPrefs test TearDown does not clean audio./qts. keys
+
+| Field | Value |
+|-------|-------|
+| **Logged** | 2026-05-23 |
+| **Severity** | Low |
+| **Area** | Save & Persistence — Tests |
+| **Blocking** | No |
+| **Story** | production/epics/save-persistence/story-006-playerprefs-setcoinbalance.md |
+
+### Description
+
+`SaveSystem_PlayerPrefs_Test.TearDown` only deletes `sp.downgrade_notice_shown`. The test `SaveSystem_DoesNotWriteAudioOrQtsPlayerPrefsKeys` deletes `audio.sfx_volume`, `audio.ambient_volume`, `audio.ui_volume`, and `qts.tier` in the test body but not in TearDown. If future tests leave those keys set to non-zero values, this test could produce incorrect assertions (DeleteKey in body guards against prior state but not against state left by this test for subsequent tests). Additionally, `GetInt` is used to check float-declared keys — a rogue `SetFloat` write would not be detected.
+
+### Resolution Plan
+
+1. Move the four `DeleteKey` calls from the test body into `TearDown` alongside `sp.downgrade_notice_shown`.
+2. Replace `PlayerPrefs.GetInt("audio.*", 0) == 0` assertions with `!PlayerPrefs.HasKey("audio.*")` to detect float or string writes as well.
+Implement in the SP integration test story (S4-03) or as a quick cleanup alongside that story.
+
+---
+
+## TD-SP-009 — SaveSystem: AC-10 PlayerPrefs.Save() not mechanically verifiable in EditMode
+
+| Field | Value |
+|-------|-------|
+| **Logged** | 2026-05-23 |
+| **Severity** | Low |
+| **Area** | Save & Persistence — Tests |
+| **Blocking** | No (confirmed by code review at call site) |
+| **Story** | production/epics/save-persistence/story-006-playerprefs-setcoinbalance.md |
+
+### Description
+
+AC-10 requires `PlayerPrefs.Save()` to be called after every `PlayerPrefs.Set*()`. The Unity `PlayerPrefs` API does not expose a call count or any observable indicating whether `Save()` was flushed to disk. The EditMode test `Downgrade_R5_SetsDowngradeNoticeKeyAsInt` verifies that `SetInt` was called (key = 1) but cannot confirm `Save()` was called. AC-10 compliance is enforced only by code review at the `HandleDowngrade` call site (line 561 of `SaveSystem.cs`).
+
+### Resolution Plan
+
+The gap is platform-architectural — Unity provides no test double for `PlayerPrefs.Save()`. Mitigate by: (a) adding a comment in `HandleDowngrade` calling out AC-10 explicitly (already present); (b) ensuring `/code-review` checklists include AC-10 as a manual verification item for any story touching PlayerPrefs writes. Revisit if a custom `IPlayerPrefs` abstraction is introduced in a future story.
+
+---
+
+## TD-SP-010 — SaveSystem: SetCoinBalance missing GuardIsReady() pre-condition enforcement
+
+| Field | Value |
+|-------|-------|
+| **Logged** | 2026-05-23 |
+| **Severity** | Low |
+| **Area** | Save & Persistence |
+| **Blocking** | No |
+| **Story** | production/epics/save-persistence/story-006-playerprefs-setcoinbalance.md |
+
+### Description
+
+AC-07 states `SetCoinBalance` is "usable only after `IsReady = true`", but the method has no `GuardIsReady()` call, unlike all read methods (`GetCurrentLevelId`, `GetCoinBalance`, `GetCompletionRecord`, `GetUndoStack`). `PushUndoMove` has the same omission. In practice, callers subscribe to `OnSaveReady` and call `SetCoinBalance` only in the handler, so the pre-condition is enforced by contract rather than code. No production bug has been observed.
+
+### Resolution Plan
+
+Add `GuardIsReady()` calls to `SetCoinBalance` and `PushUndoMove` in a cleanup story or during the CoinEconomy integration story (S4-08). Also add a test: create a raw `SaveSystem` without calling `Awake()` (not possible via `AddComponent` — requires reflection), confirm either an exception or a log error is emitted. Low priority while all callers observe subscribe-then-check.

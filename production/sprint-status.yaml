@@ -9,19 +9,19 @@
 #   done           <-> Complete
 #   blocked        <-> Blocked
 
-sprint: 3
-goal: "Deliver the Save & Persistence system and scaffold the Quality Tier System, completing BoltSort's boot-time infrastructure and unblocking Level Progression and Coin Economy."
-start: "2026-05-30"
-end: "2026-06-13"
-generated: "2026-05-22"
-updated: "2026-05-23"  # S3-01 done, S3-02 (Story 001), S3-03 (Story 002), S3-05 (Story 003), S3-04 done (Story 004), S3-06 done (Story 005)
+sprint: 4
+goal: "Resolve the CI gate, close SP integration gaps, ship QTS, and deliver CE core — completing MVP infrastructure and opening the Beta feature track."
+start: "2026-06-14"
+end: "2026-06-27"
+generated: "2026-05-23"
+updated: "2026-05-23 (S4-02 done)"
 
 stories:
   # ── MUST HAVE ──────────────────────────────────────────────────────────────
 
-  - id: "S3-01"
-    name: "Create Save & Persistence stories (/create-stories save-persistence)"
-    file: "production/epics/save-persistence/EPIC.md"
+  - id: "S4-01"
+    name: "TD-CI-001: Resolve CI pipeline (self-hosted runner or Unity Pro)"
+    file: "production/tech-debt.md"
     priority: must-have
     status: ready-for-dev
     owner: ""
@@ -29,81 +29,81 @@ stories:
     blocker: ""
     completed: ""
 
-  - id: "S3-02"
-    name: "SP: SaveData schema + SaveSystem boot (SEO -90, IsReady, OnSaveReady)"
-    file: "production/epics/save-persistence/story-001-boot-schema-isready.md"
-    priority: must-have
-    status: done
-    owner: ""
-    estimate_days: 1.5
-    blocker: ""
-    completed: "2026-05-22"
-
-  - id: "S3-03"
-    name: "SP: Atomic write — W-1 background thread (Awaitable.BackgroundThreadAsync)"
-    file: "production/epics/save-persistence/story-002-atomic-write-w1.md"
-    priority: must-have
-    status: done
-    owner: ""
-    estimate_days: 1.0
-    blocker: ""
-    completed: "2026-05-22"
-
-  - id: "S3-04"
-    name: "SP: iOS cold-start file protection retry (UnauthorizedAccessException, 250ms, 5s timeout)"
-    file: "production/epics/save-persistence/story-004-ios-retry-corruption-recovery.md"
-    priority: must-have
-    status: done
-    owner: ""
-    estimate_days: 1.0
-    blocker: "S3-02"
-    completed: "2026-05-23"
-
-  - id: "S3-05"
-    name: "SP: W-2 synchronous OnApplicationPause write"
-    file: "production/epics/save-persistence/story-003-w2-pause-write.md"
+  - id: "S4-02"
+    name: "SP: PlayerPrefs audio prefs integration"
+    file: "production/epics/save-persistence/story-006-playerprefs-setcoinbalance.md"
     priority: must-have
     status: done
     owner: ""
     estimate_days: 0.5
-    blocker: "S3-03"
-    completed: "2026-05-22"
+    blocker: ""
+    completed: "2026-05-23"
 
-  - id: "S3-06"
-    name: "SP: Schema versioning + migration runner"
-    file: "production/epics/save-persistence/story-005-schema-migration.md"
+  - id: "S4-03"
+    name: "SP <-> GSM integration test: board persistence round-trip"
+    file: "tests/integration/save-persistence/"
     priority: must-have
-    status: done
+    status: ready-for-dev
+    owner: ""
+    estimate_days: 0.5
+    blocker: ""
+    completed: ""
+
+  - id: "S4-04"
+    name: "TD-SP-006: PlayMode W-1+W-2 concurrent race test"
+    file: "tests/integration/save-persistence/SaveSystem_Pause_Race_Test.cs"
+    priority: must-have
+    status: backlog
+    owner: ""
+    estimate_days: 0.5
+    blocker: "S4-03"
+    completed: ""
+
+  - id: "S4-05"
+    name: "Create QTS stories (/create-stories quality-tier-system)"
+    file: "production/epics/quality-tier-system/EPIC.md"
+    priority: must-have
+    status: ready-for-dev
+    owner: ""
+    estimate_days: 0.5
+    blocker: ""
+    completed: ""
+
+  - id: "S4-06"
+    name: "QTS: GPU tier detection + adaptive quality settings"
+    file: "production/epics/quality-tier-system/story-001.md"
+    priority: must-have
+    status: backlog
     owner: ""
     estimate_days: 1.0
-    blocker: "S3-02"
-    completed: "2026-05-23"
+    blocker: "S4-05"
+    completed: ""
+
+  - id: "S4-07"
+    name: "Create Coin Economy stories (/create-stories coin-economy)"
+    file: "production/epics/coin-economy/EPIC.md"
+    priority: must-have
+    status: ready-for-dev
+    owner: ""
+    estimate_days: 0.5
+    blocker: ""
+    completed: ""
+
+  - id: "S4-08"
+    name: "CE: SpendCoins / EarnCoins core + balance persistence"
+    file: "production/epics/coin-economy/story-001.md"
+    priority: must-have
+    status: backlog
+    owner: ""
+    estimate_days: 1.0
+    blocker: "S4-07"
+    completed: ""
 
   # ── SHOULD HAVE ────────────────────────────────────────────────────────────
 
-  - id: "S3-07"
-    name: "SP: PlayerPrefs audio prefs integration"
-    file: "production/epics/save-persistence/story-006.md"
-    priority: should-have
-    status: backlog
-    owner: ""
-    estimate_days: 0.5
-    blocker: "S3-02"
-    completed: ""
-
-  - id: "S3-08"
-    name: "SP <-> GSM integration test: board persistence round-trip"
-    file: "tests/integration/save-persistence/"
-    priority: should-have
-    status: backlog
-    owner: ""
-    estimate_days: 0.5
-    blocker: "S3-03,S3-05"
-    completed: ""
-
-  - id: "S3-09"
-    name: "Create Quality Tier System stories (/create-stories quality-tier-system)"
-    file: "production/epics/quality-tier-system/EPIC.md"
+  - id: "S4-09"
+    name: "Physical device access plan (AC-08b + AC-28 deferred evidence)"
+    file: "production/qa/device-plan.md"
     priority: should-have
     status: backlog
     owner: ""
@@ -111,21 +111,31 @@ stories:
     blocker: ""
     completed: ""
 
-  - id: "S3-10"
-    name: "QTS: GPU tier detection + adaptive quality settings"
-    file: "production/epics/quality-tier-system/story-001.md"
+  - id: "S4-10"
+    name: "Create Audio System stories (/create-stories audio-system)"
+    file: "production/epics/audio-system/EPIC.md"
+    priority: should-have
+    status: backlog
+    owner: ""
+    estimate_days: 0.5
+    blocker: ""
+    completed: ""
+
+  - id: "S4-11"
+    name: "CE: LevelCompleted coin reward (star multiplier, OnCoinsEarned event)"
+    file: "production/epics/coin-economy/story-002.md"
     priority: should-have
     status: backlog
     owner: ""
     estimate_days: 1.0
-    blocker: "S3-09"
+    blocker: "S4-08"
     completed: ""
 
   # ── NICE TO HAVE ───────────────────────────────────────────────────────────
 
-  - id: "S3-11"
-    name: "Create Audio System stories (/create-stories audio-system)"
-    file: "production/epics/audio-system/EPIC.md"
+  - id: "S4-12"
+    name: "Create Level Progression stories (/create-stories level-progression)"
+    file: "production/epics/level-progression/EPIC.md"
     priority: nice-to-have
     status: backlog
     owner: ""
@@ -133,12 +143,12 @@ stories:
     blocker: ""
     completed: ""
 
-  - id: "S3-12"
-    name: "TD-CI-001: GameCI license root-cause investigation (no CI changes)"
-    file: "production/tech-debt.md"
+  - id: "S4-13"
+    name: "LP: Level unlock core (LevelCompleted -> unlock next, persist CurrentLevelId)"
+    file: "production/epics/level-progression/story-001.md"
     priority: nice-to-have
     status: backlog
     owner: ""
-    estimate_days: 0.5
-    blocker: ""
+    estimate_days: 1.0
+    blocker: "S4-12,S4-08"
     completed: ""

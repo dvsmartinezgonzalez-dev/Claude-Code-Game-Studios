@@ -77,8 +77,8 @@ namespace BoltSort.SaveSystem
 
         /// <summary>
         /// Updates the in-memory coin balance and marks the save as dirty.
-        /// The dirty flag causes the W-2 OnApplicationPause path to persist the change.
-        /// Story 006 adds the <c>PlayerPrefs.Save()</c> call here.
+        /// Clamps negative values to 0 (AC-07). The dirty flag causes W-2 to persist the change.
+        /// Does not write PlayerPrefs — coin balance is persisted via the JSON file (W-1 or W-2).
         /// </summary>
         void SetCoinBalance(int balance);
 

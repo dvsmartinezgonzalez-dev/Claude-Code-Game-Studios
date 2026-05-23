@@ -24,7 +24,7 @@ namespace BoltSort.SaveSystem
     /// Story 003: OnApplicationPause W-2 write path.
     /// Story 004: iOS UnauthorizedAccessException retry loop; R-4 corruption recovery.
     /// Story 005: R-2 migration dispatch.
-    /// Story 006: SetCoinBalance PlayerPrefs.Save() call.
+    /// Story 006: SetCoinBalance (AC-07); PlayerPrefs.Save() on downgrade path (AC-10).
     ///
     /// FORBIDDEN: async void Awake() — Unity does not await Awake(); Start() on other
     /// MonoBehaviours fires before IsReady = true, breaking initialization contract (ADR-0003).
@@ -556,8 +556,10 @@ namespace BoltSort.SaveSystem
         {
             Debug.LogWarning($"[SaveSystem] R-5: schema_version={fileSchemaVersion} > MaxKnownVersion={MaxKnownVersion}. Loading defaults.");
             if (PlayerPrefs.GetInt(DowngradeNoticeShownKey, 0) == 0)
+            {
                 PlayerPrefs.SetInt(DowngradeNoticeShownKey, 1);
-            // PlayerPrefs.Save() deferred to Story 006.
+                PlayerPrefs.Save(); // AC-10: explicit save after every Set*() — OnApplicationQuit not guaranteed on Android OOM kill (ADR-0003)
+            }
         }
 
         /// <summary>Silently deletes save.tmp if it existed. Non-fatal on failure.</summary>
@@ -775,10 +777,9 @@ namespace BoltSort.SaveSystem
         {
             int clamped = Math.Clamp(balance, 0, int.MaxValue);
             if (clamped != balance)
-                Debug.LogWarning($"[SaveSystem] SetCoinBalance: balance={balance} clamped to {clamped} (AC-35).");
+                Debug.LogWarning($"[SaveSystem] SetCoinBalance: balance={balance} clamped to {clamped} (AC-07).");
             _saveData.economy.coin_balance = clamped;
             _isDirty = true;
-            // PlayerPrefs.Save() deferred to Story 006.
         }
 
         // ── App Pause (W-2) — Story 003 ──────────────────────────────────────────
