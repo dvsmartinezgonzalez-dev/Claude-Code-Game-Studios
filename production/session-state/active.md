@@ -641,6 +641,36 @@ After all 11 ADRs: run `/gate-check pre-production`.
 - Next recommended: /story-readiness production/epics/save-persistence/story-002-atomic-write-w1.md
 
 ## Session Extract — /dev-story 2026-05-22
+- Story: production/epics/save-persistence/story-003-w2-pause-write.md — W-2 Synchronous Pause Write and Dirty Flag
+- Files changed: Scripts/SaveSystem/SaveSystem.cs (OnApplicationPause → HandleApplicationPause internal), Tests/integration/save-persistence/SaveSystem_Pause_Test.cs (8 test methods), Tests/integration/save-persistence/Tests.Integration.SaveSystem.asmdef (created)
+- Blockers: Pause_W2AfterW1_DirtyCheckPostLock (concurrent W-1+W-2 with Awaitable) deferred to PlayMode — S3-08; design clarification: _writeLock release owned by WriteAtomicCore, not HandleApplicationPause (double-release bug avoided)
+- Next: /code-review Scripts/SaveSystem/SaveSystem.cs then /story-done story-003
+
+## Session Extract — /dev-story 2026-05-22
+- Story: production/epics/save-persistence/story-004-ios-retry-corruption-recovery.md — Cold-Start Read Cases R-4 and iOS Protection Retry
+- Files changed: Scripts/SaveSystem/SaveSystem.cs (PerformColdStartRead refactored, ReadWithIosRetry + HandleR4Corruption + AttemptTmpRecovery + WriteSaveJsonSync + ApplySubObjectDefaults added, retry seam fields + FirstUnlockReadFailureEmitted + EmitAnalyticsEvent added), Tests/helpers/save-persistence/FakeFileSystem.cs (SetReadResultByPath, ReadCallCount, UnauthorizedReadCount added), Tests/unit/save-persistence/SaveSystem_ReadCases_Test.cs (6 test methods, created)
+- Blockers: Two tests run ~5s each (Timeout + AtMost20Attempts) due to instance-level RetryIntervalMs seam that can't be injected before Awake — static pre-boot override needed (logged as tech debt)
+- Next: /code-review Scripts/SaveSystem/SaveSystem.cs Tests/helpers/save-persistence/FakeFileSystem.cs then /story-done story-004
+
+## Session Extract — /story-done 2026-05-23
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/save-persistence/story-004-ios-retry-corruption-recovery.md — Cold-Start Read Cases R-4 and iOS Protection Retry
+- Tech debt logged: 1 item (TD-SP-007: instance-level retry timing seam adds ~10s to test suite)
+- Next recommended: /story-readiness production/epics/save-persistence/story-005-schema-migration.md
+
+## Session Extract — /dev-story 2026-05-23
+- Story: production/epics/save-persistence/story-005-schema-migration.md — Schema Version Migration Runner
+- Files changed: Scripts/SaveSystem/SaveSystem.cs (ReadWithIosRetry return type changed to string, PerformColdStartRead refactored, RunMigrations + MigrateV0ToV1 + WriteSaveJsonSyncCore added), Scripts/SaveSystem/SaveData.cs (SaveDataLegacyV0 added), Tests/unit/save-persistence/SaveSystem_Migration_Test.cs (8 test methods, created)
+- Blockers: None — WriteSaveJsonSyncCore extract cleanly solves AC-29 exception propagation
+- Next: /code-review Scripts/SaveSystem/SaveSystem.cs then /story-done story-005
+
+## Session Extract — /story-done 2026-05-22
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/save-persistence/story-003-w2-pause-write.md — W-2 Synchronous Pause Write and Dirty Flag
+- Tech debt logged: 2 items (TD-SP-005 AC-07 OnApplicationFocus gap, TD-SP-006 PlayMode W-1+W-2 concurrent test)
+- Next recommended: /story-readiness production/epics/save-persistence/story-004-ios-retry-corruption-recovery.md
+
+## Session Extract — /dev-story 2026-05-22
 - Story: production/epics/save-persistence/story-002-atomic-write-w1.md — WriteCompletionAtomic W-1 Background Write
 - Files changed: Scripts/SaveSystem/SaveSystem.cs (WriteCompletionAtomic, WriteAtomicCore, ApplyCompletionToMemory, CaptureSnapshot, PushUndoMove, GetUndoStack, _writeLock), Scripts/SaveSystem/ISaveSystem.cs (already had PushUndoMove/GetUndoStack)
 - Test written: Tests/unit/save-persistence/SaveSystem_AtomicWrite_Test.cs (20 test methods)
@@ -652,3 +682,10 @@ After all 11 ADRs: run `/gate-check pre-production`.
 - Story: production/epics/save-persistence/story-002-atomic-write-w1.md — WriteCompletionAtomic W-1 Background Write
 - Tech debt logged: 4 items (TD-SP-001 volatile fields, TD-SP-002 AC-35 no test, TD-SP-003 PlayMode tests deferred, TD-SP-004 method length)
 - Next recommended: /story-readiness production/epics/save-persistence/story-003-w2-pause-write.md
+
+## Session Extract — /story-done 2026-05-23
+- Verdict: COMPLETE
+- Story: production/epics/save-persistence/story-005-schema-migration.md — Schema Version Migration Runner
+- Tech debt logged: None
+- Code review fixes applied this session: WriteAtomicCore(byte[]) signature (JsonUtility main-thread fix), internal IsDirty property, AC-29 dirty-flag test assertion, AC-34 undo_stack null-guard assertion
+- Next recommended: All must-have SP stories complete. Should-have: S3-07 (SP: PlayerPrefs audio prefs) or S3-08 (SP <-> GSM integration test)

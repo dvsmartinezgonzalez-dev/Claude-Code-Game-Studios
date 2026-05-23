@@ -14,7 +14,7 @@ goal: "Deliver the Save & Persistence system and scaffold the Quality Tier Syste
 start: "2026-05-30"
 end: "2026-06-13"
 generated: "2026-05-22"
-updated: "2026-05-22"  # S3-01 done (stories created), S3-02 done (Story 001), S3-03 done (Story 002)
+updated: "2026-05-23"  # S3-01 done, S3-02 (Story 001), S3-03 (Story 002), S3-05 (Story 003), S3-04 done (Story 004), S3-06 done (Story 005)
 
 stories:
   # ── MUST HAVE ──────────────────────────────────────────────────────────────
@@ -51,33 +51,33 @@ stories:
 
   - id: "S3-04"
     name: "SP: iOS cold-start file protection retry (UnauthorizedAccessException, 250ms, 5s timeout)"
-    file: "production/epics/save-persistence/story-003.md"
+    file: "production/epics/save-persistence/story-004-ios-retry-corruption-recovery.md"
     priority: must-have
-    status: backlog
+    status: done
     owner: ""
     estimate_days: 1.0
     blocker: "S3-02"
-    completed: ""
+    completed: "2026-05-23"
 
   - id: "S3-05"
     name: "SP: W-2 synchronous OnApplicationPause write"
-    file: "production/epics/save-persistence/story-004.md"
+    file: "production/epics/save-persistence/story-003-w2-pause-write.md"
     priority: must-have
-    status: backlog
+    status: done
     owner: ""
     estimate_days: 0.5
     blocker: "S3-03"
-    completed: ""
+    completed: "2026-05-22"
 
   - id: "S3-06"
     name: "SP: Schema versioning + migration runner"
-    file: "production/epics/save-persistence/story-005.md"
+    file: "production/epics/save-persistence/story-005-schema-migration.md"
     priority: must-have
-    status: backlog
+    status: done
     owner: ""
     estimate_days: 1.0
     blocker: "S3-02"
-    completed: ""
+    completed: "2026-05-23"
 
   # ── SHOULD HAVE ────────────────────────────────────────────────────────────
 

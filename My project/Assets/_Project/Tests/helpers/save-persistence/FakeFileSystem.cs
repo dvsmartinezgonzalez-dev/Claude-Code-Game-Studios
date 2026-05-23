@@ -14,9 +14,11 @@ namespace BoltSort.Tests.Helpers.SavePersistence
     ///   3. Control which paths "exist" via <see cref="SetFileExists"/>.
     ///   4. Record whether <see cref="Delete"/> was called and for which paths.
     ///   5. Record all bytes written via <see cref="WriteAllBytes"/>.
+    ///   6. Return per-path content or exceptions via <see cref="SetReadResultByPath"/>.
+    ///   7. Count total read calls and calls that threw <see cref="UnauthorizedAccessException"/>.
     /// </summary>
     /// <remarks>
-    /// Shared helper for Stories 001–005 unit tests.
+    /// Shared helper for Stories 001–006 unit tests.
     /// Shared dependency: Tests.Helpers.SavePersistence assembly.
     /// </remarks>
     internal sealed class FakeFileSystem : IFileSystem
@@ -26,14 +28,52 @@ namespace BoltSort.Tests.Helpers.SavePersistence
         /// <summary>
         /// When set, <see cref="ReadAllText"/> throws this exception instead of returning content.
         /// Set to null (default) to return <see cref="ReadAllTextResult"/> normally.
+        /// Takes precedence over <see cref="ReadAllTextByPath"/> for ALL paths.
         /// </summary>
         public Exception ReadException { get; set; }
 
         /// <summary>
-        /// Content returned by <see cref="ReadAllText"/> when no exception is configured.
+        /// Content returned by <see cref="ReadAllText"/> when no exception is configured
+        /// and no per-path override is registered for the requested path.
         /// Null simulates a <see cref="FileNotFoundException"/> (file not found).
         /// </summary>
         public string ReadAllTextResult { get; set; }
+
+        // ── Per-path read control ─────────────────────────────────────────────────
+
+        private readonly Dictionary<string, Queue<object>> _readQueueByPath
+            = new Dictionary<string, Queue<object>>(StringComparer.Ordinal);
+
+        /// <summary>
+        /// Enqueues a response for the next <see cref="ReadAllText"/> call for <paramref name="path"/>.
+        /// Each call to <see cref="ReadAllText"/> dequeues one entry:
+        ///   • <c>string</c> — returned as file content.
+        ///   • <c>Exception</c> — thrown.
+        ///   • <c>null</c> — simulates <see cref="FileNotFoundException"/>.
+        /// When the queue for a path is exhausted, falls back to <see cref="ReadAllTextResult"/>.
+        /// Allows per-path sequencing (e.g. fail 2× then succeed) needed for iOS retry tests.
+        /// </summary>
+        public void SetReadResultByPath(string path, params object[] results)
+        {
+            if (!_readQueueByPath.TryGetValue(path, out var queue))
+            {
+                queue = new Queue<object>();
+                _readQueueByPath[path] = queue;
+            }
+            foreach (var r in results)
+                queue.Enqueue(r);
+        }
+
+        // ── Read-call counters ────────────────────────────────────────────────────
+
+        /// <summary>Total number of <see cref="ReadAllText"/> calls made across all paths.</summary>
+        public int ReadCallCount { get; private set; }
+
+        /// <summary>
+        /// Number of <see cref="ReadAllText"/> calls that threw <see cref="UnauthorizedAccessException"/>,
+        /// whether from <see cref="ReadException"/>, a per-path queue entry, or any other source.
+        /// </summary>
+        public int UnauthorizedReadCount { get; private set; }
 
         // ── FileExists control ────────────────────────────────────────────────────
 
@@ -115,9 +155,34 @@ namespace BoltSort.Tests.Helpers.SavePersistence
         /// <inheritdoc/>
         public string ReadAllText(string path)
         {
-            if (ReadException != null)
-                throw ReadException;
+            ReadCallCount++;
 
+            // Global exception override takes priority over everything.
+            if (ReadException != null)
+            {
+                if (ReadException is UnauthorizedAccessException)
+                    UnauthorizedReadCount++;
+                throw ReadException;
+            }
+
+            // Per-path queue: dequeue one entry if a queue exists and has items.
+            if (_readQueueByPath.TryGetValue(path, out var queue) && queue.Count > 0)
+            {
+                object entry = queue.Dequeue();
+                switch (entry)
+                {
+                    case Exception ex:
+                        if (ex is UnauthorizedAccessException)
+                            UnauthorizedReadCount++;
+                        throw ex;
+                    case string s:
+                        return s;
+                    case null:
+                        throw new FileNotFoundException($"FakeFileSystem: file not found at '{path}'.", path);
+                }
+            }
+
+            // Fall back to global ReadAllTextResult.
             if (ReadAllTextResult == null)
                 throw new FileNotFoundException($"FakeFileSystem: file not found at '{path}'.", path);
 

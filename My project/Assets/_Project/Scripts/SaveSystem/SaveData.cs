@@ -113,4 +113,34 @@ namespace BoltSort.SaveSystem
         /// <summary>Flat-namespace destination stack index (to).</summary>
         public int t;
     }
+
+    // ── Legacy Schema Classes ─────────────────────────────────────────────────────
+    //
+    // Used ONLY by migration code in SaveSystem.MigrateV0ToV1.
+    // v0 schema was a flat document: { current_level_id, completion_record, coin_balance }
+    // with no nested sub-objects. Schema version 0 predates production; files are only
+    // encountered when upgrading from a very early build.
+
+    /// <summary>
+    /// Flat v0 save document layout. Deserialized only during R-2 migration.
+    /// Must not be used anywhere outside <c>SaveSystem.MigrateV0ToV1</c>.
+    /// </summary>
+    [Serializable]
+    internal class SaveDataLegacyV0
+    {
+        /// <summary>Schema version — always 0 for this class; absent keys deserialize as 0.</summary>
+        public int schema_version;
+
+        /// <summary>Flat current level field (v0 equivalent of <c>level_progress.current_level_id</c>).</summary>
+        public int current_level_id = 1;
+
+        /// <summary>Flat coin balance field (v0 equivalent of <c>economy.coin_balance</c>).</summary>
+        public int coin_balance;
+
+        /// <summary>
+        /// Per-level completion records. v0 used the same <see cref="CompletionRecord"/> struct
+        /// at the root level rather than nested under <c>level_progress</c>.
+        /// </summary>
+        public List<CompletionRecord> completion_record = new List<CompletionRecord>();
+    }
 }

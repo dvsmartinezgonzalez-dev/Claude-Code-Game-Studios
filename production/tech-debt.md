@@ -122,3 +122,71 @@ Add a `SaveSystem_AtomicWrite_PlayMode_Test.cs` to `My project/Assets/_Project/T
 ### Resolution Plan
 
 Refactor during Story 004 (iOS retry) or Story 005 (migration) when additional cold-start logic is added and the method would grow further. Do not refactor in isolation — wait for a story that already touches the method.
+
+---
+
+## TD-SP-005 — SaveSystem: AC-07 `OnApplicationFocus` coverage gap
+
+| Field | Value |
+|-------|-------|
+| **Logged** | 2026-05-22 |
+| **Severity** | Low |
+| **Area** | Save & Persistence — W-2 |
+| **Blocking** | No |
+| **Story** | production/epics/save-persistence/story-003-w2-pause-write.md |
+
+### Description
+
+AC-07 specifies that `OnApplicationFocus(false)` must not trigger a write. The test `Pause_PauseStatusFalse_NoWrite` verifies that `HandleApplicationPause(false, ...)` is a no-op, but does not verify the actual `OnApplicationFocus` callback. If `OnApplicationFocus` were accidentally implemented with write logic in a future story, the existing test would not catch it.
+
+### Resolution Plan
+
+Add a reflection test in the S3-08 integration story (or a targeted cleanup story): `typeof(SaveSystem).GetMethod("OnApplicationFocus", ...)` — assert it either does not exist or has no write path. Alternatively, add a `HandleApplicationFocus` seam and a corresponding test.
+
+---
+
+## TD-SP-006 — SaveSystem: PlayMode test for W-1+W-2 concurrent dirty-flag race not written
+
+| Field | Value |
+|-------|-------|
+| **Logged** | 2026-05-22 |
+| **Severity** | Medium |
+| **Area** | Save & Persistence — Concurrency |
+| **Blocking** | No (post-lock dirty check is architecturally correct per ADR-0003) |
+| **Story** | production/epics/save-persistence/story-003-w2-pause-write.md |
+
+### Description
+
+`Pause_W2AfterW1_DirtyCheckPostLock` — the test that verifies W-2 blocks on `_writeLock.Wait()` while W-1 holds it, then sees `_isDirty=false` after W-1 completes — requires a concurrent W-1 `Awaitable.BackgroundThreadAsync()` call, which is only available in PlayMode. The EditMode proxy (`Pause_PostLockDirtyCheck_SkipsWriteWhenDirtyFalse`) verifies lock-release semantics but not the concurrent race scenario.
+
+### Resolution Plan
+
+Implement as a `[UnityTest]` PlayMode test in the SP↔GSM integration story (S3-08).
+
+---
+
+## TD-SP-007 — SaveSystem: iOS retry timing seam is instance-level — two tests run ~5s each
+
+| Field | Value |
+|-------|-------|
+| **Logged** | 2026-05-23 |
+| **Severity** | Low (CI speed only; tests are correct) |
+| **Area** | Save & Persistence — iOS cold-start |
+| **Blocking** | No |
+| **Story** | production/epics/save-persistence/story-004-ios-retry-corruption-recovery.md |
+
+### Description
+
+`SaveSystem.RetryIntervalMs` and `RetryTimeoutMs` are instance-level `internal int` fields. Tests cannot set them before `AddComponent<SaveSystem>()` fires `Awake()` because Unity calls `Awake()` synchronously inside `AddComponent`. Two tests (`Read_UnauthorizedAccessException_Timeout_FallsBackToDefaults` and `Read_RetryInterval_AtMost20Attempts_ThenDefaults`) therefore run at the production 250ms interval × 20 retries = ~5 seconds each, adding ~10 seconds to the EditMode test suite.
+
+### Resolution Plan
+
+Add a static pre-boot override following the `SetFileSystemForTesting` pattern:
+```csharp
+internal static void SetRetryParametersForTesting(int intervalMs, int timeoutMs)
+{
+    s_testRetryIntervalMs = intervalMs;
+    s_testRetryTimeoutMs  = timeoutMs;
+}
+```
+Read these in `ReadWithIosRetry` (e.g. `int interval = s_testRetryIntervalMs > 0 ? s_testRetryIntervalMs : RetryIntervalMs;`). Clear in `ClearInstanceForTesting()`. Update the two affected tests to use 10ms/100ms timing. Implement in Story 005 or as a standalone cleanup story before Alpha gate. The test uses `FakeFileSystem.WriteDelay` to hold the W-1 lock, fires `HandleApplicationPause(true, ...)` on the main thread which blocks on `Wait()`, then lets W-1 complete. Assert no redundant file write from W-2. This is a **blocking open item** for S3-08 — not merely advisory.

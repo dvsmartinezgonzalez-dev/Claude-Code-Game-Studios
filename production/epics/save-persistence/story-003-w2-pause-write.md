@@ -1,7 +1,7 @@
 # Story 003: W-2 Synchronous Pause Write and Dirty Flag
 
 > **Epic**: Save & Persistence
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Integration
 > **Estimate**: 0.5 days
@@ -142,7 +142,7 @@ void OnApplicationPause(bool pauseStatus) {
 **Story Type**: Integration
 **Required evidence**: `tests/integration/save-persistence/SaveSystem_Pause_Test.cs` — must exist and all tests pass
 
-**Status**: [ ] Not yet created
+**Status**: [x] Created — `My project/Assets/_Project/Tests/integration/save-persistence/SaveSystem_Pause_Test.cs` (8 test methods)
 
 ---
 
@@ -150,3 +150,16 @@ void OnApplicationPause(bool pauseStatus) {
 
 - Depends on: Story 001 (boot, IFileSystem seam), Story 002 (W-1 path, `_writeLock` established)
 - Unlocks: Story 008 (SP↔GSM round-trip integration test, which exercises W-2)
+
+---
+
+## Completion Notes
+**Completed**: 2026-05-22
+**Criteria**: 5/6 passing (1 advisory deferred — AC-08b physical device timing)
+**Deviations**:
+- ADVISORY: AC-07 test uses `HandleApplicationPause(false, ...)` as proxy for `OnApplicationFocus`; actual `OnApplicationFocus` callback not exercised. Logged as TD-SP-005.
+- ADVISORY: `Pause_W2AfterW1_DirtyCheckPostLock` concurrent race deferred to PlayMode in S3-08. Logged as TD-SP-006.
+- ADVISORY: `_writeLock.Wait` timeout 3 000 ms is a hardcoded platform constant (acceptable — not a game balance value).
+- Code review: `_writeLock.Wait` timeout added + `WriteAtomicCore` doc comment fixed during code review before story close.
+**Test Evidence**: Integration — `My project/Assets/_Project/Tests/integration/save-persistence/SaveSystem_Pause_Test.cs` (8 test methods, all EditMode)
+**Code Review**: Complete — CHANGES REQUIRED verdict; 2 issues resolved (Wait timeout, doc comment)

@@ -59,7 +59,12 @@ namespace BoltSort.Tests.Unit.SaveSystem
         }
 
         /// <summary>Triggers WriteAtomicCore directly (synchronous, no async wrapper needed).</summary>
-        private void WriteCore() => _saveSystem.WriteAtomicCore(_saveSystem.CaptureSnapshot());
+        private void WriteCore()
+        {
+            SaveData snapshot = _saveSystem.CaptureSnapshot();
+            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(UnityEngine.JsonUtility.ToJson(snapshot));
+            _saveSystem.WriteAtomicCore(bytes);
+        }
 
         // ── AC-20: best_stars = 0 is a no-op ─────────────────────────────────────
 

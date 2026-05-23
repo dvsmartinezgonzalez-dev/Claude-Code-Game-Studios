@@ -1,12 +1,12 @@
 # Story 005: Schema Version Migration Runner
 
 > **Epic**: Save & Persistence
-> **Status**: Ready
+> **Status**: Complete
 > **Layer**: Foundation
 > **Type**: Logic
 > **Estimate**: 1.0 day
 > **Manifest Version**: 2026-05-12
-> **Last Updated**: 2026-05-22
+> **Last Updated**: 2026-05-23
 
 ## Context
 
@@ -34,12 +34,12 @@
 
 *From GDD `design/gdd/save-persistence.md`, scoped to this story:*
 
-- [ ] **AC-14** — `schema_version = 0` in file: `migrate_v0_to_v1` runs; result has nested `level_progress` + `economy` structure; `schema_version = 1` in written file
-- [ ] **AC-18** — `schema_version` key absent in valid JSON: treated as v0; migration runs; NOT treated as R-1
-- [ ] **AC-22** *(migration aspect)* — `completion_version` present on v0 completion records is NOT mutated by `migrate_v0_to_v1`; write-once contract respected
-- [ ] **AC-29** — Post-migration write-back throws `IOException`: in-memory migrated state retained (not reverted); dirty flag `true`; failure logged with migrated-from schema version; `IsReady = true`; migration re-runs on next cold start
-- [ ] **AC-31** — `SaveSystem.MaxKnownVersion` constant in code == 1 (matches GDD); implement as unit assertion: `Assert.AreEqual(1, SaveSystem.MaxKnownVersion)`
-- [ ] **AC-34** — Running `migrate_v0_to_v1` twice on the same in-memory state produces identical output (idempotency)
+- [x] **AC-14** — `schema_version = 0` in file: `migrate_v0_to_v1` runs; result has nested `level_progress` + `economy` structure; `schema_version = 1` in written file
+- [x] **AC-18** — `schema_version` key absent in valid JSON: treated as v0; migration runs; NOT treated as R-1
+- [x] **AC-22** *(migration aspect)* — `completion_version` present on v0 completion records is NOT mutated by `migrate_v0_to_v1`; write-once contract respected
+- [x] **AC-29** — Post-migration write-back throws `IOException`: in-memory migrated state retained (not reverted); dirty flag `true`; failure logged with migrated-from schema version; `IsReady = true`; migration re-runs on next cold start
+- [x] **AC-31** — `SaveSystem.MaxKnownVersion` constant in code == 1 (matches GDD); implement as unit assertion: `Assert.AreEqual(1, SaveSystem.MaxKnownVersion)`
+- [x] **AC-34** — Running `migrate_v0_to_v1` twice on the same in-memory state produces identical output (idempotency)
 
 ---
 
@@ -51,18 +51,18 @@
 ```csharp
 private SaveData RunMigrations(SaveData data) {
     // Migrations apply in version order; each is a pure function
-    if (data.schemaVersion < 1) {
+    if (data.schema_version < 1) {
         data = MigrateV0ToV1(data);
     }
-    // Future: if (data.schemaVersion < 2) { data = MigrateV1ToV2(data); }
+    // Future: if (data.schema_version < 2) { data = MigrateV1ToV2(data); }
 
     // Write-back after all migrations — synchronous (no await)
     try {
-        PerformSynchronousWrite(data);  // same write-then-swap as W-2
+        WriteSaveJsonSync(data);  // same write-then-swap as Story 004; already exists
         _isDirty = false;
     } catch (IOException ex) {
         _isDirty = true;  // retry on next W-1 or W-2
-        LogAnalytics("migration_write_failure", data.schemaVersion, ex);
+        Debug.LogWarning($"[SaveSystem] R-2 write-back failed (from v{data.schema_version}): {ex.Message}");
     }
     return data;
 }
@@ -74,13 +74,13 @@ private SaveData RunMigrations(SaveData data) {
 // v1: nested under level_progress + economy
 ```
 Migration must:
-1. Restructure flat v0 fields into nested `levelProgress` + `economy` objects
-2. Initialize `undoStack = []` (empty array — v0 has no undo history)
-3. Do NOT set `completionVersion` on any existing record (write-once contract)
-4. Set `schemaVersion = 1`
+1. Restructure flat v0 fields into nested `level_progress` + `economy` objects
+2. Initialize `undo_stack = []` (empty list — v0 has no undo history)
+3. Do NOT set `completion_version` on any existing record (write-once contract)
+4. Set `schema_version = 1`
 5. Be idempotent: running twice on v1 data returns identical v1 data unchanged
 
-**`completion_version` write-once enforcement**: Before any field assignment in a migrator, check if the target record already has `completionVersion` set (non-null, non-empty). If set, skip. Never synthesise a value for an empty record.
+**`completion_version` write-once enforcement**: Before any field assignment in a migrator, check if the target record already has `completion_version` set (non-null, non-empty string — remember `JsonUtility` serializes null as `""`). If set, skip. Never synthesise a value for an empty record.
 
 **`MAX_KNOWN_VERSION` constant**: Declare as `public const int MaxKnownVersion = 1;` on `SaveSystem`. Write a unit test asserting `Assert.AreEqual(1, SaveSystem.MaxKnownVersion)` — this acts as a CI lint that forces the test to be updated when a new schema version is introduced.
 
@@ -145,7 +145,7 @@ Migration must:
 **Story Type**: Logic
 **Required evidence**: `tests/unit/save-persistence/SaveSystem_Migration_Test.cs` — must exist and all tests pass
 
-**Status**: [ ] Not yet created
+**Status**: [x] `My project/Assets/_Project/Tests/unit/save-persistence/SaveSystem_Migration_Test.cs` — 7 tests, all ACs covered
 
 ---
 
@@ -153,3 +153,13 @@ Migration must:
 
 - Depends on: Story 001 must be DONE (cold-start dispatch routing, write-back helper, `IsReady` contract)
 - Unlocks: None directly — parallel with Stories 002, 004, 006
+
+---
+
+## Completion Notes
+**Completed**: 2026-05-23
+**Criteria**: 6/6 passing
+**Deviations**: None. ADR-0003 violation (JsonUtility.ToJson on background thread in WriteAtomicCore) detected during /code-review and resolved before story-done — WriteAtomicCore signature changed from SaveData to byte[]; serialization now occurs on main thread in both W-1 and W-2 paths.
+**Scope note**: SaveSystem_AtomicWrite_Test.cs updated to match new WriteAtomicCore(byte[]) signature — out of story scope but required by the fix.
+**Test Evidence**: Logic — `My project/Assets/_Project/Tests/unit/save-persistence/SaveSystem_Migration_Test.cs` (7 tests, all ACs covered, AC-29 dirty-flag now verifiable via internal IsDirty property added this session)
+**Code Review**: Complete — /code-review ran this session; CHANGES REQUIRED verdict resolved before story-done.
