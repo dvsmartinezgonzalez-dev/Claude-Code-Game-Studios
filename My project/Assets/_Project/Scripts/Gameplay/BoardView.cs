@@ -59,6 +59,8 @@ namespace BoltSort.Gameplay
 
             gsm.OnLevelLoaded  += OnLevelLoaded;
             sm.OnMoveCommitted += OnMoveCommitted;
+            // No rejection animation — complete the handshake immediately so FSM returns to BoltSelected.
+            sm.OnMoveRejected  += (_, _, _, _) => _sortMechanic.OnRejectionAnimationComplete();
         }
 
         private void OnLevelLoaded(int levelId, int colorCount, int stackDepth,
@@ -220,7 +222,7 @@ namespace BoltSort.Gameplay
                         if (sr != null)
                         {
                             sr.transform.localPosition = new Vector3(0f,
-                                topSlot * _boltStep + _boltStep * 0.7f, 0f);
+                                topSlot * _boltStep + 0.3f, 0f);
 
                             Color c = sr.color;
                             sr.color = new Color(

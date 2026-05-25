@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem.UI;
 
 namespace BoltSort.Gameplay
 {
@@ -77,7 +78,7 @@ namespace BoltSort.Gameplay
             {
                 var esGO = new GameObject("EventSystem");
                 esGO.AddComponent<EventSystem>();
-                esGO.AddComponent<StandaloneInputModule>();
+                esGO.AddComponent<InputSystemUIInputModule>();
             }
 
             Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
