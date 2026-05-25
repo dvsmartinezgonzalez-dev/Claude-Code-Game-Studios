@@ -7,8 +7,7 @@ namespace BoltSort.Gameplay
     /// Renders the bolt-sorting board as coloured world-space sprites.
     /// Each column has a BoxCollider2D on the "BoltStacks" layer so
     /// SortMechanic can detect taps via Physics2D.OverlapPoint.
-    /// Calls OnAnimationComplete() immediately after each move to simulate
-    /// instant animation (no animation system wired yet).
+    /// Bolts are rendered as procedural anti-aliased circle sprites.
     /// </summary>
     public class BoardView : MonoBehaviour
     {
@@ -20,19 +19,21 @@ namespace BoltSort.Gameplay
 
         private static readonly Color[] BoltColors =
         {
-            new Color(0.18f, 0.18f, 0.22f), // 0 – empty
-            new Color(0.95f, 0.22f, 0.18f), // 1 – red
-            new Color(0.20f, 0.55f, 0.98f), // 2 – blue
-            new Color(0.18f, 0.82f, 0.28f), // 3 – green
-            new Color(0.98f, 0.86f, 0.10f), // 4 – yellow
-            new Color(0.98f, 0.52f, 0.10f), // 5 – orange
-            new Color(0.68f, 0.22f, 0.98f), // 6 – purple
-            new Color(0.10f, 0.88f, 0.88f), // 7 – cyan
-            new Color(0.98f, 0.22f, 0.78f), // 8 – magenta
+            new Color(0.22f, 0.24f, 0.32f, 0.35f), // 0 – empty slot (ghost)
+            new Color(0.95f, 0.22f, 0.18f),         // 1 – red
+            new Color(0.20f, 0.52f, 0.97f),         // 2 – blue
+            new Color(0.18f, 0.82f, 0.28f),         // 3 – green
+            new Color(0.98f, 0.86f, 0.10f),         // 4 – yellow
+            new Color(0.98f, 0.52f, 0.10f),         // 5 – orange
+            new Color(0.68f, 0.22f, 0.98f),         // 6 – purple
+            new Color(0.10f, 0.88f, 0.88f),         // 7 – cyan
+            new Color(0.98f, 0.22f, 0.78f),         // 8 – magenta
         };
 
-        private static readonly Color ColBgColor  = new Color(0.15f, 0.16f, 0.20f);
-        private static readonly Color TempBgColor = new Color(0.22f, 0.20f, 0.16f);
+        private static readonly Color ColBgColor      = new Color(0.15f, 0.16f, 0.20f);
+        private static readonly Color TempBgColor     = new Color(0.22f, 0.20f, 0.16f);
+        private static readonly Color ColOutlineColor  = new Color(0.30f, 0.35f, 0.50f);
+        private static readonly Color TempOutlineColor = new Color(0.50f, 0.40f, 0.25f);
 
         private BoltSort.GameStateManager.GameStateManager _gsm;
         private BoltSort.SortMechanic.SortMechanic         _sortMechanic;
@@ -45,6 +46,7 @@ namespace BoltSort.Gameplay
         private SpriteRenderer[][] _boltRenderers; // [col][slot], slot 0 = bottom
 
         private static Sprite _sharedSprite;
+        private static Sprite _boltSprite;
 
         public void Initialize(
             BoltSort.GameStateManager.GameStateManager gsm,
@@ -53,6 +55,7 @@ namespace BoltSort.Gameplay
             _gsm          = gsm;
             _sortMechanic = sm;
             _sharedSprite = _sharedSprite != null ? _sharedSprite : CreateWhiteSprite();
+            _boltSprite   = _boltSprite   != null ? _boltSprite   : CreateCircleSprite();
 
             gsm.OnLevelLoaded  += OnLevelLoaded;
             sm.OnMoveCommitted += OnMoveCommitted;
@@ -70,9 +73,8 @@ namespace BoltSort.Gameplay
 
         private void OnMoveCommitted(int src, int dst, int colorId, long seqId)
         {
-            // GSM has already mutated the board (it subscribed first in GameBootstrap.Awake).
-            // Complete the FSM animation handshake so SortMechanic returns to Idle immediately
-            // instead of waiting for the 1.5 s watchdog.
+            // GSM has already mutated the board. Complete the FSM animation handshake
+            // so SortMechanic returns to Idle instead of waiting for the watchdog.
             _sortMechanic.OnAnimationComplete(seqId);
         }
 
@@ -83,7 +85,6 @@ namespace BoltSort.Gameplay
 
             int totalCols = _colorCount + _tempSlotCount;
 
-            // Fit all columns into the visible camera frustum at runtime
             Camera cam          = Camera.main;
             float camHalfWidth  = cam != null ? cam.orthographicSize * cam.aspect : 6f;
             float camHalfHeight = cam != null ? cam.orthographicSize : 6f;
@@ -124,6 +125,16 @@ namespace BoltSort.Gameplay
                 colGO.transform.localPosition = new Vector3(colX, _boardCenterY, 0f);
                 colGO.layer = boltStackLayer;
 
+                // Outline (behind background, slightly larger)
+                var outlineGO = new GameObject("Outline");
+                outlineGO.transform.SetParent(colGO.transform, false);
+                outlineGO.transform.localPosition = new Vector3(0f, (depth - 1) * 0.5f * _boltStep, 0f);
+                outlineGO.transform.localScale    = new Vector3(_colWidth + 0.14f, depth * _boltStep + 0.26f, 1f);
+                var outlineSr = outlineGO.AddComponent<SpriteRenderer>();
+                outlineSr.sprite       = _sharedSprite;
+                outlineSr.color        = isTemp ? TempOutlineColor : ColOutlineColor;
+                outlineSr.sortingOrder = -1;
+
                 // Background
                 var bgGO = new GameObject("Background");
                 bgGO.transform.SetParent(colGO.transform, false);
@@ -142,7 +153,7 @@ namespace BoltSort.Gameplay
                 var bsi = colGO.AddComponent<BoltSort.SortMechanic.BoltStackIndex>();
                 bsi.Initialize(col);
 
-                // Per-slot renderers
+                // Per-slot bolt renderers (circle sprite)
                 _boltRenderers[col] = new SpriteRenderer[depth];
                 for (int slot = 0; slot < depth; slot++)
                 {
@@ -152,7 +163,7 @@ namespace BoltSort.Gameplay
                     boltGO.transform.localScale    = new Vector3(_colWidth - 0.08f, _boltHeight, 1f);
 
                     var sr = boltGO.AddComponent<SpriteRenderer>();
-                    sr.sprite       = _sharedSprite;
+                    sr.sprite       = _boltSprite;
                     sr.sortingOrder = 1;
                     _boltRenderers[col][slot] = sr;
                 }
@@ -182,7 +193,7 @@ namespace BoltSort.Gameplay
                     var sr = _boltRenderers[col][slot];
                     if (sr == null) continue;
 
-                    // Reset to base position every frame so the lift is always relative to ground truth
+                    // Reset to base position every frame so lift is always relative to ground truth
                     sr.transform.localPosition = new Vector3(0f, slot * _boltStep, 0f);
 
                     int colorId = (column != null && slot < column.Count) ? column[slot] : 0;
@@ -208,16 +219,15 @@ namespace BoltSort.Gameplay
                         var sr = _boltRenderers[heldCol][topSlot];
                         if (sr != null)
                         {
-                            // Lift bolt upward by 70% of a slot step
                             sr.transform.localPosition = new Vector3(0f,
                                 topSlot * _boltStep + _boltStep * 0.7f, 0f);
 
-                            // Brighten to make the held bolt obvious
                             Color c = sr.color;
                             sr.color = new Color(
                                 Mathf.Min(c.r * 1.5f + 0.15f, 1f),
                                 Mathf.Min(c.g * 1.5f + 0.15f, 1f),
-                                Mathf.Min(c.b * 1.5f + 0.15f, 1f));
+                                Mathf.Min(c.b * 1.5f + 0.15f, 1f),
+                                1f);
                         }
                     }
                 }
@@ -230,6 +240,34 @@ namespace BoltSort.Gameplay
             tex.SetPixels(new[] { Color.white, Color.white, Color.white, Color.white });
             tex.Apply();
             return Sprite.Create(tex, new Rect(0, 0, 2, 2), Vector2.one * 0.5f, 2f);
+        }
+
+        private static Sprite CreateCircleSprite()
+        {
+            const int size = 64;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+                { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+            Color[] px = new Color[size * size];
+            float c = size * 0.5f, r = c - 1f;
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dx   = x + 0.5f - c, dy = y + 0.5f - c;
+                    float dist = Mathf.Sqrt(dx * dx + dy * dy);
+                    float alpha = Mathf.Clamp01((r - dist) * 2f);
+                    // Radial shading: center bright, rim darker
+                    float shade = Mathf.Lerp(1f, 0.70f, Mathf.Clamp01(dist / r));
+                    // Specular highlight at upper-left quadrant
+                    float hlDx   = dx + r * 0.28f, hlDy = dy + r * 0.28f;
+                    float hlDist = Mathf.Sqrt(hlDx * hlDx + hlDy * hlDy);
+                    shade = Mathf.Min(1f, shade + Mathf.Clamp01(1f - hlDist / (r * 0.38f)) * 0.45f);
+                    px[y * size + x] = new Color(shade, shade, shade, alpha);
+                }
+            }
+            tex.SetPixels(px);
+            tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, size, size), Vector2.one * 0.5f, size);
         }
     }
 }
