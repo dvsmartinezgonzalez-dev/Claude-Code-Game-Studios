@@ -22,6 +22,7 @@ namespace BoltSort.Gameplay
         private void Awake()
         {
             EnsureCamera();
+            ConfigureCamera();
             CreateSystems();
 
             _lds.LoadCatalogueTextAsync = LoadLevelsFromResources;
@@ -92,12 +93,20 @@ namespace BoltSort.Gameplay
             var camGO = new GameObject("Main Camera");
             camGO.tag = "MainCamera";
             var cam = camGO.AddComponent<Camera>();
-            cam.clearFlags       = CameraClearFlags.SolidColor;
-            cam.backgroundColor  = new Color(0.08f, 0.09f, 0.13f);
-            cam.orthographic     = true;
-            cam.orthographicSize = 6f;
+            cam.clearFlags = CameraClearFlags.SolidColor;
+            cam.orthographic = true;
             cam.transform.position = new Vector3(0f, 0f, -10f);
             camGO.AddComponent<AudioListener>();
+        }
+
+        // Applies portrait-first camera settings at runtime regardless of scene defaults.
+        private void ConfigureCamera()
+        {
+            Camera cam = Camera.main;
+            if (cam == null) return;
+            cam.backgroundColor  = new Color(0.051f, 0.051f, 0.102f, 1f); // #0D0D1A
+            cam.orthographicSize = 9.6f;  // 19.2 world-unit tall view at 100 ppu (1080×1920 ref)
+            cam.orthographic     = true;
         }
     }
 }
