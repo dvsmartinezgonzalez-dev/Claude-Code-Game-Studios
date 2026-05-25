@@ -37,7 +37,7 @@ namespace BoltSort.LevelData
         /// Seam for integration testing. Set to the real Addressables loader in Awake();
         /// replace before calling <see cref="InitializeAsync"/> to inject a fake catalogue.
         /// </summary>
-        internal Func<Task<(bool Succeeded, string Text)>> LoadCatalogueTextAsync;
+        public Func<Task<(bool Succeeded, string Text)>> LoadCatalogueTextAsync;
 
         private void Awake()
         {

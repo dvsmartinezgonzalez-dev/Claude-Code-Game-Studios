@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using UnityEngine;
 using BoltSort.SortMechanic;
 
 // Test assembly: Tests.Unit.SortMechanic
@@ -12,6 +13,7 @@ namespace BoltSort.Tests.Unit.SortMechanic
     [TestFixture]
     internal sealed class SortMechanic_Input_Test
     {
+        private GameObject _go;
         private global::BoltSort.SortMechanic.SortMechanic _sm;
         private MockGsm _gsm;
         private EventSpy _spy;
@@ -19,11 +21,11 @@ namespace BoltSort.Tests.Unit.SortMechanic
         [SetUp]
         public void SetUp()
         {
-            // NOTE: SortMechanic is created via 'new' to bypass Unity lifecycle.
-            // Awake() is NOT called — _mainCamera is null. NEVER call Update() or
-            // HandleTap(Vector2) from a test; doing so will NRE on _mainCamera.
+            // NOTE: Awake() fires via AddComponent<> — _mainCamera is null in EditMode (no camera in scene).
+            // NEVER call Update() or HandleTap(Vector2) from a test; doing so will NRE on _mainCamera.
             // All test paths go through InjectTapForTesting / ForceEnter* seams.
-            _sm  = new global::BoltSort.SortMechanic.SortMechanic();
+            _go = new GameObject("SortMechanic_Input_Test");
+            _sm = _go.AddComponent<global::BoltSort.SortMechanic.SortMechanic>();
             _gsm = new MockGsm();
             _spy = new EventSpy();
 
@@ -34,6 +36,12 @@ namespace BoltSort.Tests.Unit.SortMechanic
             _sm.InjectForTesting(_gsm);
             _sm.InitializeBoard();
             _spy.Subscribe(_sm);
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            Object.DestroyImmediate(_go);
         }
 
         // ── Helper ────────────────────────────────────────────────────────────────

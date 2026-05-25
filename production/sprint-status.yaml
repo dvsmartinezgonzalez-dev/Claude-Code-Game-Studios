@@ -14,7 +14,7 @@ goal: "Resolve the CI gate, close SP integration gaps, ship QTS, and deliver CE 
 start: "2026-06-14"
 end: "2026-06-27"
 generated: "2026-05-23"
-updated: "2026-05-23 (S4-02 done)"
+updated: "2026-05-23 (S4-03 in-progress)"
 
 stories:
   # ── MUST HAVE ──────────────────────────────────────────────────────────────
@@ -41,9 +41,9 @@ stories:
 
   - id: "S4-03"
     name: "SP <-> GSM integration test: board persistence round-trip"
-    file: "tests/integration/save-persistence/"
+    file: "production/epics/save-persistence/story-007-sp-gsm-integration-test.md"
     priority: must-have
-    status: ready-for-dev
+    status: in-progress
     owner: ""
     estimate_days: 0.5
     blocker: ""

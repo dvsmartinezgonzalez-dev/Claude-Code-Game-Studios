@@ -149,6 +149,14 @@ namespace BoltSort.SortMechanic
         /// </summary>
         public event Action<SortMechLoadFailReason> OnLevelLoadFailed;
 
+        // ── Public State (read-only, for BoardView selection feedback) ────────────
+
+        /// <summary>Current FSM state. BoardView polls this to drive selection highlight.</summary>
+        public SortMechState CurrentState    => _currentState;
+
+        /// <summary>Flat column index of the held bolt. Valid only when CurrentState == BoltSelected.</summary>
+        public int           HeldSourceIndex => _heldSourceIndex;
+
         // ── Unity Lifecycle ───────────────────────────────────────────────────────
 
         private void Awake()
@@ -156,11 +164,17 @@ namespace BoltSort.SortMechanic
             // Resolve GSM dependency. If not injected by tests, use component reference.
             if (_gsm == null && _gsmComponent != null)
                 _gsm = _gsmComponent;
+            // Fall back to singleton when wired programmatically (GameBootstrap path).
+            if (_gsm == null)
+                _gsm = global::BoltSort.GameStateManager.GameStateManager.Instance;
 
             // Input system setup (ADR-0007).
             EnhancedTouchSupport.Enable();
             _mainCamera = Camera.main;
-            _boltStacksLayerMask = LayerMask.GetMask("BoltStacks");
+            int boltStacksLayer = LayerMask.NameToLayer("BoltStacks");
+            _boltStacksLayerMask = boltStacksLayer >= 0
+                ? LayerMask.GetMask("BoltStacks")
+                : ~0; // fall back to "everything" when layer isn't registered yet
 
             // Subscribe to GSM events using named methods (control manifest: no lambdas).
             if (_gsm != null)
@@ -278,10 +292,10 @@ namespace BoltSort.SortMechanic
         {
             IReadOnlyList<int>[] stacks = _gsm.StackContents;
             int colorCount = _gsm.ColorCount;
-            if (stacks != null && stacks.Length == colorCount) return true;
+            if (stacks != null && stacks.Length >= colorCount) return true;
 
             BlockInput(SortMechLoadFailReason.CorruptedBoardState,
-                $"Assertion 1 failed: StackContents.Length ({stacks?.Length}) ≠ ColorCount ({colorCount}).");
+                $"Assertion 1 failed: StackContents.Length ({stacks?.Length}) < ColorCount ({colorCount}).");
             return false;
         }
 
@@ -389,15 +403,27 @@ namespace BoltSort.SortMechanic
 
             // Process touch input via EnhancedTouchSupport (ADR-0007).
             var activeTouches = UnityEngine.InputSystem.EnhancedTouch.Touch.activeTouches;
+            bool touchHandled = false;
             foreach (var touch in activeTouches)
             {
                 if (touch.phase == UnityEngine.InputSystem.TouchPhase.Began)
                 {
                     HandleTap(touch.screenPosition);
-                    // Process only the first touch per frame — single-bolt model.
+                    touchHandled = true;
                     break;
                 }
             }
+
+#if UNITY_EDITOR
+            // Mouse fallback for Editor play mode.
+            // Only fires when no real touch (or simulated touch) was processed this frame.
+            if (!touchHandled)
+            {
+                var mouse = Mouse.current;
+                if (mouse != null && mouse.leftButton.wasPressedThisFrame)
+                    HandleTap(mouse.position.ReadValue());
+            }
+#endif
         }
 
         /// <summary>
@@ -439,23 +465,29 @@ namespace BoltSort.SortMechanic
         /// <summary>
         /// Evaluates the win condition against the current board state from GSM.
         /// All color stacks must be full (count == stackDepth) and monochromatic (all bolts same color).
-        /// Temp slots are excluded from evaluation entirely (TR-SORT-003).
-        /// O(colorCount × stackDepth) ≤ 64 iterations; zero allocation (control manifest guardrail).
+        /// Win rule: every column is either EMPTY or COMPLETELY FULL with bolts of ONE color.
+        /// Temp slots are included — a solved board may have bolts sorted into any column.
+        /// O((colorCount + tempSlotCount) × maxDepth) ≤ 96 iterations; zero allocation.
         /// </summary>
         private bool IsWon()
         {
             IReadOnlyList<int>[] stacks = _gsm.StackContents;
-            int colorCount              = _gsm.ColorCount;
-            int stackDepth              = _gsm.StackDepth;
+            int colorCount    = _gsm.ColorCount;
+            int tempSlotCount = _gsm.TempSlotCount;
+            int stackDepth    = _gsm.StackDepth;
+            int tempSlotDepth = _gsm.TempSlotDepth;
 
-            if (stacks == null || stacks.Length != colorCount || stackDepth <= 0)
+            if (stacks == null || stacks.Length < colorCount || stackDepth <= 0)
                 return false;
 
-            for (int i = 0; i < colorCount; i++)
+            int totalCols = colorCount + tempSlotCount;
+            for (int i = 0; i < totalCols && i < stacks.Length; i++)
             {
                 IReadOnlyList<int> stack = stacks[i];
-                if (stack == null || stack.Count != stackDepth) return false;  // not full
-                if (!AllSameColor(stack))                         return false;  // not monochromatic
+                if (stack == null || stack.Count == 0) continue; // empty column — ok
+                int capacity = i < colorCount ? stackDepth : tempSlotDepth;
+                if (stack.Count != capacity) return false;        // partial fill — not won
+                if (!AllSameColor(stack))   return false;         // mixed colors — not won
             }
             return true;
         }

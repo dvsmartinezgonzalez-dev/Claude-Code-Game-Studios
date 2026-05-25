@@ -21,7 +21,7 @@ namespace BoltSort.Tests.Helpers.SavePersistence
     /// Shared helper for Stories 001–006 unit tests.
     /// Shared dependency: Tests.Helpers.SavePersistence assembly.
     /// </remarks>
-    internal sealed class FakeFileSystem : IFileSystem
+    public sealed class FakeFileSystem : IFileSystem
     {
         // ── ReadAllText control ───────────────────────────────────────────────────
 

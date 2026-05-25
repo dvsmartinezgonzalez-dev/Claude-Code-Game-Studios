@@ -61,7 +61,7 @@ namespace BoltSort.Tests.Unit.SaveSystem
         /// <summary>Triggers WriteAtomicCore directly (synchronous, no async wrapper needed).</summary>
         private void WriteCore()
         {
-            SaveData snapshot = _saveSystem.CaptureSnapshot();
+            SD snapshot = _saveSystem.CaptureSnapshot();
             byte[] bytes = System.Text.Encoding.UTF8.GetBytes(UnityEngine.JsonUtility.ToJson(snapshot));
             _saveSystem.WriteAtomicCore(bytes);
         }
@@ -194,9 +194,6 @@ namespace BoltSort.Tests.Unit.SaveSystem
             Apply(5, 3, "2026.05", 6);
             Apply(5, 3, "2026.06", 6); // second call — same level
 
-            int count = 0;
-            // Iterate indirectly by checking the undo stack isn't duplicated and counting via GetCompletionRecord.
-            // Count by scanning GetUndoStack size is unrelated — count via reflection alternative:
             // Use the public GetCompletionRecord and test that only one record with level_id=5 exists.
             // Because GetCompletionRecord returns the first match, we verify by applying a 3rd time:
             Apply(5, 3, "2026.07", 6);

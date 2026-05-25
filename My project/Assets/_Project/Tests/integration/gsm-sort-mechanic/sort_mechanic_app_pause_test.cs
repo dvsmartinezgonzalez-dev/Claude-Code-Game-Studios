@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using NUnit.Framework;
+using UnityEngine;
 using BoltSort.GameStateManager;
 using BoltSort.SortMechanic;
 
@@ -23,6 +24,7 @@ namespace BoltSort.Tests.Integration.GsmSortMechanic
     [TestFixture]
     internal sealed class SortMechanic_AppPause_Integration_Test
     {
+        private GameObject _go;
         private global::BoltSort.SortMechanic.SortMechanic _sm;
         private GsmStub _gsm;
 
@@ -35,7 +37,8 @@ namespace BoltSort.Tests.Integration.GsmSortMechanic
         [SetUp]
         public void SetUp()
         {
-            _sm  = new global::BoltSort.SortMechanic.SortMechanic();
+            _go  = new GameObject("SortMechanic_AppPause_Integration_Test");
+            _sm  = _go.AddComponent<global::BoltSort.SortMechanic.SortMechanic>();
             _gsm = new GsmStub();
 
             _moveCancelledCount = 0;
@@ -47,6 +50,12 @@ namespace BoltSort.Tests.Integration.GsmSortMechanic
             _sm.OnMoveCancelled  += (src, color) => { _moveCancelledCount++; _lastCancelledSource = src; _lastCancelledColorId = color; };
             _sm.OnMoveCommitted  += (_, __, ___, ____) => _moveCommittedCount++;
             _sm.OnPuzzleSolved   += _ => _puzzleSolvedCount++;
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            UnityEngine.Object.DestroyImmediate(_go);
         }
 
         // ── AC-28: BOLT_SELECTED + pause → IDLE + move_cancelled ─────────────────

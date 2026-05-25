@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace BoltSort.SaveSystem
@@ -58,13 +59,13 @@ namespace BoltSort.SaveSystem
         /// <summary>
         /// Writes level completion data atomically to disk on a background thread.
         /// Captures a snapshot on the calling (main) thread before switching to background.
-        /// Implements the full W-1 write path with <c>Awaitable.BackgroundThreadAsync()</c>.
+        /// Implements the W-1 write path: background thread via <c>Task.Run</c> + <c>SemaphoreSlim</c> lock.
         /// </summary>
         /// <remarks>
         /// The <c>async</c> keyword is an implementation detail — the interface declares
-        /// <c>Awaitable</c> as the return type so callers can <c>await</c> if needed.
+        /// <c>Task</c> as the return type so callers can <c>await</c> if needed.
         /// </remarks>
-        Awaitable WriteCompletionAtomic(int levelId, int bestStars, string version, int newCurrentLevelId);
+        Task WriteCompletionAtomic(int levelId, int bestStars, string version, int newCurrentLevelId);
 
         /// <summary>
         /// Returns the current coin balance from in-memory save state.

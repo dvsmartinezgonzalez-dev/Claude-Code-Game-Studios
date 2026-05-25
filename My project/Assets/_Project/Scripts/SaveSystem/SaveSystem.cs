@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace BoltSort.SaveSystem
@@ -126,8 +127,20 @@ namespace BoltSort.SaveSystem
         internal static void ClearInstanceForTesting()
         {
             if (Instance != null)
+            {
                 Instance.FirstUnlockReadFailureEmitted = false;
-            Instance = null;
+                // Guard against a leaked instance whose GameObject was never destroyed
+                // (e.g. a test that called ClearInstanceForTesting but skipped DestroyImmediate).
+                // Capture before nulling so OnDestroy's "Instance == this" check is a no-op.
+                var leaked = Instance.gameObject;
+                Instance = null;
+                if (leaked != null)
+                    DestroyImmediate(leaked);
+            }
+            else
+            {
+                Instance = null;
+            }
             s_testFileSystemOverride = null;
         }
 
@@ -135,6 +148,16 @@ namespace BoltSort.SaveSystem
 
         private void Awake()
         {
+            // 0. Test-mode takeover: if a test injected a file system before AddComponent<SS>(),
+            // destroy any existing (potentially leaked/persisted) singleton so this instance
+            // can initialize cleanly. s_testFileSystemOverride is set only by SetFileSystemForTesting
+            // (internal, test-only) — this branch never fires in production builds.
+            if (s_testFileSystemOverride != null && Instance != null && Instance != this)
+            {
+                Destroy(Instance.gameObject);   // deferred — safe to call from Awake
+                Instance = null;
+            }
+
             // 1. Singleton guard — MUST be the absolute first statement (ADR-0001, ADR-0003).
             if (Instance != null && Instance != this)
             {
@@ -622,7 +645,7 @@ namespace BoltSort.SaveSystem
         // ── ISaveSystem Write Methods ─────────────────────────────────────────────
 
         /// <inheritdoc/>
-        public async Awaitable WriteCompletionAtomic(int levelId, int bestStars,
+        public async Task WriteCompletionAtomic(int levelId, int bestStars,
             string version, int newCurrentLevelId)
         {
             // Early-exit guards — run synchronously on main thread before any await.
@@ -640,27 +663,27 @@ namespace BoltSort.SaveSystem
             // Apply in-memory mutations on main thread before snapshot (AC-21, AC-22, AC-23).
             ApplyCompletionToMemory(levelId, bestStars, version, newCurrentLevelId);
 
-            // Capture immutable deep-copy snapshot on main thread BEFORE BackgroundThreadAsync.
+            // Capture immutable deep-copy snapshot on main thread BEFORE thread hop.
             // Serialize to bytes here — JsonUtility is main-thread-only (ADR-0003).
             // Any mutations after this line will NOT be reflected in this write (AC-39).
-            SaveData snapshot    = CaptureSnapshot();
+            SaveData snapshot      = CaptureSnapshot();
             byte[]   snapshotBytes = Encoding.UTF8.GetBytes(JsonUtility.ToJson(snapshot));
 
-            // Step 2: switch to background thread.
-            await Awaitable.BackgroundThreadAsync();
+            // Capture token on main thread before entering background thread (ADR-0003).
+            CancellationToken ct = destroyCancellationToken;
 
-            // Step 3: acquire write lock — prevents concurrent File.Replace calls (AC-30).
-            await _writeLock.WaitAsync(destroyCancellationToken);
+            // Run file I/O on a thread-pool thread (W-1 background write path — ADR-0003).
+            // Task.Run(Func<Task>) unwraps the async lambda and awaits its full completion.
+            // Unity's SynchronizationContext resumes this method on the main thread after the await.
+            await Task.Run(async () =>
+            {
+                // Acquire write lock — prevents concurrent File.Replace calls (AC-30).
+                await _writeLock.WaitAsync(ct);
+                // WriteAtomicCore owns lock release via finally. NO Unity API calls inside.
+                WriteAtomicCore(snapshotBytes);
+            });
 
-            // Step 4: defensive re-assertion — guarantees I/O on thread-pool thread
-            // even if WaitAsync continuation runs on main thread. Do NOT remove (ADR-0003 C.1).
-            await Awaitable.BackgroundThreadAsync();
-
-            // Steps 5-6: file I/O — NO Unity API calls (Application.*, Debug.*) here.
-            WriteAtomicCore(snapshotBytes);
-
-            // Step 7: back to main thread — safe to call Unity APIs and mutate _isDirty.
-            await Awaitable.MainThreadAsync();
+            // Back on main thread (Unity SynchronizationContext). Unity APIs safe here.
             if (_lastWriteError != null)
             {
                 Debug.LogError($"[SaveSystem] W-1 write failed: {_lastWriteError}");
@@ -719,6 +742,7 @@ namespace BoltSort.SaveSystem
         internal void ApplyCompletionToMemory(int levelId, int bestStars,
             string version, int newCurrentLevelId)
         {
+            GuardIsReady();
             _saveData.level_progress.current_level_id = newCurrentLevelId;
             _isDirty = true;
 
@@ -765,6 +789,7 @@ namespace BoltSort.SaveSystem
         /// <inheritdoc/>
         public void PushUndoMove(int from, int to)
         {
+            GuardIsReady();
             var stack = _saveData.level_progress.undo_stack;
             if (stack.Count >= 20)
                 stack.RemoveAt(0);   // discard oldest entry (FIFO cap — AC-41)
@@ -775,6 +800,7 @@ namespace BoltSort.SaveSystem
         /// <inheritdoc/>
         public void SetCoinBalance(int balance)
         {
+            GuardIsReady();
             int clamped = Math.Clamp(balance, 0, int.MaxValue);
             if (clamped != balance)
                 Debug.LogWarning($"[SaveSystem] SetCoinBalance: balance={balance} clamped to {clamped} (AC-07).");

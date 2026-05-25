@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using NUnit.Framework;
+using UnityEngine;
 using BoltSort.SortMechanic;
 
 // Test assembly: Tests.Unit.SortMechanic
@@ -13,6 +14,7 @@ namespace BoltSort.Tests.Unit.SortMechanic
     [TestFixture]
     internal sealed class SortMechanic_WinCondition_Test
     {
+        private GameObject _go;
         private global::BoltSort.SortMechanic.SortMechanic _sm;
         private MockGsm _gsm;
         private EventSpy _spy;
@@ -20,8 +22,8 @@ namespace BoltSort.Tests.Unit.SortMechanic
         [SetUp]
         public void SetUp()
         {
-            // NOTE: 'new SortMechanic()' bypasses Unity lifecycle — Awake not called.
-            _sm  = new global::BoltSort.SortMechanic.SortMechanic();
+            _go = new GameObject("SortMechanic_WinCondition_Test");
+            _sm = _go.AddComponent<global::BoltSort.SortMechanic.SortMechanic>();
             _gsm = new MockGsm();
             _spy = new EventSpy();
 
@@ -35,6 +37,12 @@ namespace BoltSort.Tests.Unit.SortMechanic
             _sm.InjectForTesting(_gsm);
             _sm.InitializeBoard();
             _spy.Subscribe(_sm);
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            Object.DestroyImmediate(_go);
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────────

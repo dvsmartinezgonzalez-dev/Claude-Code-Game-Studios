@@ -139,9 +139,6 @@ namespace BoltSort.Tests.Unit.SaveSystem
             // We inject the seam by using 0-length timeout: elapsed(0) >= timeout(0) → loop exits.
             _fakeFs.ReadException = new UnauthorizedAccessException("iOS file protection — always");
 
-            // Track analytics emission.
-            string emittedEvent = null;
-
             SS.SetFileSystemForTesting(_fakeFs);
             var go = new GameObject("SaveSystem_ReadCases_Test");
             _saveSystem = go.AddComponent<SS>();

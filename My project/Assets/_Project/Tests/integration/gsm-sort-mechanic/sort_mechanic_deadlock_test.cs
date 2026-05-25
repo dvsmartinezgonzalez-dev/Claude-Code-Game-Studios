@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using NUnit.Framework;
+using UnityEngine;
 using BoltSort.GameStateManager;
 using BoltSort.SortMechanic;
 using BoltSort.Tests.Helpers.SortMechanic;
@@ -20,6 +21,7 @@ namespace BoltSort.Tests.Integration.GsmSortMechanic
     [TestFixture]
     internal sealed class SortMechanic_Deadlock_Integration_Test
     {
+        private GameObject _go;
         private global::BoltSort.SortMechanic.SortMechanic _sm;
         private GsmStub _gsm;
         private int _deadlockCount;
@@ -29,7 +31,8 @@ namespace BoltSort.Tests.Integration.GsmSortMechanic
         [SetUp]
         public void SetUp()
         {
-            _sm  = new global::BoltSort.SortMechanic.SortMechanic();
+            _go  = new GameObject("SortMechanic_Deadlock_Integration_Test");
+            _sm  = _go.AddComponent<global::BoltSort.SortMechanic.SortMechanic>();
             _gsm = new GsmStub();
             _deadlockCount           = 0;
             _puzzleSolvedCount       = 0;
@@ -40,6 +43,12 @@ namespace BoltSort.Tests.Integration.GsmSortMechanic
             _sm.OnDeadlockDetected    += () => _deadlockCount++;
             _sm.OnPuzzleSolved        += _ => _puzzleSolvedCount++;
             _sm.OnMoveExecutingExited += _ => _moveExecutingExitedCount++;
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            UnityEngine.Object.DestroyImmediate(_go);
         }
 
         // ── AC-25: Initial deadlock on level_loaded ───────────────────────────────
@@ -114,7 +123,6 @@ namespace BoltSort.Tests.Integration.GsmSortMechanic
 
             // Capture ordering
             bool deadlockFiredBeforeProcessPendingTap = false;
-            bool tapFiredBeforeDeadlock = false;
             _sm.OnDeadlockDetected += () =>
             {
                 // At this point, ProcessPendingTap has not yet run (code order guaranteed)

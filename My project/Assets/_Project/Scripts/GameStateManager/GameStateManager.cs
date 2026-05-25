@@ -374,7 +374,7 @@ namespace BoltSort.GameStateManager
         ///
         /// This is an internal method exposed for test seams via <see cref="SimulateMoveCommitted"/>.
         /// </remarks>
-        private void HandleMoveCommitted(int src, int dst, int colorId, long seqId)
+        public void HandleMoveCommitted(int src, int dst, int colorId, long seqId)
         {
             if (_lifecycleState != GSMLifecycleState.Active) return;
 
@@ -445,7 +445,7 @@ namespace BoltSort.GameStateManager
         /// Implements WIN-01 from <c>design/gdd/game-state-manager.md</c>.
         /// Subscribed to <c>SortMechanic.OnPuzzleSolved</c> (wired in Story 004/005).
         /// </remarks>
-        private void HandlePuzzleSolved()
+        public void HandlePuzzleSolved()
         {
             if (_lifecycleState != GSMLifecycleState.Active) return; // EC-15: no-op in COMPLETE / non-ACTIVE
 
@@ -735,7 +735,7 @@ namespace BoltSort.GameStateManager
         /// completion path). Cancels the watchdog timer (WDG-03).
         /// Subscribed to <c>SortMechanic.OnMoveExecutingExited</c> (wired when Sort Mechanic exists).
         /// </summary>
-        private void HandleMoveExecutingExited(long seqId)
+        public void HandleMoveExecutingExited(long seqId)
         {
             CancelWatchdog();         // WDG-03: valid exit — timer no longer needed
             _isAnimationInFlight = false;

@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using UnityEngine;
 using BoltSort.SortMechanic;
 using BoltSort.Tests.Helpers.SortMechanic;
 
@@ -13,6 +14,7 @@ namespace BoltSort.Tests.Unit.SortMechanic
     [TestFixture]
     internal sealed class SortMechanic_Deadlock_Test
     {
+        private GameObject _go;
         private global::BoltSort.SortMechanic.SortMechanic _sm;
         private MockGsm _gsm;
         private EventSpy _spy;
@@ -20,7 +22,8 @@ namespace BoltSort.Tests.Unit.SortMechanic
         [SetUp]
         public void SetUp()
         {
-            _sm  = new global::BoltSort.SortMechanic.SortMechanic();
+            _go = new GameObject("SortMechanic_Deadlock_Test");
+            _sm = _go.AddComponent<global::BoltSort.SortMechanic.SortMechanic>();
             _gsm = new MockGsm();
             _spy = new EventSpy();
 
@@ -29,6 +32,12 @@ namespace BoltSort.Tests.Unit.SortMechanic
             _sm.InjectForTesting(_gsm);
             _sm.InitializeBoard();
             _spy.Subscribe(_sm);
+        }
+
+        [TearDown]
+        public void TearDown()
+        {
+            Object.DestroyImmediate(_go);
         }
 
         // ── Helper ────────────────────────────────────────────────────────────────

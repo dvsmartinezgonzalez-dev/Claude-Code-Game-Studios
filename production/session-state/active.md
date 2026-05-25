@@ -6,6 +6,8 @@
 
 ## Progress Checklist
 
+<!-- QA-PLAN: 2026-05-23 | System: sprint-4 | Plan written: production/qa/qa-plan-sprint4-2026-05-23.md -->
+
 - [x] Game concept created: `design/gdd/game-concept.md`
 - [x] Systems index created: `design/gdd/systems-index.md`
 - [x] MVP GDDs authored (8/8)
@@ -689,3 +691,18 @@ After all 11 ADRs: run `/gate-check pre-production`.
 - Tech debt logged: None
 - Code review fixes applied this session: WriteAtomicCore(byte[]) signature (JsonUtility main-thread fix), internal IsDirty property, AC-29 dirty-flag test assertion, AC-34 undo_stack null-guard assertion
 - Next recommended: All must-have SP stories complete. Should-have: S3-07 (SP: PlayerPrefs audio prefs) or S3-08 (SP <-> GSM integration test)
+
+<!-- QA RUN: 2026-05-23 | Sprint: sprint-3 | Verdict: APPROVED WITH CONDITIONS | Report: production/qa/qa-signoff-sprint3-2026-05-23.md -->
+
+## Session Extract — /story-done 2026-05-23
+- Verdict: COMPLETE WITH NOTES
+- Story: production/epics/save-persistence/story-006-playerprefs-setcoinbalance.md — PlayerPrefs Namespace, SetCoinBalance, and Backup Exclusion
+- Tech debt logged: 3 items (TD-SP-008 TearDown isolation gap, TD-SP-009 AC-10 not verifiable, TD-SP-010 SetCoinBalance missing GuardIsReady)
+- Next recommended: S4-03 (SP↔GSM integration test) — next must-have story in Sprint 4
+
+## Session Extract — /dev-story 2026-05-23
+- Story: production/epics/save-persistence/story-007-sp-gsm-integration-test.md — SP ↔ GSM Integration Test
+- Files changed: My project/Assets/_Project/Tests/integration/save-persistence/SaveSystem_BoardPersistence_Integration_Test.cs (created)
+- Test written: My project/Assets/_Project/Tests/integration/save-persistence/SaveSystem_BoardPersistence_Integration_Test.cs (6 tests: AC-INT-01 through AC-INT-06)
+- Blockers: None
+- Next: /code-review then /story-done production/epics/save-persistence/story-007-sp-gsm-integration-test.md
