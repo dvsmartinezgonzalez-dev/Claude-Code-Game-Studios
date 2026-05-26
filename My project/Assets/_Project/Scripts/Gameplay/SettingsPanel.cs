@@ -79,7 +79,8 @@ namespace BoltSort.Gameplay
             y -= 70f;
 
             // Privacy Policy button
-            AddActionButton(card, font, "Privacy Policy", y, () => { /* placeholder */ });
+            AddActionButton(card, font, "Privacy Policy", y,
+                () => Application.OpenURL("https://dvsstudio.github.io/boltsort/privacy"));
             y -= 70f;
 
             // Version
