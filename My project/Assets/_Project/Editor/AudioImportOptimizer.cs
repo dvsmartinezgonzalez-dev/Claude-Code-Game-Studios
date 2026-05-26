@@ -59,8 +59,8 @@ namespace BoltSort.Editor
                 : AudioClipLoadType.DecompressOnLoad;
             settings.sampleRateSetting  = AudioSampleRateSetting.OverrideSampleRate;
             settings.sampleRateOverride = isBgm ? 44100u : 22050u;
+            settings.preloadAudioData   = !isBgm;
             importer.defaultSampleSettings = settings;
-            importer.preloadAudioData   = !isBgm;
             importer.loadInBackground   = isBgm;
 
             importer.SaveAndReimport();
