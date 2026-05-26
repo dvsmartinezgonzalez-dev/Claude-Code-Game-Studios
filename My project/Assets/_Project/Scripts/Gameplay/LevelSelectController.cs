@@ -106,7 +106,7 @@ namespace BoltSort.Gameplay
             scrollRect.viewport = viewportGO.GetComponent<RectTransform>();
 
             // Content container
-            var contentGO = new GameObject("Content");
+            var contentGO = new GameObject("Content", typeof(RectTransform));
             contentGO.transform.SetParent(viewportGO.transform, false);
             var contentRt = contentGO.GetComponent<RectTransform>();
             contentRt.anchorMin = new Vector2(0f, 1f); contentRt.anchorMax = new Vector2(1f, 1f);
