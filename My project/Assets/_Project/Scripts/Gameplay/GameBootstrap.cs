@@ -3,6 +3,7 @@ using System.Collections;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using AudioMgr = BoltSort.Audio.AudioManager;
 
 namespace BoltSort.Gameplay
 {
@@ -26,6 +27,7 @@ namespace BoltSort.Gameplay
         private void Awake()
         {
             EnsureSaveSystem();
+            EnsureAudioManager();
             EnsureCamera();
             ConfigureCamera();
             CreateSystems();
@@ -39,6 +41,10 @@ namespace BoltSort.Gameplay
             _sortMechanic.OnMoveCommitted       += _gsm.HandleMoveCommitted;
             _sortMechanic.OnPuzzleSolved        += _ => _gsm.HandlePuzzleSolved();
             _sortMechanic.OnMoveExecutingExited += _gsm.HandleMoveExecutingExited;
+
+            _sortMechanic.OnMoveCommitted += (_, _, _, _) => AudioMgr.Instance?.PlaySFX("bolt_place");
+            _sortMechanic.OnMoveRejected  += (_, _, _, _) => AudioMgr.Instance?.PlaySFX("bolt_invalid");
+            _sortMechanic.OnPuzzleSolved  += _            => AudioMgr.Instance?.PlaySFX("level_win");
 
             _gsm.OnLevelComplete += HandleLevelComplete;
         }
@@ -64,6 +70,7 @@ namespace BoltSort.Gameplay
 
             _gsm.ExitLevel();
             _gsm.LoadLevel(_currentLevelId);
+            AudioMgr.Instance?.PlayMusic();
         }
 
         // ── Level management ──────────────────────────────────────────────────────
@@ -126,6 +133,12 @@ namespace BoltSort.Gameplay
         {
             if (SaveSystem.SaveSystem.Instance == null)
                 new GameObject("SaveSystem").AddComponent<SaveSystem.SaveSystem>();
+        }
+
+        private static void EnsureAudioManager()
+        {
+            if (AudioMgr.Instance == null)
+                new GameObject("AudioManager").AddComponent<AudioMgr>();
         }
 
         private void CreateSystems()

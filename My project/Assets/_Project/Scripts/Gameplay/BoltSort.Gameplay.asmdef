@@ -6,6 +6,7 @@
         "BoltSort.GameStateManager",
         "BoltSort.SortMechanic",
         "BoltSort.SaveSystem",
+        "BoltSort.Audio",
         "Unity.InputSystem"
     ],
     "includePlatforms": [],
