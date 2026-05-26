@@ -39,6 +39,10 @@ namespace BoltSort.Gameplay
         private Text       _moreLevelsText;
         private SettingsPanel _settingsPanel;
 
+        // ── Stored event handlers (for clean unsubscription in OnDestroy) ─────────
+        private Action<int, int, int, int, int, long> _onLevelLoadedHandler;
+        private Action<int, int, int, long>           _onLevelCompleteHandler;
+
         // ─────────────────────────────────────────────────────────────────────────
 
         public void Initialize(
@@ -57,7 +61,7 @@ namespace BoltSort.Gameplay
             _onMenu      = onMenu;
             _onReplay    = onReplay;
 
-            gsm.OnLevelLoaded += (id, cc, sd, tsc, tsd, seqId) =>
+            _onLevelLoadedHandler = (id, cc, sd, tsc, tsd, seqId) =>
             {
                 if (_levelText != null) _levelText.text = $"Level {id}";
                 _levelComplete = false;
@@ -65,13 +69,15 @@ namespace BoltSort.Gameplay
                 RefreshDeadlock();
                 if (_winOverlay != null) _winOverlay.SetActive(false);
             };
+            gsm.OnLevelLoaded += _onLevelLoadedHandler;
 
-            gsm.OnLevelComplete += (id, moves, par, seqId) =>
+            _onLevelCompleteHandler = (id, moves, par, seqId) =>
             {
                 _levelComplete = true;
                 if (_winMovesText != null) _winMovesText.text = $"Moves: {moves}";
                 if (_winOverlay   != null) _winOverlay.SetActive(true);
             };
+            gsm.OnLevelComplete += _onLevelCompleteHandler;
 
             sm.OnDeadlockDetected += () => { _deadlock = true; RefreshDeadlock(); };
 
@@ -94,6 +100,15 @@ namespace BoltSort.Gameplay
         public void ShowMoreLevelsSoon()
         {
             if (_moreLevelsText != null) _moreLevelsText.gameObject.SetActive(true);
+        }
+
+        private void OnDestroy()
+        {
+            if (_gsm != null)
+            {
+                _gsm.OnLevelLoaded  -= _onLevelLoadedHandler;
+                _gsm.OnLevelComplete -= _onLevelCompleteHandler;
+            }
         }
 
         private void OnSettingsClicked() => _settingsPanel?.Toggle();

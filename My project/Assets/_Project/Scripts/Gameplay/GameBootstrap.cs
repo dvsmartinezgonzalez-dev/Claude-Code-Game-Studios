@@ -62,6 +62,7 @@ namespace BoltSort.Gameplay
                 onMenu:    OnMenuClicked,
                 onReplay:  ResetLevel);
 
+            _gsm.ExitLevel();
             _gsm.LoadLevel(_currentLevelId);
         }
 

@@ -52,9 +52,6 @@ namespace BoltSort.Gameplay
             cardRt.anchoredPosition = Vector2.zero;
             cardRt.sizeDelta        = new Vector2(500f, 560f);
 
-            // Prevent taps on card from propagating to dim-close button
-            card.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0f); // invisible blocker
-
             float y = 200f;
 
             // Title

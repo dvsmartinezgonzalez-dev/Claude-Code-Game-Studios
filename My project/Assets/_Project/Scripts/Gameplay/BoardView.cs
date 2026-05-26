@@ -76,6 +76,12 @@ namespace BoltSort.Gameplay
             sm.OnMoveRejected  += (_, _, _, _) => _sortMechanic.OnRejectionAnimationComplete();
         }
 
+        private void OnDestroy()
+        {
+            if (_gsm != null)
+                _gsm.OnLevelLoaded -= OnLevelLoaded;
+        }
+
         private void OnLevelLoaded(int levelId, int colorCount, int stackDepth,
                                    int tempSlotCount, int tempSlotDepth, long seqId)
         {
