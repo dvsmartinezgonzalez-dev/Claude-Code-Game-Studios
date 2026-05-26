@@ -5,6 +5,7 @@
         "BoltSort.LevelData",
         "BoltSort.GameStateManager",
         "BoltSort.SortMechanic",
+        "BoltSort.SaveSystem",
         "Unity.InputSystem"
     ],
     "includePlatforms": [],
