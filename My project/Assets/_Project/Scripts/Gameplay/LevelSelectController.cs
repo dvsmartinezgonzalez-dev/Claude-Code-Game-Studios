@@ -4,6 +4,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using AudioMgr = BoltSort.Audio.AudioManager;
 
 namespace BoltSort.Gameplay
 {
@@ -174,6 +175,7 @@ namespace BoltSort.Gameplay
                     cs.highlightedColor = new Color(cellColor.r + 0.1f, cellColor.g + 0.1f, cellColor.b + 0.1f);
                     cs.pressedColor     = new Color(cellColor.r - 0.1f, cellColor.g - 0.1f, cellColor.b - 0.1f);
                     btn.colors = cs;
+                    btn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
                     btn.onClick.AddListener(() => LoadLevel(captured));
                 }
             }
@@ -250,6 +252,7 @@ namespace BoltSort.Gameplay
             go.transform.SetParent(parent.transform, false);
             go.AddComponent<Image>();
             var btn = go.AddComponent<Button>();
+            btn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
             btn.onClick.AddListener(() => onClick?.Invoke());
 
             var lgo = new GameObject("Label");

@@ -4,6 +4,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using AudioMgr = BoltSort.Audio.AudioManager;
 
 namespace BoltSort.Gameplay
 {
@@ -23,9 +24,11 @@ namespace BoltSort.Gameplay
         private void Start()
         {
             EnsureSaveSystem();
+            EnsureAudioManager();
             EnsureEventSystem();
             ConfigureCamera();
             BuildUI();
+            AudioMgr.Instance?.PlayMusic();
         }
 
         private void BuildUI()
@@ -107,6 +110,12 @@ namespace BoltSort.Gameplay
                 new GameObject("SaveSystem").AddComponent<SaveSystem.SaveSystem>();
         }
 
+        private static void EnsureAudioManager()
+        {
+            if (AudioMgr.Instance == null)
+                new GameObject("AudioManager").AddComponent<AudioMgr>();
+        }
+
         private static void EnsureEventSystem()
         {
             if (FindObjectsByType<EventSystem>(FindObjectsSortMode.None).Length == 0)
@@ -158,6 +167,7 @@ namespace BoltSort.Gameplay
             go.transform.SetParent(parent.transform, false);
             go.AddComponent<Image>();
             var btn = go.AddComponent<Button>();
+            btn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
             btn.onClick.AddListener(() => onClick?.Invoke());
 
             var lgo = new GameObject("Label");

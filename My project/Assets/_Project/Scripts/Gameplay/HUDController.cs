@@ -3,6 +3,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
+using AudioMgr = BoltSort.Audio.AudioManager;
 
 namespace BoltSort.Gameplay
 {
@@ -358,6 +359,7 @@ namespace BoltSort.Gameplay
             cs.highlightedColor = new Color(0.40f, 0.65f, 0.95f);
             cs.pressedColor     = new Color(0.18f, 0.38f, 0.68f);
             btn.colors = cs;
+            btn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
             btn.onClick.AddListener(() => onClick?.Invoke());
 
             var labelGO = new GameObject("Label");
