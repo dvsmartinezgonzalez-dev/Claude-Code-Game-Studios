@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
+using AudioMgr = BoltSort.Audio.AudioManager;
 
 namespace BoltSort.Gameplay
 {
@@ -63,6 +64,7 @@ namespace BoltSort.Gameplay
             {
                 PlayerPrefs.SetInt(MusicKey, newVal ? 1 : 0);
                 PlayerPrefs.Save();
+                AudioMgr.Instance?.SetMusicEnabled(newVal);
             });
             y -= 80f;
 
@@ -71,6 +73,7 @@ namespace BoltSort.Gameplay
             {
                 PlayerPrefs.SetInt(SfxKey, newVal ? 1 : 0);
                 PlayerPrefs.Save();
+                AudioMgr.Instance?.SetSFXEnabled(newVal);
             });
             y -= 80f;
 
@@ -183,6 +186,7 @@ namespace BoltSort.Gameplay
             go.transform.SetParent(parent.transform, false);
             go.AddComponent<Image>().color = bgColor;
             var btn = go.AddComponent<Button>();
+            btn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
             btn.onClick.AddListener(() => onClick?.Invoke());
 
             var lgo = new GameObject("Label");
