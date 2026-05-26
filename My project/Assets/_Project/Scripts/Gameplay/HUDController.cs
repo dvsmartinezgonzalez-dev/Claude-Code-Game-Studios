@@ -26,6 +26,9 @@ namespace BoltSort.Gameplay
         private bool   _deadlock;
         private Action _onReset;
         private Action _onNextLevel;
+        private Action _onUndo;
+        private Action _onMenu;
+        private Action _onReplay;
 
         // ── Live UI refs ──────────────────────────────────────────────────────────
         private Text       _levelText;
@@ -33,6 +36,8 @@ namespace BoltSort.Gameplay
         private Text       _deadlockText;
         private GameObject _winOverlay;
         private Text       _winMovesText;
+        private Text       _moreLevelsText;
+        private SettingsPanel _settingsPanel;
 
         // ─────────────────────────────────────────────────────────────────────────
 
@@ -40,11 +45,17 @@ namespace BoltSort.Gameplay
             BoltSort.GameStateManager.GameStateManager gsm,
             BoltSort.SortMechanic.SortMechanic sm,
             Action onReset,
-            Action onNextLevel)
+            Action onNextLevel,
+            Action onUndo  = null,
+            Action onMenu  = null,
+            Action onReplay = null)
         {
             _gsm         = gsm;
             _onReset     = onReset;
             _onNextLevel = onNextLevel;
+            _onUndo      = onUndo;
+            _onMenu      = onMenu;
+            _onReplay    = onReplay;
 
             gsm.OnLevelLoaded += (id, cc, sd, tsc, tsd, seqId) =>
             {
@@ -78,6 +89,14 @@ namespace BoltSort.Gameplay
             if (_deadlockText != null)
                 _deadlockText.gameObject.SetActive(_deadlock && !_levelComplete);
         }
+
+        /// <summary>Shows "More levels coming soon" in the win overlay (last level reached).</summary>
+        public void ShowMoreLevelsSoon()
+        {
+            if (_moreLevelsText != null) _moreLevelsText.gameObject.SetActive(true);
+        }
+
+        private void OnSettingsClicked() => _settingsPanel?.Toggle();
 
         // ── UI construction ───────────────────────────────────────────────────────
 
@@ -150,7 +169,7 @@ namespace BoltSort.Gameplay
             dlRect.offsetMax = new Vector2(0f, -(topBarH + safeTop));
             _deadlockText.gameObject.SetActive(false);
 
-            // ── Bottom bar (Reset button) ────────────────────────────────────────
+            // ── Bottom bar (Reset / Undo / Menu buttons) ─────────────────────────
             const float botBarH = 140f;
             var bottomBar  = MakePanel(canvasGO, "BottomBar", PanelColor);
             var botRect    = bottomBar.GetComponent<RectTransform>();
@@ -160,14 +179,50 @@ namespace BoltSort.Gameplay
             botRect.offsetMin = new Vector2(0f, 0f);
             botRect.offsetMax = new Vector2(0f, botBarH + safeBottom);
 
-            // Reset button — centred in bottom bar
-            var resetBtn  = MakeButton(bottomBar, "ResetButton", "Reset", font, 34, _onReset);
+            float btnY = safeBottom + 22f;
+
+            // Reset button — left third
+            var resetBtn  = MakeButton(bottomBar, "ResetButton", "Reset", font, 30, _onReset);
             var resetRect = resetBtn.GetComponent<RectTransform>();
-            resetRect.anchorMin        = new Vector2(0.5f, 0f);
-            resetRect.anchorMax        = new Vector2(0.5f, 0f);
-            resetRect.pivot            = new Vector2(0.5f, 0f);
-            resetRect.anchoredPosition = new Vector2(0f, safeBottom + 22f);
-            resetRect.sizeDelta        = new Vector2(240f, 72f);
+            resetRect.anchorMin        = new Vector2(0.04f, 0f);
+            resetRect.anchorMax        = new Vector2(0.04f, 0f);
+            resetRect.pivot            = new Vector2(0f, 0f);
+            resetRect.anchoredPosition = new Vector2(0f, btnY);
+            resetRect.sizeDelta        = new Vector2(196f, 72f);
+
+            // Undo button — centre
+            var undoBtn  = MakeButton(bottomBar, "UndoButton", "Undo", font, 30, _onUndo);
+            var undoRect = undoBtn.GetComponent<RectTransform>();
+            undoRect.anchorMin        = new Vector2(0.5f, 0f);
+            undoRect.anchorMax        = new Vector2(0.5f, 0f);
+            undoRect.pivot            = new Vector2(0.5f, 0f);
+            undoRect.anchoredPosition = new Vector2(0f, btnY);
+            undoRect.sizeDelta        = new Vector2(196f, 72f);
+
+            // Menu button — right third
+            var menuBtn  = MakeButton(bottomBar, "MenuButton", "Menu", font, 30, _onMenu);
+            var menuRect = menuBtn.GetComponent<RectTransform>();
+            menuRect.anchorMin        = new Vector2(0.96f, 0f);
+            menuRect.anchorMax        = new Vector2(0.96f, 0f);
+            menuRect.pivot            = new Vector2(1f, 0f);
+            menuRect.anchoredPosition = new Vector2(0f, btnY);
+            menuRect.sizeDelta        = new Vector2(196f, 72f);
+
+            // Settings button (top-left gear)
+            var settingsBtn  = MakeButton(canvasGO, "SettingsButton", "⚙", font, 36, OnSettingsClicked);
+            settingsBtn.GetComponent<Image>().color = new Color(0.12f, 0.12f, 0.22f, 0.85f);
+            var sgr = settingsBtn.GetComponent<RectTransform>();
+            sgr.anchorMin        = new Vector2(0f, 1f);
+            sgr.anchorMax        = new Vector2(0f, 1f);
+            sgr.pivot            = new Vector2(0f, 1f);
+            sgr.anchoredPosition = new Vector2(12f, -(safeTop + 12f));
+            sgr.sizeDelta        = new Vector2(72f, 72f);
+
+            // Settings panel (hidden initially)
+            var spHost = new GameObject("SettingsPanelHost");
+            spHost.transform.SetParent(canvasGO.transform, false);
+            _settingsPanel = spHost.AddComponent<SettingsPanel>();
+            _settingsPanel.Initialize(font, canvasGO.transform);
 
             // ── Win overlay ──────────────────────────────────────────────────────
             _winOverlay = MakePanel(canvasGO, "WinOverlay", WinBgColor);
@@ -214,8 +269,30 @@ namespace BoltSort.Gameplay
             nbRect.anchorMin        = new Vector2(0.5f, 0f);
             nbRect.anchorMax        = new Vector2(0.5f, 0f);
             nbRect.pivot            = new Vector2(0.5f, 0f);
-            nbRect.anchoredPosition = new Vector2(0f, 22f);
-            nbRect.sizeDelta        = new Vector2(260f, 76f);
+            nbRect.anchoredPosition = new Vector2(-80f, 22f);
+            nbRect.sizeDelta        = new Vector2(220f, 68f);
+
+            // Replay button
+            var replayBtn  = MakeButton(winCard, "ReplayButton", "Replay", font, 28, _onReplay ?? _onReset);
+            replayBtn.GetComponent<Image>().color = new Color(0.22f, 0.22f, 0.36f, 1f);
+            var rpRect   = replayBtn.GetComponent<RectTransform>();
+            rpRect.anchorMin        = new Vector2(0.5f, 0f);
+            rpRect.anchorMax        = new Vector2(0.5f, 0f);
+            rpRect.pivot            = new Vector2(0f, 0f);
+            rpRect.anchoredPosition = new Vector2(16f, 22f);
+            rpRect.sizeDelta        = new Vector2(180f, 68f);
+
+            // "More levels coming soon" text (hidden by default)
+            _moreLevelsText = MakeLabel(winCard, "MoreLevels", "More levels coming soon!",
+                                        font, 28, TextAnchor.MiddleCenter, bold: false, shadow: false);
+            _moreLevelsText.color = new Color(0.8f, 0.8f, 0.5f, 1f);
+            var mlRect = _moreLevelsText.GetComponent<RectTransform>();
+            mlRect.anchorMin = new Vector2(0f, 0f);
+            mlRect.anchorMax = new Vector2(1f, 0f);
+            mlRect.pivot     = new Vector2(0.5f, 0f);
+            mlRect.offsetMin = new Vector2(8f, 22f);
+            mlRect.offsetMax = new Vector2(-8f, 76f);
+            _moreLevelsText.gameObject.SetActive(false);
 
             _winOverlay.SetActive(false);
         }
