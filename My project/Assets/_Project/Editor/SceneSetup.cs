@@ -3,8 +3,6 @@ using System.IO;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.InputSystem.UI;
 
 namespace BoltSort.Editor
 {
@@ -71,23 +69,10 @@ namespace BoltSort.Editor
                 Directory.CreateDirectory(Path.GetDirectoryName(scenePath)!);
             }
 
-            EnsureEventSystem(scene);
             EnsureController(scene, controllerTypeName);
 
             EditorSceneManager.SaveScene(scene, scenePath);
             Debug.Log($"[SceneSetup] {Path.GetFileName(scenePath)} ✓");
-        }
-
-        static void EnsureEventSystem(UnityEngine.SceneManagement.Scene scene)
-        {
-            foreach (var go in scene.GetRootGameObjects())
-                if (go.GetComponentInChildren<EventSystem>() != null)
-                    return;
-
-            var esGO = new GameObject("EventSystem");
-            UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(esGO, scene);
-            esGO.AddComponent<EventSystem>();
-            esGO.AddComponent<InputSystemUIInputModule>();
         }
 
         static void EnsureController(UnityEngine.SceneManagement.Scene scene,
