@@ -13,7 +13,7 @@ namespace BoltSort.Editor
     public static class GameAssetImporter
     {
         [MenuItem("BoltSort/Import Game Assets")]
-        static void ImportAll()
+        public static void ImportAll()
         {
             ImportButtonsSet1();
             ImportButtonsSet2();
@@ -259,6 +259,33 @@ namespace BoltSort.Editor
             importer.mipmapEnabled       = false;
             AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
             Debug.Log($"[GameAssetImporter] {path} → single sprite");
+        }
+    }
+
+    /// <summary>
+    /// Automatically slices game_assets sprites on Editor load if they haven't been imported yet.
+    /// Checks for the btn_play sub-sprite as a proxy for whether ImportAll has been run.
+    /// </summary>
+    [InitializeOnLoad]
+    static class GameAssetAutoImport
+    {
+        static GameAssetAutoImport()
+        {
+            EditorApplication.delayCall += AutoImportIfNeeded;
+        }
+
+        static void AutoImportIfNeeded()
+        {
+            const string probeAsset = "Assets/game_assets/buttons/ui_buttons_set1.png";
+            var all = AssetDatabase.LoadAllAssetsAtPath(probeAsset);
+            foreach (var obj in all)
+                if (obj is Sprite s && s.name == "btn_play") return;
+
+            // btn_play sub-sprite not found — assets haven't been sliced yet
+            if (AssetImporter.GetAtPath(probeAsset) == null) return; // PNG not in project yet
+
+            Debug.Log("[GameAssets] Sprites not yet sliced — auto-importing game_assets...");
+            GameAssetImporter.ImportAll();
         }
     }
 }

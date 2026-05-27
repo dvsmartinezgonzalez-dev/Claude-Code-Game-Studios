@@ -355,11 +355,6 @@ namespace BoltSort.Gameplay
             _winCardRT.pivot            = new Vector2(0.5f, 0.5f);
             _winCardRT.anchoredPosition = Vector2.zero;
             _winCardRT.sizeDelta        = new Vector2(520f, 680f);
-            GameAssets.Apply(winCard.GetComponent<Image>(), GameAssets.VictoryScreen);
-
-            // Dark scrim over the victory sprite so text is readable
-            var scrim = MakePanel(winCard, "Scrim", new Color(0f, 0f, 0f, 0.52f));
-            Stretch(scrim.GetComponent<RectTransform>());
 
             // 3 star icons near the top of the win card
             _winStarImages = new Image[3];
@@ -369,8 +364,8 @@ namespace BoltSort.Gameplay
                 starGO.transform.SetParent(winCard.transform, false);
                 var starImg = starGO.AddComponent<Image>();
                 Sprite spr  = GameAssets.StarLarge;
-                if (spr != null) { starImg.sprite = spr; starImg.color = Color.white; starImg.preserveAspect = true; }
-                else              { starImg.color = BoltSortTheme.WinGold; }
+                if (spr != null) { starImg.sprite = spr; starImg.color = new Color(1f, 1f, 1f, 0.25f); starImg.preserveAspect = true; }
+                else              { starImg.color = new Color(0f, 0f, 0f, 0f); }
                 var stRT = starGO.GetComponent<RectTransform>();
                 stRT.anchorMin = stRT.anchorMax = new Vector2(0.5f, 1f);
                 stRT.pivot     = new Vector2(0.5f, 1f);
@@ -379,7 +374,6 @@ namespace BoltSort.Gameplay
                 float offsetY = i == 1 ? -28f : -50f; // center star higher
                 stRT.anchoredPosition = new Vector2(offsetX, offsetY);
                 stRT.sizeDelta        = new Vector2(starW, starW);
-                starImg.color         = new Color(1f, 1f, 1f, 0.25f); // dim by default
                 _winStarImages[i]     = starImg;
             }
 
