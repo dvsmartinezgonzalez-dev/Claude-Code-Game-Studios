@@ -120,6 +120,7 @@ namespace BoltSort.Visual
             vel.enabled = true;
             vel.x       = new ParticleSystem.MinMaxCurve(-0.04f, 0.04f);
             vel.y       = new ParticleSystem.MinMaxCurve(0.05f,  0.20f);
+            vel.z       = new ParticleSystem.MinMaxCurve(0f, 0f);
 
             var col = ps.colorOverLifetime;
             col.enabled = true;
