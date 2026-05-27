@@ -43,43 +43,93 @@ namespace BoltSort.Gameplay
             scaler.matchWidthOrHeight  = 1f;
             canvasGO.AddComponent<GraphicRaycaster>();
 
-            // Background
-            var bg = MakePanel(canvasGO, "Background", BoltSortTheme.BackgroundDeep);
-            Stretch(bg.GetComponent<RectTransform>());
+            // Background — use game_background sprite if available, else solid color
+            var bg    = MakePanel(canvasGO, "Background", BoltSortTheme.BackgroundDeep);
+            var bgImg = bg.GetComponent<Image>();
+            GameAssets.Apply(bgImg, GameAssets.GameBackground);
+            Stretch(bgImg.GetComponent<RectTransform>());
 
-            // Title
+            // Title (shown on top of background sprite)
             var titleText = MakeLabel(canvasGO, "Title", "BOLT SORT", font,
                                       100, TextAnchor.MiddleCenter, bold: true, shadow: true);
             titleText.color = BoltSortTheme.WinGold;
             SetAnchors(titleText.GetComponent<RectTransform>(),
                 new Vector2(0.05f, 0.58f), new Vector2(0.95f, 0.76f));
 
-            // PLAY button
-            var playBtn = MakeAnimatedButton(canvasGO, "PlayButton", "PLAY", font, 56, OnPlayClicked);
-            playBtn.GetComponent<Image>().color = BoltSortTheme.HUDAccent;
+            // PLAY button — btn_play sprite has "PLAY ▶" baked in; hide text label
+            var playBtn = MakeAnimatedButton(canvasGO, "PlayButton", "", font, 56, OnPlayClicked);
+            var playImg = playBtn.GetComponent<Image>();
+            if (GameAssets.BtnPlay != null)
+                GameAssets.Apply(playImg, GameAssets.BtnPlay, preserveAspect: true);
+            else
+                playImg.color = BoltSortTheme.HUDAccent;
             SetAnchors(playBtn.GetComponent<RectTransform>(),
-                new Vector2(0.12f, 0.42f), new Vector2(0.88f, 0.54f));
+                new Vector2(0.08f, 0.42f), new Vector2(0.72f, 0.55f));
 
-            // LEVELS button
-            var levelsBtn = MakeAnimatedButton(canvasGO, "LevelsButton", "LEVELS", font, 48, OnLevelsClicked);
-            levelsBtn.GetComponent<Image>().color = new Color(0.20f, 0.40f, 0.65f, 1f);
+            // LEVELS button — no dedicated sprite; use btn_continue (right arrow) + label
+            var levelsBtn = MakeAnimatedButton(canvasGO, "LevelsButton", "LEVELS", font, 44, OnLevelsClicked);
+            var levelsImg = levelsBtn.GetComponent<Image>();
+            if (GameAssets.BtnContinue != null)
+                GameAssets.Apply(levelsImg, GameAssets.BtnContinue, preserveAspect: true);
+            else
+                levelsImg.color = new Color(0.20f, 0.40f, 0.65f, 1f);
             SetAnchors(levelsBtn.GetComponent<RectTransform>(),
                 new Vector2(0.12f, 0.28f), new Vector2(0.88f, 0.39f));
 
-            // Settings button
-            var settingsBtn = MakeAnimatedButton(canvasGO, "SettingsButton", "⚙", font, 44, OnSettingsClicked);
-            settingsBtn.GetComponent<Image>().color = new Color(0.12f, 0.12f, 0.22f, 0.9f);
+            // Settings button (top-left corner) — btn_settings sprite (red gear circle)
+            var settingsBtn = MakeAnimatedButton(canvasGO, "SettingsButton", "", font, 44, OnSettingsClicked);
+            var settingsImg = settingsBtn.GetComponent<Image>();
+            if (GameAssets.BtnSettings != null)
+                GameAssets.Apply(settingsImg, GameAssets.BtnSettings, preserveAspect: true);
+            else
+                settingsImg.color = new Color(0.12f, 0.12f, 0.22f, 0.9f);
             var sr = settingsBtn.GetComponent<RectTransform>();
             sr.anchorMin        = new Vector2(0f, 1f);
             sr.anchorMax        = new Vector2(0f, 1f);
             sr.pivot            = new Vector2(0f, 1f);
             sr.anchoredPosition = new Vector2(16f, -16f);
-            sr.sizeDelta        = new Vector2(80f, 80f);
+            sr.sizeDelta        = new Vector2(110f, 110f);
+
+            // Sound toggle button (top-right corner) — btn_sound sprite
+            bool musicOn = PlayerPrefs.GetInt("bs.music_on", 1) == 1;
+            var soundBtn = MakeAnimatedButton(canvasGO, "SoundButton", "", font, 32, OnSoundClicked);
+            _soundBtnImg = soundBtn.GetComponent<Image>();
+            RefreshSoundSprite();
+            var soundRT = soundBtn.GetComponent<RectTransform>();
+            soundRT.anchorMin        = new Vector2(1f, 1f);
+            soundRT.anchorMax        = new Vector2(1f, 1f);
+            soundRT.pivot            = new Vector2(1f, 1f);
+            soundRT.anchoredPosition = new Vector2(-16f, -16f);
+            soundRT.sizeDelta        = new Vector2(110f, 110f);
 
             var spHost = new GameObject("SettingsPanelHost");
             spHost.transform.SetParent(canvasGO.transform, false);
             _settingsPanel = spHost.AddComponent<SettingsPanel>();
             _settingsPanel.Initialize(font, canvasGO.transform);
+        }
+
+        private Image _soundBtnImg;
+
+        private void OnSoundClicked()
+        {
+            bool current = PlayerPrefs.GetInt("bs.music_on", 1) == 1;
+            bool next    = !current;
+            PlayerPrefs.SetInt("bs.music_on", next ? 1 : 0);
+            AudioMgr.Instance?.SetMusicEnabled(next);
+            RefreshSoundSprite();
+        }
+
+        private void RefreshSoundSprite()
+        {
+            if (_soundBtnImg == null) return;
+            bool on = PlayerPrefs.GetInt("bs.music_on", 1) == 1;
+            Sprite spr = on ? GameAssets.BtnSound : GameAssets.BtnSoundOff;
+            if (spr != null)
+                GameAssets.Apply(_soundBtnImg, spr, preserveAspect: true);
+            else
+                _soundBtnImg.color = on
+                    ? new Color(0.12f, 0.55f, 0.55f, 1f)
+                    : new Color(0.40f, 0.40f, 0.40f, 0.8f);
         }
 
         private void OnPlayClicked()

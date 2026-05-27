@@ -35,6 +35,7 @@ namespace BoltSort.Gameplay
         private RectTransform _winCardRT;
         private Text        _winMovesText;
         private Text        _moreLevelsText;
+        private Image[]     _winStarImages;
         private SettingsPanel _settingsPanel;
 
         // ── Move counter animation ────────────────────────────────────────────────
@@ -131,6 +132,11 @@ namespace BoltSort.Gameplay
         {
             _winOverlay.SetActive(true);
 
+            // Dim all stars first
+            if (_winStarImages != null)
+                foreach (var si in _winStarImages)
+                    if (si != null) si.color = new Color(1f, 1f, 1f, 0.18f);
+
             // Slide card in from bottom
             if (_winCardRT != null)
             {
@@ -161,6 +167,22 @@ namespace BoltSort.Gameplay
                     yield return null;
                 }
                 _winMovesText.text = $"Moves: {moves}";
+            }
+
+            // Light up stars one by one (assume GSM fires OnLevelComplete with star count
+            // separately; here we flash all 3 since we don't have star count in this callback)
+            if (_winStarImages != null)
+            {
+                foreach (var si in _winStarImages)
+                {
+                    if (si == null) continue;
+                    yield return new WaitForSeconds(0.12f);
+                    si.color = Color.white;
+                    // Small pop scale
+                    var rt = si.GetComponent<RectTransform>();
+                    if (rt != null) StartCoroutine(TweenUtility.LerpRectScale(
+                        rt, new Vector3(1.3f, 1.3f, 1f), 0.08f, TweenUtility.EaseOutBack));
+                }
             }
         }
 
@@ -275,34 +297,44 @@ namespace BoltSort.Gameplay
 
             float btnY = safeBottom + 22f;
 
-            var resetBtn  = MakeAnimatedButton(bottomBar, "ResetButton", "Reset", font, 30, _onReset);
+            // Retry / Reset button — btn_retry sprite
+            var resetBtn  = MakeIconButton(bottomBar, "ResetButton", "Reset", font, 30,
+                                           GameAssets.BtnRetry, _onReset);
             var resetRect = resetBtn.GetComponent<RectTransform>();
             resetRect.anchorMin = resetRect.anchorMax = new Vector2(0.04f, 0f);
             resetRect.pivot     = new Vector2(0f, 0f);
             resetRect.anchoredPosition = new Vector2(0f, btnY);
-            resetRect.sizeDelta        = new Vector2(196f, 72f);
+            resetRect.sizeDelta        = new Vector2(90f, 90f);
 
-            var undoBtn  = MakeAnimatedButton(bottomBar, "UndoButton", "Undo", font, 30, _onUndo);
+            // Undo button — btn_back sprite
+            var undoBtn  = MakeIconButton(bottomBar, "UndoButton", "Undo", font, 30,
+                                          GameAssets.BtnBack, _onUndo);
             var undoRect = undoBtn.GetComponent<RectTransform>();
             undoRect.anchorMin = undoRect.anchorMax = new Vector2(0.5f, 0f);
             undoRect.pivot     = new Vector2(0.5f, 0f);
             undoRect.anchoredPosition = new Vector2(0f, btnY);
-            undoRect.sizeDelta        = new Vector2(196f, 72f);
+            undoRect.sizeDelta        = new Vector2(90f, 90f);
 
-            var menuBtn  = MakeAnimatedButton(bottomBar, "MenuButton", "Menu", font, 30, _onMenu);
+            // Menu / Home button — btn_home sprite
+            var menuBtn  = MakeIconButton(bottomBar, "MenuButton", "Menu", font, 30,
+                                          GameAssets.BtnHome, _onMenu);
             var menuRect = menuBtn.GetComponent<RectTransform>();
             menuRect.anchorMin = menuRect.anchorMax = new Vector2(0.96f, 0f);
             menuRect.pivot     = new Vector2(1f, 0f);
             menuRect.anchoredPosition = new Vector2(0f, btnY);
-            menuRect.sizeDelta        = new Vector2(196f, 72f);
+            menuRect.sizeDelta        = new Vector2(90f, 90f);
 
-            var settingsBtn = MakeAnimatedButton(canvasGO, "SettingsButton", "⚙", font, 36, OnSettingsClicked);
-            settingsBtn.GetComponent<Image>().color = new Color(0.12f, 0.12f, 0.22f, 0.85f);
+            // Settings button (top-left corner) — btn_settings_pause sprite (yellow gear)
+            var settingsBtn = MakeIconButton(canvasGO, "SettingsButton", "",  font, 36,
+                                             GameAssets.BtnSettingsPause, OnSettingsClicked);
+            var settingsImg = settingsBtn.GetComponent<Image>();
+            if (GameAssets.BtnSettingsPause == null)
+                settingsImg.color = new Color(0.12f, 0.12f, 0.22f, 0.85f);
             var sgr = settingsBtn.GetComponent<RectTransform>();
             sgr.anchorMin = sgr.anchorMax = new Vector2(0f, 1f);
             sgr.pivot     = new Vector2(0f, 1f);
             sgr.anchoredPosition = new Vector2(12f, -(safeTop + 12f));
-            sgr.sizeDelta        = new Vector2(72f, 72f);
+            sgr.sizeDelta        = new Vector2(88f, 88f);
 
             var spHost = new GameObject("SettingsPanelHost");
             spHost.transform.SetParent(canvasGO.transform, false);
@@ -310,58 +342,90 @@ namespace BoltSort.Gameplay
             _settingsPanel.Initialize(font, canvasGO.transform);
 
             // ── Win overlay ──────────────────────────────────────────────────────
-            _winOverlay = MakePanel(canvasGO, "WinOverlay", new Color(0f, 0f, 0f, 0.75f));
+            _winOverlay = MakePanel(canvasGO, "WinOverlay", new Color(0f, 0f, 0f, 0.78f));
             var winRect = _winOverlay.GetComponent<RectTransform>();
             winRect.anchorMin = Vector2.zero; winRect.anchorMax = Vector2.one;
             winRect.offsetMin = winRect.offsetMax = Vector2.zero;
 
+            // Win card — use victory_screen sprite as background if available
             var winCard  = MakePanel(_winOverlay, "WinCard", new Color(0.071f, 0.071f, 0.118f, 0.97f));
             _winCardRT   = winCard.GetComponent<RectTransform>();
             _winCardRT.anchorMin        = new Vector2(0.5f, 0.5f);
             _winCardRT.anchorMax        = new Vector2(0.5f, 0.5f);
             _winCardRT.pivot            = new Vector2(0.5f, 0.5f);
             _winCardRT.anchoredPosition = Vector2.zero;
-            _winCardRT.sizeDelta        = new Vector2(460f, 340f);
+            _winCardRT.sizeDelta        = new Vector2(520f, 680f);
+            GameAssets.Apply(winCard.GetComponent<Image>(), GameAssets.VictoryScreen);
 
-            var winTitle = MakeLabel(winCard, "WinTitle", "★ Level Complete! ★",
-                                     font, 56, TextAnchor.MiddleCenter, bold: true, shadow: true);
+            // Dark scrim over the victory sprite so text is readable
+            var scrim = MakePanel(winCard, "Scrim", new Color(0f, 0f, 0f, 0.52f));
+            Stretch(scrim.GetComponent<RectTransform>());
+
+            // 3 star icons near the top of the win card
+            _winStarImages = new Image[3];
+            for (int i = 0; i < 3; i++)
+            {
+                var starGO  = new GameObject($"WinStar_{i + 1}");
+                starGO.transform.SetParent(winCard.transform, false);
+                var starImg = starGO.AddComponent<Image>();
+                Sprite spr  = GameAssets.StarLarge;
+                if (spr != null) { starImg.sprite = spr; starImg.color = Color.white; starImg.preserveAspect = true; }
+                else              { starImg.color = BoltSortTheme.WinGold; }
+                var stRT = starGO.GetComponent<RectTransform>();
+                stRT.anchorMin = stRT.anchorMax = new Vector2(0.5f, 1f);
+                stRT.pivot     = new Vector2(0.5f, 1f);
+                float starW = 110f;
+                float offsetX = (i - 1) * 120f;
+                float offsetY = i == 1 ? -28f : -50f; // center star higher
+                stRT.anchoredPosition = new Vector2(offsetX, offsetY);
+                stRT.sizeDelta        = new Vector2(starW, starW);
+                starImg.color         = new Color(1f, 1f, 1f, 0.25f); // dim by default
+                _winStarImages[i]     = starImg;
+            }
+
+            var winTitle = MakeLabel(winCard, "WinTitle", "LEVEL COMPLETE!",
+                                     font, 52, TextAnchor.MiddleCenter, bold: true, shadow: true);
             winTitle.color = BoltSortTheme.WinGold;
             var wtRect = winTitle.GetComponent<RectTransform>();
-            wtRect.anchorMin = new Vector2(0f, 1f); wtRect.anchorMax = new Vector2(1f, 1f);
-            wtRect.pivot     = new Vector2(0.5f, 1f);
-            wtRect.offsetMin = new Vector2(12f, -108f); wtRect.offsetMax = new Vector2(-12f, -16f);
+            wtRect.anchorMin = new Vector2(0f, 0.55f); wtRect.anchorMax = new Vector2(1f, 0.72f);
+            wtRect.offsetMin = new Vector2(12f, 0f);   wtRect.offsetMax = new Vector2(-12f, 0f);
 
             _winMovesText = MakeLabel(winCard, "WinMoves", "Moves: 0",
-                                      font, 40, TextAnchor.MiddleCenter, bold: false, shadow: false);
-            _winMovesText.color = BoltSortTheme.HUDText;
+                                      font, 38, TextAnchor.MiddleCenter, bold: false, shadow: false);
+            _winMovesText.color = Color.white;
             var wmRect = _winMovesText.GetComponent<RectTransform>();
-            wmRect.anchorMin = new Vector2(0f, 0.5f); wmRect.anchorMax = new Vector2(1f, 0.5f);
-            wmRect.pivot     = new Vector2(0.5f, 0.5f);
-            wmRect.offsetMin = new Vector2(0f, -24f); wmRect.offsetMax = new Vector2(0f, 24f);
+            wmRect.anchorMin = new Vector2(0f, 0.44f); wmRect.anchorMax = new Vector2(1f, 0.56f);
+            wmRect.offsetMin = wmRect.offsetMax = Vector2.zero;
 
-            var nextBtn  = MakeAnimatedButton(winCard, "NextLevelButton", "Next Level", font, 36, _onNextLevel);
-            nextBtn.GetComponent<Image>().color = BoltSortTheme.HUDAccent;
-            var nbRect   = nextBtn.GetComponent<RectTransform>();
+            // Next Level button — btn_continue sprite
+            var nextBtn = MakeIconButton(winCard, "NextLevelButton", "NEXT", font, 34,
+                                         GameAssets.BtnContinue, _onNextLevel);
+            if (GameAssets.BtnContinue == null)
+                nextBtn.GetComponent<Image>().color = BoltSortTheme.HUDAccent;
+            var nbRect  = nextBtn.GetComponent<RectTransform>();
             nbRect.anchorMin = nbRect.anchorMax = new Vector2(0.5f, 0f);
             nbRect.pivot     = new Vector2(0.5f, 0f);
-            nbRect.anchoredPosition = new Vector2(-80f, 22f);
-            nbRect.sizeDelta        = new Vector2(220f, 68f);
+            nbRect.anchoredPosition = new Vector2(-70f, 30f);
+            nbRect.sizeDelta        = new Vector2(120f, 120f);
 
-            var replayBtn  = MakeAnimatedButton(winCard, "ReplayButton", "Replay", font, 28, _onReplay ?? _onReset);
-            replayBtn.GetComponent<Image>().color = new Color(0.22f, 0.22f, 0.36f, 1f);
-            var rpRect   = replayBtn.GetComponent<RectTransform>();
+            // Replay button — btn_retry sprite
+            var replayBtn = MakeIconButton(winCard, "ReplayButton", "", font, 28,
+                                           GameAssets.BtnRetry, _onReplay ?? _onReset);
+            if (GameAssets.BtnRetry == null)
+                replayBtn.GetComponent<Image>().color = new Color(0.22f, 0.22f, 0.36f, 1f);
+            var rpRect = replayBtn.GetComponent<RectTransform>();
             rpRect.anchorMin = rpRect.anchorMax = new Vector2(0.5f, 0f);
             rpRect.pivot     = new Vector2(0f, 0f);
-            rpRect.anchoredPosition = new Vector2(16f, 22f);
-            rpRect.sizeDelta        = new Vector2(180f, 68f);
+            rpRect.anchoredPosition = new Vector2(20f, 30f);
+            rpRect.sizeDelta        = new Vector2(120f, 120f);
 
             _moreLevelsText = MakeLabel(winCard, "MoreLevels", "More levels coming soon!",
-                                        font, 28, TextAnchor.MiddleCenter, bold: false, shadow: false);
+                                        font, 26, TextAnchor.MiddleCenter, bold: false, shadow: false);
             _moreLevelsText.color = new Color(0.8f, 0.8f, 0.5f, 1f);
             var mlRect = _moreLevelsText.GetComponent<RectTransform>();
             mlRect.anchorMin = new Vector2(0f, 0f); mlRect.anchorMax = new Vector2(1f, 0f);
             mlRect.pivot     = new Vector2(0.5f, 0f);
-            mlRect.offsetMin = new Vector2(8f, 22f); mlRect.offsetMax = new Vector2(-8f, 76f);
+            mlRect.offsetMin = new Vector2(8f, 30f); mlRect.offsetMax = new Vector2(-8f, 76f);
             _moreLevelsText.gameObject.SetActive(false);
 
             _winOverlay.SetActive(false);
@@ -438,6 +502,60 @@ namespace BoltSort.Gameplay
                 rt, new Vector3(0.90f, 0.90f, 1f), 0.07f, TweenUtility.EaseInQuad));
             yield return StartCoroutine(TweenUtility.LerpRectScale(
                 rt, Vector3.one, 0.10f, TweenUtility.EaseOutBack));
+        }
+
+        // Icon-first button: uses sprite if available, falls back to labeled colored rect.
+        private GameObject MakeIconButton(GameObject parent, string name, string fallbackLabel,
+                                          Font font, int fontSize,
+                                          Sprite icon, Action onClick)
+        {
+            var go  = new GameObject(name);
+            go.transform.SetParent(parent.transform, false);
+            var img = go.AddComponent<Image>();
+
+            if (icon != null)
+            {
+                img.sprite         = icon;
+                img.color          = Color.white;
+                img.preserveAspect = true;
+            }
+            else
+            {
+                img.color = BoltSortTheme.HUDAccent;
+                if (!string.IsNullOrEmpty(fallbackLabel))
+                {
+                    var lgo = new GameObject("Label");
+                    lgo.transform.SetParent(go.transform, false);
+                    var t = lgo.AddComponent<Text>();
+                    t.text = fallbackLabel; t.font = font; t.fontSize = fontSize;
+                    t.fontStyle = FontStyle.Bold; t.alignment = TextAnchor.MiddleCenter;
+                    t.color = Color.white; t.supportRichText = false;
+                    var lr = lgo.GetComponent<RectTransform>();
+                    lr.anchorMin = Vector2.zero; lr.anchorMax = Vector2.one;
+                    lr.offsetMin = lr.offsetMax = Vector2.zero;
+                }
+            }
+
+            var btn = go.AddComponent<Button>();
+            var cs  = btn.colors;
+            cs.highlightedColor = new Color(0.9f, 0.9f, 0.9f, 1f);
+            cs.pressedColor     = new Color(0.75f, 0.75f, 0.75f, 1f);
+            btn.colors = cs;
+
+            var rt = go.GetComponent<RectTransform>();
+            btn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
+            btn.onClick.AddListener(() =>
+            {
+                StartCoroutine(BounceButton(rt));
+                onClick?.Invoke();
+            });
+            return go;
+        }
+
+        private static void Stretch(RectTransform rt)
+        {
+            rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+            rt.offsetMin = rt.offsetMax = Vector2.zero;
         }
 
         private static void SetAnchors(RectTransform rt,

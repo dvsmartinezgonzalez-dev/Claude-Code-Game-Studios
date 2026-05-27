@@ -81,8 +81,9 @@ namespace BoltSort.Gameplay
             scaler.matchWidthOrHeight  = 1f;
             canvasGO.AddComponent<GraphicRaycaster>();
 
-            // Background
-            var bg = MakePanel(canvasGO, "Background", BoltSortTheme.BackgroundDeep);
+            // Background — game_background sprite if available, else solid color
+            var bg    = MakePanel(canvasGO, "Background", BoltSortTheme.BackgroundDeep);
+            GameAssets.Apply(bg.GetComponent<Image>(), GameAssets.GameBackground);
             Stretch(bg.GetComponent<RectTransform>());
 
             // Header bar
@@ -97,13 +98,17 @@ namespace BoltSort.Gameplay
             titleText.color = BoltSortTheme.HUDText;
             Stretch(titleText.GetComponent<RectTransform>());
 
-            var backBtn = MakeAnimatedButton(header, "BackButton", "< Back", font, 36,
+            var backBtn = MakeAnimatedButton(header, "BackButton", "", font, 36,
                                              OnBackClicked);
-            backBtn.GetComponent<Image>().color = new Color(0.12f, 0.12f, 0.22f, 0.9f);
+            var backImg = backBtn.GetComponent<Image>();
+            if (GameAssets.BtnBack != null)
+                GameAssets.Apply(backImg, GameAssets.BtnBack, preserveAspect: true);
+            else
+                backImg.color = new Color(0.12f, 0.12f, 0.22f, 0.9f);
             var bbr = backBtn.GetComponent<RectTransform>();
             bbr.anchorMin = new Vector2(0f, 0f); bbr.anchorMax = new Vector2(0f, 1f);
             bbr.pivot     = new Vector2(0f, 0.5f);
-            bbr.offsetMin = new Vector2(8f, 8f); bbr.offsetMax = new Vector2(180f, -8f);
+            bbr.offsetMin = new Vector2(8f, 8f); bbr.offsetMax = new Vector2(100f, -8f);
 
             // Scroll area
             var scrollGO  = new GameObject("ScrollView");
@@ -162,106 +167,97 @@ namespace BoltSort.Gameplay
                 float x = padX + col * (cellSize + cellGap) + cellSize * 0.5f;
                 float y = -(padTop + row * (cellSize + cellGap) + cellSize * 0.5f);
 
-                // Cell background color
-                Color cellColor = isLocked
-                    ? new Color(0.20f, 0.20f, 0.24f, 0.6f)
-                    : isCompleted
-                        ? BoltSortTheme.HexColor("1A4A22") // dark green for completed
-                        : isCurrent
-                            ? BoltSortTheme.HexColor("1A2E4A")
-                            : BoltSortTheme.HexColor("1A2E4A");
-
+                // Cell — tile_level_unlocked or tile_level_locked sprite
                 var cell = new GameObject($"Level_{levelId}");
                 cell.transform.SetParent(contentGO.transform, false);
                 var cellImg = cell.AddComponent<Image>();
-                cellImg.color = cellColor;
+                Sprite tileSprite = isLocked ? GameAssets.TileLevelLocked
+                                              : GameAssets.TileLevelUnlocked;
+                if (tileSprite != null)
+                {
+                    cellImg.sprite  = tileSprite;
+                    cellImg.color   = Color.white;
+                    cellImg.type    = Image.Type.Simple;
+                    cellImg.preserveAspect = false;
+                    // Tint for completed (golden) vs current (bright) vs locked (dark)
+                    if (isCompleted && !isLocked)
+                        cellImg.color = new Color(1.0f, 0.95f, 0.7f, 1f); // warm gold tint
+                    else if (isLocked)
+                        cellImg.color = new Color(0.55f, 0.55f, 0.65f, 1f); // greyed out
+                }
+                else
+                {
+                    // Fallback — solid color if sprites not yet imported
+                    Color cellColor = isLocked
+                        ? new Color(0.20f, 0.20f, 0.24f, 0.6f)
+                        : isCompleted ? BoltSortTheme.HexColor("1A4A22")
+                                      : BoltSortTheme.HexColor("1A2E4A");
+                    cellImg.color = cellColor;
+                }
+
                 var cr = cell.GetComponent<RectTransform>();
                 cr.anchorMin = new Vector2(0f, 1f); cr.anchorMax = new Vector2(0f, 1f);
                 cr.pivot     = new Vector2(0.5f, 0.5f);
                 cr.anchoredPosition = new Vector2(x, y);
                 cr.sizeDelta = new Vector2(cellSize, cellSize);
 
-                // Current-level pulsing border (separate Image)
-                if (!isLocked)
+                // Pulsing glow border for current level
+                if (isCurrent)
                 {
                     var borderGO  = new GameObject("Border");
                     borderGO.transform.SetParent(cell.transform, false);
                     var borderImg = borderGO.AddComponent<Image>();
                     var borderRt  = borderGO.GetComponent<RectTransform>();
                     borderRt.anchorMin = Vector2.zero; borderRt.anchorMax = Vector2.one;
-                    borderRt.offsetMin = new Vector2(-3f, -3f);
-                    borderRt.offsetMax = new Vector2(3f, 3f);
-
-                    if (isCurrent)
-                    {
-                        borderImg.color = new Color(
-                            BoltSortTheme.HUDAccent.r, BoltSortTheme.HUDAccent.g,
-                            BoltSortTheme.HUDAccent.b, 0.9f);
-                        _pulseCells.Add((borderImg, true));
-                    }
-                    else if (isCompleted)
-                    {
-                        borderImg.color = new Color(
-                            BoltSortTheme.WinGold.r, BoltSortTheme.WinGold.g,
-                            BoltSortTheme.WinGold.b, 0.5f);
-                        _pulseCells.Add((borderImg, false));
-                    }
-                    else
-                    {
-                        borderImg.color = new Color(1f, 1f, 1f, 0.08f);
-                        _pulseCells.Add((borderImg, false));
-                    }
-                }
-
-                // Completed glow overlay
-                if (isCompleted && !isLocked)
-                {
-                    var glowGO  = new GameObject("CompletedGlow");
-                    glowGO.transform.SetParent(cell.transform, false);
-                    var glowImg = glowGO.AddComponent<Image>();
-                    glowImg.color = new Color(
+                    borderRt.offsetMin = new Vector2(-4f, -4f);
+                    borderRt.offsetMax = new Vector2(4f, 4f);
+                    borderImg.color = new Color(
                         BoltSortTheme.WinGold.r, BoltSortTheme.WinGold.g,
-                        BoltSortTheme.WinGold.b, 0.08f);
-                    Stretch(glowGO.GetComponent<RectTransform>());
+                        BoltSortTheme.WinGold.b, 0.9f);
+                    _pulseCells.Add((borderImg, true));
                 }
 
-                // Lock icon or level number
-                var numLabel = MakeLabel(cell, "Num", isLocked ? "🔒" : levelId.ToString(),
-                                         font, isLocked ? 32 : 36,
-                                         TextAnchor.MiddleCenter, bold: true, shadow: false);
-                numLabel.color = isLocked ? new Color(0.5f, 0.5f, 0.5f, 0.6f) : BoltSortTheme.HUDText;
-                Stretch(numLabel.GetComponent<RectTransform>());
+                // Level number label (centered, above stars row)
+                if (!isLocked)
+                {
+                    var numLabel = MakeLabel(cell, "Num", levelId.ToString(),
+                                             font, 34, TextAnchor.MiddleCenter,
+                                             bold: true, shadow: true);
+                    numLabel.color = isCompleted
+                        ? BoltSortTheme.WinGold
+                        : Color.white;
+                    var nlr = numLabel.GetComponent<RectTransform>();
+                    nlr.anchorMin = new Vector2(0f, 0.35f); nlr.anchorMax = new Vector2(1f, 1f);
+                    nlr.offsetMin = nlr.offsetMax = Vector2.zero;
+                }
 
-                // Stars for completed
+                // Stars row — real Image sprites for completed levels
                 if (isCompleted && !isLocked)
                 {
-                    int stars = ss!.GetCompletionRecord(levelId)!.Value.best_stars;
-                    string starStr = stars >= 3 ? "★★★" : stars >= 2 ? "★★☆" : "★☆☆";
-                    var starLabel = MakeLabel(cell, "Stars", starStr,
-                                             font, 20, TextAnchor.LowerCenter, bold: false, shadow: false);
-                    starLabel.color = BoltSortTheme.WinGold;
-                    var slr = starLabel.GetComponent<RectTransform>();
-                    slr.anchorMin = new Vector2(0f, 0f); slr.anchorMax = new Vector2(1f, 0.4f);
-                    slr.offsetMin = slr.offsetMax = Vector2.zero;
+                    int earnedStars = ss!.GetCompletionRecord(levelId)!.Value.best_stars;
+                    AddStarRow(cell, earnedStars, cellSize);
                 }
 
-                // Desaturate locked cells
-                if (isLocked)
+                // Lock icon overlay for locked cells
+                if (isLocked && GameAssets.TileLevelLocked == null)
                 {
-                    var lockOverlay = new GameObject("LockOverlay");
-                    lockOverlay.transform.SetParent(cell.transform, false);
-                    var lo = lockOverlay.AddComponent<Image>();
-                    lo.color = new Color(0f, 0f, 0f, 0.35f);
-                    Stretch(lockOverlay.GetComponent<RectTransform>());
+                    // Fallback text lock icon when sprite isn't imported
+                    var lockLbl = MakeLabel(cell, "LockIcon", "🔒",
+                                           font, 30, TextAnchor.MiddleCenter,
+                                           bold: false, shadow: false);
+                    lockLbl.color = new Color(0.5f, 0.5f, 0.5f, 0.7f);
+                    Stretch(lockLbl.GetComponent<RectTransform>());
                 }
 
                 if (!isLocked)
                 {
                     int captured = levelId;
                     var btn = cell.AddComponent<Button>();
+                    // Use sprite-mode button colors (white → light grey on press)
                     var cs  = btn.colors;
-                    cs.highlightedColor = new Color(cellColor.r + 0.1f, cellColor.g + 0.1f, cellColor.b + 0.1f);
-                    cs.pressedColor     = new Color(cellColor.r - 0.1f, cellColor.g - 0.1f, cellColor.b - 0.1f);
+                    cs.normalColor      = Color.white;
+                    cs.highlightedColor = new Color(0.92f, 0.92f, 0.92f, 1f);
+                    cs.pressedColor     = new Color(0.75f, 0.75f, 0.75f, 1f);
                     btn.colors = cs;
                     btn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
                     btn.onClick.AddListener(() =>
@@ -323,6 +319,42 @@ namespace BoltSort.Gameplay
                 yield return null;
             }
             if (rt != null) rt.localScale = Vector3.one;
+        }
+
+        private static void AddStarRow(GameObject cell, int earned, float cellSize)
+        {
+            const int total = 3;
+            float starSize  = cellSize * 0.22f;
+            float totalW    = total * starSize + (total - 1) * 2f;
+            float startX    = -totalW * 0.5f + starSize * 0.5f;
+
+            Sprite starSprite = GameAssets.StarLarge;
+
+            for (int i = 0; i < total; i++)
+            {
+                var starGO = new GameObject($"Star_{i + 1}");
+                starGO.transform.SetParent(cell.transform, false);
+                var starImg = starGO.AddComponent<Image>();
+                if (starSprite != null)
+                {
+                    starImg.sprite         = starSprite;
+                    starImg.preserveAspect = true;
+                    starImg.color = i < earned
+                        ? Color.white                          // filled star
+                        : new Color(1f, 1f, 1f, 0.22f);       // dim unfilled star
+                }
+                else
+                {
+                    // Fallback text star
+                    starImg.color = new Color(0f, 0f, 0f, 0f);
+                }
+                var rt = starGO.GetComponent<RectTransform>();
+                rt.anchorMin        = new Vector2(0.5f, 0f);
+                rt.anchorMax        = new Vector2(0.5f, 0f);
+                rt.pivot            = new Vector2(0.5f, 0f);
+                rt.anchoredPosition = new Vector2(startX + i * (starSize + 2f), 4f);
+                rt.sizeDelta        = new Vector2(starSize, starSize);
+            }
         }
 
         private static void LoadLevel(int levelId)
