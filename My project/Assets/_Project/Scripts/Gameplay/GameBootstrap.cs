@@ -2,7 +2,7 @@ using System;
 using System.Collections;
 using System.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.SceneManagement;
+using BoltSort.Visual;
 using AudioMgr = BoltSort.Audio.AudioManager;
 
 namespace BoltSort.Gameplay
@@ -28,6 +28,7 @@ namespace BoltSort.Gameplay
         {
             EnsureSaveSystem();
             EnsureAudioManager();
+            EnsureTransitionManager();
             EnsureCamera();
             ConfigureCamera();
             CreateSystems();
@@ -42,9 +43,9 @@ namespace BoltSort.Gameplay
             _sortMechanic.OnPuzzleSolved        += _ => _gsm.HandlePuzzleSolved();
             _sortMechanic.OnMoveExecutingExited += _gsm.HandleMoveExecutingExited;
 
-            _sortMechanic.OnMoveCommitted += (_, _, _, _) => AudioMgr.Instance?.PlaySFX("bolt_place");
-            _sortMechanic.OnMoveRejected  += (_, _, _, _) => AudioMgr.Instance?.PlaySFX("bolt_invalid");
-            _sortMechanic.OnPuzzleSolved  += _            => AudioMgr.Instance?.PlaySFX("level_win");
+            // bolt_pick and bolt_place are played by BoardView for correct timing.
+            // bolt_invalid plays here (frame 1 of rejection, same as shake start).
+            _sortMechanic.OnMoveRejected += (_, _, _, _) => AudioMgr.Instance?.PlaySFX("bolt_invalid");
 
             _gsm.OnLevelComplete += HandleLevelComplete;
         }
@@ -56,17 +57,21 @@ namespace BoltSort.Gameplay
 
             _currentLevelId = ReadTargetLevel();
 
+            // Background controller (gradient + vignette + ambient particles)
+            var bgGO = new GameObject("BackgroundController");
+            bgGO.AddComponent<BackgroundController>();
+
             var boardGO = new GameObject("Board");
             boardGO.AddComponent<BoardView>().Initialize(_gsm, _sortMechanic);
 
             var hudGO = new GameObject("HUD");
             _hud = hudGO.AddComponent<HUDController>();
             _hud.Initialize(_gsm, _sortMechanic,
-                onReset:   ResetLevel,
+                onReset:    ResetLevel,
                 onNextLevel: LoadNextLevel,
-                onUndo:    OnUndoClicked,
-                onMenu:    OnMenuClicked,
-                onReplay:  ResetLevel);
+                onUndo:     OnUndoClicked,
+                onMenu:     OnMenuClicked,
+                onReplay:   ResetLevel);
 
             _gsm.ExitLevel();
             _gsm.LoadLevel(_currentLevelId);
@@ -95,7 +100,12 @@ namespace BoltSort.Gameplay
 
         private void OnUndoClicked() => _gsm.UndoRequested();
 
-        private static void OnMenuClicked() => SceneManager.LoadScene("MainMenu");
+        private void OnMenuClicked()
+        {
+            var tm = SceneTransitionManager.Instance;
+            if (tm != null) tm.TransitionTo("MainMenu");
+            else UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
+        }
 
         // ── Save wiring ───────────────────────────────────────────────────────────
 
@@ -122,7 +132,6 @@ namespace BoltSort.Gameplay
                 PlayerPrefs.DeleteKey(NextLevelKey);
                 return Mathf.Clamp(id, 1, MaxLevelId);
             }
-
             var ss = SaveSystem.SaveSystem.Instance;
             return (ss != null && ss.IsReady)
                 ? Mathf.Clamp(ss.GetCurrentLevelId(), 1, MaxLevelId)
@@ -139,6 +148,13 @@ namespace BoltSort.Gameplay
         {
             if (AudioMgr.Instance == null)
                 new GameObject("AudioManager").AddComponent<AudioMgr>();
+        }
+
+        private static void EnsureTransitionManager()
+        {
+            if (SceneTransitionManager.Instance == null)
+                new GameObject("SceneTransitionManager")
+                    .AddComponent<SceneTransitionManager>();
         }
 
         private void CreateSystems()
@@ -181,7 +197,7 @@ namespace BoltSort.Gameplay
         {
             Camera cam = Camera.main;
             if (cam == null) return;
-            cam.backgroundColor  = new Color(0.051f, 0.051f, 0.102f, 1f);
+            cam.backgroundColor  = BoltSortTheme.BackgroundDeep;
             cam.orthographicSize = 9.6f;
             cam.orthographic     = true;
         }

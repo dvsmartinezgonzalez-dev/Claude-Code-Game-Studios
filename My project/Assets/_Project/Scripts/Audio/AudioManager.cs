@@ -27,6 +27,7 @@ namespace BoltSort.Audio
         private AudioClip _levelWin;
         private AudioClip _buttonTap;
         private AudioClip _bgmMain;
+        private AudioClip _sceneWhoosh;
 
         private void Awake()
         {
@@ -66,6 +67,7 @@ namespace BoltSort.Audio
             _levelWin    = Resources.Load<AudioClip>("Audio/level_win");
             _buttonTap   = Resources.Load<AudioClip>("Audio/button_tap");
             _bgmMain     = Resources.Load<AudioClip>("Audio/bgm_main");
+            _sceneWhoosh = Resources.Load<AudioClip>("Audio/scene_whoosh") ?? GenerateWhoosh();
         }
 
         // ── Public API ────────────────────────────────────────────────────────────
@@ -86,6 +88,7 @@ namespace BoltSort.Audio
                 "bolt_invalid" => _boltInvalid,
                 "level_win"    => _levelWin,
                 "button_tap"   => _buttonTap,
+                "scene_whoosh" => _sceneWhoosh,
                 _              => null,
             };
             if (clip != null) _sfxSource.PlayOneShot(clip);
@@ -117,5 +120,40 @@ namespace BoltSort.Audio
         }
 
         public void SetSFXEnabled(bool enabled) => _sfxEnabled = enabled;
+
+        // Procedural whoosh: bandpass-filtered white noise, 300ms, fade in/out
+        private static AudioClip GenerateWhoosh()
+        {
+            const int   sampleRate = 44100;
+            const float duration   = 0.30f;
+            int samples = (int)(sampleRate * duration);
+            var clip    = AudioClip.Create("scene_whoosh_proc", samples, 1, sampleRate, false);
+            var data    = new float[samples];
+
+            // Biquad lowpass at 800 Hz, Q=0.7 (approximates 200–800 Hz bandpass)
+            float w0    = 2f * Mathf.PI * 800f / sampleRate;
+            float cosW0 = Mathf.Cos(w0), sinW0 = Mathf.Sin(w0);
+            float alph  = sinW0 / (2f * 0.7f);
+            float b0    = (1f - cosW0) * 0.5f;
+            float b1    = 1f - cosW0;
+            float b2    = b0;
+            float a0    = 1f + alph;
+            float a1    = -2f * cosW0 / a0;
+            float a2    = (1f - alph) / a0;
+            b0 /= a0; b1 /= a0; b2 /= a0;
+
+            float x1 = 0f, x2 = 0f, y1 = 0f, y2 = 0f;
+            for (int i = 0; i < samples; i++)
+            {
+                float t   = (float)i / samples;
+                float env = Mathf.Sin(t * Mathf.PI) * 0.55f;
+                float x0  = UnityEngine.Random.Range(-1f, 1f) * env;
+                float y0  = b0 * x0 + b1 * x1 + b2 * x2 - a1 * y1 - a2 * y2;
+                x2 = x1; x1 = x0; y2 = y1; y1 = y0;
+                data[i] = Mathf.Clamp(y0, -1f, 1f);
+            }
+            clip.SetData(data, 0);
+            return clip;
+        }
     }
 }

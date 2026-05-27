@@ -2,8 +2,8 @@ using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
-using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using BoltSort.Visual;
 using AudioMgr = BoltSort.Audio.AudioManager;
 
 namespace BoltSort.Gameplay
@@ -14,17 +14,13 @@ namespace BoltSort.Gameplay
     /// </summary>
     public class MainMenuController : MonoBehaviour
     {
-        private static readonly Color BgColor     = new Color(0.051f, 0.051f, 0.102f, 1f);
-        private static readonly Color AccentColor = new Color(0.290f, 0.565f, 0.851f, 1f);
-        private static readonly Color DimColor    = new Color(0.20f,  0.40f,  0.65f,  1f);
-        private static readonly Color TitleColor  = new Color(0.98f,  0.85f,  0.30f,  1f);
-
         private SettingsPanel _settingsPanel;
 
         private void Start()
         {
             EnsureSaveSystem();
             EnsureAudioManager();
+            EnsureTransitionManager();
             EnsureEventSystem();
             ConfigureCamera();
             BuildUI();
@@ -48,30 +44,30 @@ namespace BoltSort.Gameplay
             canvasGO.AddComponent<GraphicRaycaster>();
 
             // Background
-            var bg = MakePanel(canvasGO, "Background", BgColor);
+            var bg = MakePanel(canvasGO, "Background", BoltSortTheme.BackgroundDeep);
             Stretch(bg.GetComponent<RectTransform>());
 
             // Title
             var titleText = MakeLabel(canvasGO, "Title", "BOLT SORT", font,
                                       100, TextAnchor.MiddleCenter, bold: true, shadow: true);
-            titleText.color = TitleColor;
+            titleText.color = BoltSortTheme.WinGold;
             SetAnchors(titleText.GetComponent<RectTransform>(),
                 new Vector2(0.05f, 0.58f), new Vector2(0.95f, 0.76f));
 
             // PLAY button
-            var playBtn = MakeButton(canvasGO, "PlayButton", "PLAY", font, 56, OnPlayClicked);
-            playBtn.GetComponent<Image>().color = AccentColor;
+            var playBtn = MakeAnimatedButton(canvasGO, "PlayButton", "PLAY", font, 56, OnPlayClicked);
+            playBtn.GetComponent<Image>().color = BoltSortTheme.HUDAccent;
             SetAnchors(playBtn.GetComponent<RectTransform>(),
                 new Vector2(0.12f, 0.42f), new Vector2(0.88f, 0.54f));
 
             // LEVELS button
-            var levelsBtn = MakeButton(canvasGO, "LevelsButton", "LEVELS", font, 48, OnLevelsClicked);
-            levelsBtn.GetComponent<Image>().color = DimColor;
+            var levelsBtn = MakeAnimatedButton(canvasGO, "LevelsButton", "LEVELS", font, 48, OnLevelsClicked);
+            levelsBtn.GetComponent<Image>().color = new Color(0.20f, 0.40f, 0.65f, 1f);
             SetAnchors(levelsBtn.GetComponent<RectTransform>(),
                 new Vector2(0.12f, 0.28f), new Vector2(0.88f, 0.39f));
 
-            // Settings button (top-left gear icon)
-            var settingsBtn = MakeButton(canvasGO, "SettingsButton", "⚙", font, 44, OnSettingsClicked);
+            // Settings button
+            var settingsBtn = MakeAnimatedButton(canvasGO, "SettingsButton", "⚙", font, 44, OnSettingsClicked);
             settingsBtn.GetComponent<Image>().color = new Color(0.12f, 0.12f, 0.22f, 0.9f);
             var sr = settingsBtn.GetComponent<RectTransform>();
             sr.anchorMin        = new Vector2(0f, 1f);
@@ -80,7 +76,6 @@ namespace BoltSort.Gameplay
             sr.anchoredPosition = new Vector2(16f, -16f);
             sr.sizeDelta        = new Vector2(80f, 80f);
 
-            // Settings panel (hidden initially)
             var spHost = new GameObject("SettingsPanelHost");
             spHost.transform.SetParent(canvasGO.transform, false);
             _settingsPanel = spHost.AddComponent<SettingsPanel>();
@@ -91,10 +86,17 @@ namespace BoltSort.Gameplay
         {
             int levelId = GetCurrentLevel();
             PlayerPrefs.SetInt("bs.next_level", levelId);
-            SceneManager.LoadScene("Gameplay");
+            var tm = SceneTransitionManager.Instance;
+            if (tm != null) tm.TransitionTo("Gameplay");
+            else UnityEngine.SceneManagement.SceneManager.LoadScene("Gameplay");
         }
 
-        private void OnLevelsClicked() => SceneManager.LoadScene("LevelSelect");
+        private void OnLevelsClicked()
+        {
+            var tm = SceneTransitionManager.Instance;
+            if (tm != null) tm.TransitionTo("LevelSelect");
+            else UnityEngine.SceneManagement.SceneManager.LoadScene("LevelSelect");
+        }
 
         private void OnSettingsClicked() => _settingsPanel?.Toggle();
 
@@ -116,6 +118,13 @@ namespace BoltSort.Gameplay
                 new GameObject("AudioManager").AddComponent<AudioMgr>();
         }
 
+        private static void EnsureTransitionManager()
+        {
+            if (SceneTransitionManager.Instance == null)
+                new GameObject("SceneTransitionManager")
+                    .AddComponent<SceneTransitionManager>();
+        }
+
         private static void EnsureEventSystem()
         {
             if (FindObjectsByType<EventSystem>(FindObjectsSortMode.None).Length == 0)
@@ -129,7 +138,7 @@ namespace BoltSort.Gameplay
         private static void ConfigureCamera()
         {
             if (Camera.main != null)
-                Camera.main.backgroundColor = new Color(0.051f, 0.051f, 0.102f, 1f);
+                Camera.main.backgroundColor = BoltSortTheme.BackgroundDeep;
         }
 
         // ── UI helpers ────────────────────────────────────────────────────────────
@@ -160,10 +169,10 @@ namespace BoltSort.Gameplay
             return t;
         }
 
-        private static GameObject MakeButton(GameObject parent, string name, string label,
-                                             Font font, int size, Action onClick)
+        private static GameObject MakeAnimatedButton(GameObject parent, string name, string label,
+                                                     Font font, int size, Action onClick)
         {
-            var go = new GameObject(name);
+            var go  = new GameObject(name);
             go.transform.SetParent(parent.transform, false);
             go.AddComponent<Image>();
             var btn = go.AddComponent<Button>();

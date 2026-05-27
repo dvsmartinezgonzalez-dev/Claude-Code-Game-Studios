@@ -1,14 +1,8 @@
 {
-    "name": "BoltSort.Gameplay",
-    "rootNamespace": "BoltSort.Gameplay",
+    "name": "BoltSort.Visual",
+    "rootNamespace": "BoltSort.Visual",
     "references": [
-        "BoltSort.LevelData",
-        "BoltSort.GameStateManager",
-        "BoltSort.SortMechanic",
-        "BoltSort.SaveSystem",
-        "BoltSort.Audio",
-        "BoltSort.Visual",
-        "Unity.InputSystem"
+        "BoltSort.Audio"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
