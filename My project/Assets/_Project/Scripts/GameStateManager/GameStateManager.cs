@@ -174,6 +174,10 @@ namespace BoltSort.GameStateManager
             // Wire LDS reference. LevelDataSystem is at SEO −95; GSM is at SEO −50.
             // Execution order guarantees LDS.Instance is non-null when GSM.Awake() runs.
             _levelDataSystem = LevelDataSystem.Instance;
+
+            // SER-01/02/03: production board-snapshot store (Story 008). Test fixtures override
+            // via InjectBoardSnapshotSystemForTesting after construction.
+            _boardSnapshotSystem = new BoardSnapshotSystem();
         }
 
         private void OnDestroy()
