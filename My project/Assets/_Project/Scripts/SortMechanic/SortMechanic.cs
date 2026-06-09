@@ -4,7 +4,6 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.EnhancedTouch;
 using BoltSort.GameStateManager;
-using BoltSort.Gameplay;
 
 namespace BoltSort.SortMechanic
 {
@@ -66,7 +65,7 @@ namespace BoltSort.SortMechanic
 
         /// <summary>
         /// When TRUE, all input processing is suspended while the settings panel is open.
-        /// Set via <see cref="OnPauseStateChanged"/> which subscribes to
+        /// Set via <see cref="SetGamePaused"/> which is wired by GameBootstrap to
         /// <see cref="SettingsPanel.OnGamePaused"/>. GP-01: does NOT use Time.timeScale.
         /// </summary>
         private bool _paused;
@@ -188,8 +187,7 @@ namespace BoltSort.SortMechanic
             if (_gsm != null)
                 SubscribeToGsm();
 
-            // GP-01: subscribe to settings panel pause event to block input while open.
-            SettingsPanel.OnGamePaused += OnPauseStateChanged;
+            // GP-01: pause wiring is done by GameBootstrap (avoids circular assembly ref).
         }
 
         private void OnDestroy()
@@ -199,8 +197,7 @@ namespace BoltSort.SortMechanic
             if (_gsm != null)
                 UnsubscribeFromGsm();
 
-            // GP-01: unsubscribe to avoid dangling references after scene unload.
-            SettingsPanel.OnGamePaused -= OnPauseStateChanged;
+            // GP-01: pause wiring unsubscribed by GameBootstrap.
         }
 
         /// <summary>
@@ -275,7 +272,8 @@ namespace BoltSort.SortMechanic
         /// Cancels any in-progress bolt hold so the board is always in a clean state
         /// when the overlay is dismissed.
         /// </summary>
-        private void OnPauseStateChanged(bool paused)
+        /// <summary>Called by GameBootstrap when SettingsPanel opens/closes (GP-01).</summary>
+        public void SetGamePaused(bool paused)
         {
             _paused = paused;
             if (paused && _currentState == SortMechState.BoltSelected)
