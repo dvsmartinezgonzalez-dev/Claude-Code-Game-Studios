@@ -3,6 +3,7 @@ using System.Collections;
 using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.UI;
 using BoltSort.Visual;
 using BoltSort.SortMechanic;
 using AudioMgr = BoltSort.Audio.AudioManager;
@@ -55,8 +56,10 @@ namespace BoltSort.Gameplay
 
         private IEnumerator Start()
         {
+            var loadingOverlay = CreateLoadingOverlay();   // GP-04: show before LDS init
             _lds.InitializeAsync();
             yield return new WaitUntil(() => _lds.IsReady);
+            Destroy(loadingOverlay);                        // GP-04: hide after LDS ready
 
             _currentLevelId = ReadTargetLevel();
 
@@ -74,7 +77,8 @@ namespace BoltSort.Gameplay
                 onNextLevel: LoadNextLevel,
                 onUndo:     OnUndoClicked,
                 onMenu:     OnMenuClicked,
-                onReplay:   ResetLevel);
+                onReplay:   ResetLevel,
+                onLevels:   OnLevelsClicked);
 
             _gsm.ExitLevel();
             _gsm.LoadLevel(_currentLevelId);
@@ -110,6 +114,14 @@ namespace BoltSort.Gameplay
             var tm = SceneTransitionManager.Instance;
             if (tm != null) tm.TransitionTo("MainMenu");
             else UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
+        }
+
+        // GP-06: navigate to LevelSelect from the in-game Levels button
+        private void OnLevelsClicked()
+        {
+            var tm = SceneTransitionManager.Instance;
+            if (tm != null) tm.TransitionTo("LevelSelect");
+            else UnityEngine.SceneManagement.SceneManager.LoadScene("LevelSelect");
         }
 
         // ── Android back button (GP-02) ───────────────────────────────────────────
@@ -161,6 +173,42 @@ namespace BoltSort.Gameplay
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────────
+
+        // GP-04: minimal full-screen loading overlay shown while LevelDataSystem initialises
+        private static GameObject CreateLoadingOverlay()
+        {
+            var go = new GameObject("LoadingOverlay");
+            var canvas = go.AddComponent<Canvas>();
+            canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 200;
+            go.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            go.AddComponent<GraphicRaycaster>();
+
+            var bg = new GameObject("Bg");
+            bg.transform.SetParent(go.transform, false);
+            var bgImg = bg.AddComponent<Image>();
+            bgImg.color = new Color(0.04f, 0.04f, 0.08f, 1f);
+            var bgRt = bg.GetComponent<RectTransform>();
+            bgRt.anchorMin = Vector2.zero; bgRt.anchorMax = Vector2.one;
+            bgRt.offsetMin = bgRt.offsetMax = Vector2.zero;
+
+            var lblGO = new GameObject("LoadingText");
+            lblGO.transform.SetParent(go.transform, false);
+            var lbl = lblGO.AddComponent<Text>();
+            lbl.text      = "Loading…";
+            lbl.font      = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
+                         ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+            lbl.fontSize  = 42;
+            lbl.fontStyle = FontStyle.Bold;
+            lbl.alignment = TextAnchor.MiddleCenter;
+            lbl.color     = new Color(0.7f, 0.7f, 0.9f, 1f);
+            lbl.supportRichText = false;
+            var lblRt = lblGO.GetComponent<RectTransform>();
+            lblRt.anchorMin = new Vector2(0f, 0.4f); lblRt.anchorMax = new Vector2(1f, 0.6f);
+            lblRt.offsetMin = lblRt.offsetMax = Vector2.zero;
+
+            return go;
+        }
 
         private int ReadTargetLevel()
         {

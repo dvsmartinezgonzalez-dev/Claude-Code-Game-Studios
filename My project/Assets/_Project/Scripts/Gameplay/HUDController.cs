@@ -25,6 +25,7 @@ namespace BoltSort.Gameplay
         private Action _onUndo;
         private Action _onMenu;
         private Action _onReplay;
+        private Action _onLevels;
 
         // ── Live UI refs ──────────────────────────────────────────────────────────
         private Text        _levelText;
@@ -58,9 +59,10 @@ namespace BoltSort.Gameplay
             BoltSort.SortMechanic.SortMechanic sm,
             Action onReset,
             Action onNextLevel,
-            Action onUndo  = null,
-            Action onMenu  = null,
-            Action onReplay = null)
+            Action onUndo   = null,
+            Action onMenu   = null,
+            Action onReplay = null,
+            Action onLevels = null)
         {
             _gsm         = gsm;
             _onReset     = onReset;
@@ -68,6 +70,7 @@ namespace BoltSort.Gameplay
             _onUndo      = onUndo;
             _onMenu      = onMenu;
             _onReplay    = onReplay;
+            _onLevels    = onLevels;
 
             _onLevelLoadedHandler = (id, cc, sd, tsc, tsd, seqId) =>
             {
@@ -328,7 +331,7 @@ namespace BoltSort.Gameplay
 
             // ── Deadlock banner ──────────────────────────────────────────────────
             _deadlockText = MakeLabel(canvasGO, "DeadlockBanner",
-                                      "DEADLOCK — Reset!", font, 34,
+                                      "No more moves! Tap Reset", font, 34,
                                       TextAnchor.MiddleCenter, bold: false, shadow: false);
             _deadlockText.color = new Color(0.95f, 0.24f, 0.24f, 1f);
             var dlRect = _deadlockText.GetComponent<RectTransform>();
@@ -358,14 +361,23 @@ namespace BoltSort.Gameplay
             resetRect.anchoredPosition = new Vector2(0f, btnY);
             resetRect.sizeDelta        = new Vector2(90f, 90f);
 
-            // Undo button — btn_back sprite
-            var undoBtn  = MakeIconButton(bottomBar, "UndoButton", "Undo", font, 30,
-                                          GameAssets.BtnBack, _onUndo);
+            // Undo button — no BtnUndo sprite; use "↩" text fallback (GP-03)
+            var undoBtn  = MakeIconButton(bottomBar, "UndoButton", "↩", font, 42,
+                                          null, _onUndo);
             var undoRect = undoBtn.GetComponent<RectTransform>();
-            undoRect.anchorMin = undoRect.anchorMax = new Vector2(0.5f, 0f);
+            undoRect.anchorMin = undoRect.anchorMax = new Vector2(0.36f, 0f);
             undoRect.pivot     = new Vector2(0.5f, 0f);
             undoRect.anchoredPosition = new Vector2(0f, btnY);
             undoRect.sizeDelta        = new Vector2(90f, 90f);
+
+            // Levels button — btn_levels sprite (GP-06)
+            var levelsBtn  = MakeIconButton(bottomBar, "LevelsButton", "Lvls", font, 24,
+                                            GameAssets.BtnLevels, _onLevels);
+            var levelsRect = levelsBtn.GetComponent<RectTransform>();
+            levelsRect.anchorMin = levelsRect.anchorMax = new Vector2(0.64f, 0f);
+            levelsRect.pivot     = new Vector2(0.5f, 0f);
+            levelsRect.anchoredPosition = new Vector2(0f, btnY);
+            levelsRect.sizeDelta        = new Vector2(90f, 90f);
 
             // Menu / Home button — btn_home sprite
             var menuBtn  = MakeIconButton(bottomBar, "MenuButton", "Menu", font, 30,
@@ -418,6 +430,10 @@ namespace BoltSort.Gameplay
             _winCardRT.pivot            = new Vector2(0.5f, 0.5f);
             _winCardRT.anchoredPosition = Vector2.zero;
             _winCardRT.sizeDelta        = new Vector2(520f, 680f);
+
+            // WIN-03: apply VictoryBg sprite; dark fallback color from MakePanel remains if null
+            var winCardImg = winCard.GetComponent<Image>();
+            GameAssets.Apply(winCardImg, GameAssets.VictoryBg, preserveAspect: false);
 
             // Trophy image at top of win card
             var trophyGO = new GameObject("Trophy");

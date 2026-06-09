@@ -88,7 +88,28 @@ namespace BoltSort.Gameplay
             else
                 playImg.color = BoltSortTheme.HUDAccent;
             SetAnchors(playBtn.GetComponent<RectTransform>(),
-                new Vector2(0.08f, 0.42f), new Vector2(0.72f, 0.55f));
+                new Vector2(0.08f, 0.42f), new Vector2(0.92f, 0.55f));
+
+            // MM-03: current level indicator inside PLAY button
+            var mm03ss      = BoltSort.SaveSystem.SaveSystem.Instance;
+            int nextLevelId = (mm03ss != null && mm03ss.IsReady)
+                ? mm03ss.GetCurrentLevelId()
+                : PlayerPrefs.GetInt("bs.current_level_id", 1);
+            var lvlLabelGO = new GameObject("LevelLabel");
+            lvlLabelGO.transform.SetParent(playBtn.transform, false);
+            var lvlLabelT = lvlLabelGO.AddComponent<Text>();
+            lvlLabelT.text             = $"Level {nextLevelId}";
+            lvlLabelT.font             = font;
+            lvlLabelT.fontSize         = 28;
+            lvlLabelT.fontStyle        = FontStyle.Bold;
+            lvlLabelT.alignment        = TextAnchor.LowerCenter;
+            lvlLabelT.color            = new Color(1f, 1f, 1f, 0.75f);
+            lvlLabelT.supportRichText  = false;
+            lvlLabelT.raycastTarget    = false;
+            var lvlLabelRT = lvlLabelGO.GetComponent<RectTransform>();
+            lvlLabelRT.anchorMin = new Vector2(0f, 0f);
+            lvlLabelRT.anchorMax = new Vector2(1f, 0.45f);
+            lvlLabelRT.offsetMin = lvlLabelRT.offsetMax = Vector2.zero;
 
             // LEVELS button — use dedicated Levels.png from assets_admin
             var levelsBtn = MakeAnimatedButton(canvasGO, "LevelsButton", "LEVELS", font, 44, OnLevelsClicked);
@@ -133,6 +154,18 @@ namespace BoltSort.Gameplay
             shopImg.color = new Color(0.55f, 0.25f, 0.75f, 1f); // purple
             SetAnchors(shopBtn.GetComponent<RectTransform>(),
                 new Vector2(0.08f, 0.14f), new Vector2(0.92f, 0.25f));
+
+            // MM-05: diamond icon for consistent shop iconography
+            var shopIconGO = new GameObject("ShopIcon");
+            shopIconGO.transform.SetParent(shopBtn.transform, false);
+            var shopIconImg = shopIconGO.AddComponent<Image>();
+            GameAssets.Apply(shopIconImg, GameAssets.DiamondIcon, preserveAspect: true);
+            if (GameAssets.DiamondIcon == null) shopIconImg.color = new Color(0.8f, 0.5f, 1f, 0.9f);
+            var shopIconRT = shopIconGO.GetComponent<RectTransform>();
+            shopIconRT.anchorMin = new Vector2(0f, 0.1f); shopIconRT.anchorMax = new Vector2(0f, 0.9f);
+            shopIconRT.pivot     = new Vector2(0f, 0.5f);
+            shopIconRT.offsetMin = new Vector2(14f, 0f); shopIconRT.offsetMax = new Vector2(64f, 0f);
+            shopIconImg.raycastTarget = false;
 
             var spHost = new GameObject("SettingsPanelHost");
             spHost.transform.SetParent(canvasGO.transform, false);
