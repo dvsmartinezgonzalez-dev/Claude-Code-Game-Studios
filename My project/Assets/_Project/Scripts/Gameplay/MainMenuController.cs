@@ -50,8 +50,7 @@ namespace BoltSort.Gameplay
 
         private void BuildUI()
         {
-            Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
-                     ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+            Font font = GameAssets.MenuFont; // Gummy display font (falls back to built-in)
 
             var canvasGO = new GameObject("Canvas");
             var canvas   = canvasGO.AddComponent<Canvas>();
@@ -74,18 +73,23 @@ namespace BoltSort.Gameplay
             GameAssets.Apply(bgImg, GameAssets.GameBackground);
             Stretch(bgImg.GetComponent<RectTransform>());
 
-            // Title (shown on top of background sprite)
-            var titleText = MakeLabel(canvasGO, "Title", "BOLT SORT", font,
-                                      100, TextAnchor.MiddleCenter, bold: true, shadow: true);
-            titleText.color = BoltSortTheme.WinGold;
-            SetAnchors(titleText.GetComponent<RectTransform>(),
-                new Vector2(0.05f, 0.58f), new Vector2(0.95f, 0.76f));
+            // Title — two stacked image words ("BOLT" / "SORT") + decorative spark,
+            // replacing the old "BOLT SORT" text label.
+            var boltImg  = MakeImage(canvasGO, "Title_Bolt",  GameAssets.TitleBolt);
+            SetAnchors(boltImg.rectTransform,
+                new Vector2(0.14f, 0.72f), new Vector2(0.86f, 0.84f));
+            var sortImg  = MakeImage(canvasGO, "Title_Sort",  GameAssets.TitleSort);
+            SetAnchors(sortImg.rectTransform,
+                new Vector2(0.14f, 0.60f), new Vector2(0.86f, 0.72f));
+            var sparkImg = MakeImage(canvasGO, "Title_Spark", GameAssets.TitleSpark);
+            SetAnchors(sparkImg.rectTransform,
+                new Vector2(0.66f, 0.69f), new Vector2(0.86f, 0.79f));
 
-            // PLAY button — btn_play sprite has "PLAY ▶" baked in; hide text label
-            var playBtn = MakeAnimatedButton(canvasGO, "PlayButton", "", font, 56, OnPlayClicked);
+            // PLAY button — shared general_button.png base + independent text label
+            var playBtn = MakeAnimatedButton(canvasGO, "PlayButton", "PLAY", font, 56, OnPlayClicked);
             var playImg = playBtn.GetComponent<Image>();
-            if (GameAssets.BtnPlay != null)
-                GameAssets.Apply(playImg, GameAssets.BtnPlay, preserveAspect: true);
+            if (GameAssets.MenuButton != null)
+                GameAssets.Apply(playImg, GameAssets.MenuButton, preserveAspect: true);
             else
                 playImg.color = BoltSortTheme.HUDAccent;
             SetAnchors(playBtn.GetComponent<RectTransform>(),
@@ -112,12 +116,11 @@ namespace BoltSort.Gameplay
             lvlLabelRT.anchorMax = new Vector2(1f, 0.45f);
             lvlLabelRT.offsetMin = lvlLabelRT.offsetMax = Vector2.zero;
 
-            // LEVELS button — use dedicated Levels.png from assets_admin
+            // LEVELS button — shared general_button.png base + independent text label
             var levelsBtn = MakeAnimatedButton(canvasGO, "LevelsButton", "LEVELS", font, 44, OnLevelsClicked);
             var levelsImg = levelsBtn.GetComponent<Image>();
-            Sprite levelsSpr = GameAssets.BtnLevels;
-            if (levelsSpr != null)
-                GameAssets.Apply(levelsImg, levelsSpr, preserveAspect: true);
+            if (GameAssets.MenuButton != null)
+                GameAssets.Apply(levelsImg, GameAssets.MenuButton, preserveAspect: true);
             else
                 levelsImg.color = new Color(0.20f, 0.40f, 0.65f, 1f);
             SetAnchors(levelsBtn.GetComponent<RectTransform>(),
@@ -126,8 +129,8 @@ namespace BoltSort.Gameplay
             // Settings button (top-left corner) — btn_settings sprite (red gear circle)
             var settingsBtn = MakeAnimatedButton(canvasGO, "SettingsButton", "", font, 44, OnSettingsClicked);
             var settingsImg = settingsBtn.GetComponent<Image>();
-            if (GameAssets.BtnSettings != null)
-                GameAssets.Apply(settingsImg, GameAssets.BtnSettings, preserveAspect: true);
+            if (GameAssets.MenuSettings != null)
+                GameAssets.Apply(settingsImg, GameAssets.MenuSettings, preserveAspect: true);
             else
                 settingsImg.color = new Color(0.12f, 0.12f, 0.22f, 0.9f);
             var sr = settingsBtn.GetComponent<RectTransform>();
@@ -149,24 +152,26 @@ namespace BoltSort.Gameplay
             soundRT.anchoredPosition = new Vector2(-16f, -(16f + safeTop));
             soundRT.sizeDelta        = new Vector2(110f, 110f);
 
-            // SHOP button — below LEVELS, uses diamond icon color + label
+            // SHOP button — shared general_button.png base + independent text label
             var shopBtn = MakeAnimatedButton(canvasGO, "ShopButton", "SHOP", font, 40, OnShopClicked);
             var shopImg = shopBtn.GetComponent<Image>();
-            shopImg.color = new Color(0.55f, 0.25f, 0.75f, 1f); // purple
+            if (GameAssets.MenuButton != null)
+                GameAssets.Apply(shopImg, GameAssets.MenuButton, preserveAspect: true);
+            else
+                shopImg.color = new Color(0.55f, 0.25f, 0.75f, 1f); // purple
             SetAnchors(shopBtn.GetComponent<RectTransform>(),
                 new Vector2(0.08f, 0.14f), new Vector2(0.92f, 0.25f));
 
-            // MM-05: diamond icon for consistent shop iconography
-            var shopIconGO = new GameObject("ShopIcon");
-            shopIconGO.transform.SetParent(shopBtn.transform, false);
-            var shopIconImg = shopIconGO.AddComponent<Image>();
-            GameAssets.Apply(shopIconImg, GameAssets.DiamondIcon, preserveAspect: true);
-            if (GameAssets.DiamondIcon == null) shopIconImg.color = new Color(0.8f, 0.5f, 1f, 0.9f);
-            var shopIconRT = shopIconGO.GetComponent<RectTransform>();
-            shopIconRT.anchorMin = new Vector2(0f, 0.1f); shopIconRT.anchorMax = new Vector2(0f, 0.9f);
-            shopIconRT.pivot     = new Vector2(0f, 0.5f);
-            shopIconRT.offsetMin = new Vector2(14f, 0f); shopIconRT.offsetMax = new Vector2(64f, 0f);
-            shopIconImg.raycastTarget = false;
+            // MM-05: diamond decorations — left icon + two small accents on the right
+            MakeDiamond(shopBtn, "ShopDiamond_L", GameAssets.MenuDiamond(1),
+                new Vector2(0f, 0.18f), new Vector2(0f, 0.82f),
+                new Vector2(14f, 0f),  new Vector2(70f, 0f));
+            MakeDiamond(shopBtn, "ShopDiamond_R1", GameAssets.MenuDiamond(2),
+                new Vector2(1f, 0.45f), new Vector2(1f, 0.95f),
+                new Vector2(-60f, 0f), new Vector2(-22f, 0f));
+            MakeDiamond(shopBtn, "ShopDiamond_R2", GameAssets.MenuDiamond(3),
+                new Vector2(1f, 0.08f), new Vector2(1f, 0.52f),
+                new Vector2(-46f, 0f), new Vector2(-14f, 0f));
 
             var spHost = new GameObject("SettingsPanelHost");
             spHost.transform.SetParent(canvasGO.transform, false);
@@ -183,12 +188,20 @@ namespace BoltSort.Gameplay
             var levelsRt = levelsBtn.GetComponent<RectTransform>();
             var shopRt   = shopBtn.GetComponent<RectTransform>();
             StartCoroutine(StaggerEntrance(
-                (titleText.rectTransform, 0f),
-                (playRt,                  0.08f),
-                (levelsRt,                0.14f),
-                (shopRt,                  0.20f)));
+                (boltImg.rectTransform,   0f),
+                (sortImg.rectTransform,   0.06f),
+                (playRt,                  0.10f),
+                (levelsRt,                0.16f),
+                (shopRt,                  0.22f)));
+
+            // Title float (BOLT + SORT, offset phase), spark scale-pulse, SHOP breathe.
             StartCoroutine(DelayedStart(0.40f, () =>
-                StartCoroutine(IdleFloatButton(playRt, 5f, 1.8f))));
+            {
+                StartCoroutine(IdleFloatButton(boltImg.rectTransform, 6f, 2.4f, 0f));
+                StartCoroutine(IdleFloatButton(sortImg.rectTransform, 6f, 2.4f, 0.5f));
+                StartCoroutine(ScalePulse(sparkImg.rectTransform, 0.85f, 1.15f, 1.2f));
+                StartCoroutine(ScalePulse(shopRt,                  0.97f, 1.04f, 1.6f));
+            }));
         }
 
         // ── Entrance & idle animations ────────────────────────────────────────────
@@ -215,17 +228,32 @@ namespace BoltSort.Gameplay
             }
         }
 
-        /// <summary>Gently floats a button up and down in a loop. D.2-A.</summary>
-        private IEnumerator IdleFloatButton(RectTransform rt, float amplitude, float period)
+        /// <summary>Gently floats an element up and down in a loop. D.2-A.
+        /// <paramref name="phase"/> (0..1) offsets the sine cycle for staggered motion.</summary>
+        private IEnumerator IdleFloatButton(RectTransform rt, float amplitude, float period, float phase = 0f)
         {
             Vector2 origin  = rt.anchoredPosition;
-            float   elapsed = 0f;
+            float   elapsed = phase * period;
             while (rt != null)
             {
                 elapsed += Time.deltaTime;
                 float t       = elapsed / period;
                 float offsetY = Mathf.Sin(t * Mathf.PI * 2f) * amplitude;
                 rt.anchoredPosition = new Vector2(origin.x, origin.y + offsetY);
+                yield return null;
+            }
+        }
+
+        /// <summary>Loops a sinusoidal scale pulse (breathe effect) on a RectTransform.</summary>
+        private IEnumerator ScalePulse(RectTransform rt, float minScale, float maxScale, float period)
+        {
+            float elapsed = 0f;
+            while (rt != null)
+            {
+                elapsed += Time.deltaTime;
+                float t = (Mathf.Sin(elapsed / period * Mathf.PI * 2f) + 1f) * 0.5f; // 0..1
+                float s = Mathf.Lerp(minScale, maxScale, t);
+                rt.localScale = new Vector3(s, s, 1f);
                 yield return null;
             }
         }
@@ -252,13 +280,18 @@ namespace BoltSort.Gameplay
         {
             if (_soundBtnImg == null) return;
             bool on = PlayerPrefs.GetInt("bs.music_on", 1) == 1;
-            Sprite spr = on ? GameAssets.BtnSound : GameAssets.BtnSoundOff;
-            if (spr != null)
-                GameAssets.Apply(_soundBtnImg, spr, preserveAspect: true);
+            // Single volume.png sprite for both states; dim + half-alpha when muted.
+            if (GameAssets.MenuVolume != null)
+            {
+                GameAssets.Apply(_soundBtnImg, GameAssets.MenuVolume, preserveAspect: true);
+                _soundBtnImg.color = on ? Color.white : new Color(0.6f, 0.6f, 0.6f, 0.6f);
+            }
             else
+            {
                 _soundBtnImg.color = on
                     ? new Color(0.12f, 0.55f, 0.55f, 1f)
                     : new Color(0.40f, 0.40f, 0.40f, 0.8f);
+            }
         }
 
         private void OnPlayClicked()
@@ -311,7 +344,10 @@ namespace BoltSort.Gameplay
             {
                 var es = new GameObject("EventSystem");
                 es.AddComponent<EventSystem>();
-                es.AddComponent<InputSystemUIInputModule>();
+                // Procedurally-added UI input modules ship with NO actions assigned,
+                // so pointer/click events never fire (dead buttons in editor & build).
+                // AssignDefaultActions() wires up the package's default UI action map.
+                es.AddComponent<InputSystemUIInputModule>().AssignDefaultActions();
             }
         }
 
@@ -369,6 +405,31 @@ namespace BoltSort.Gameplay
             lr.anchorMin = Vector2.zero; lr.anchorMax = Vector2.one;
             lr.offsetMin = lr.offsetMax = Vector2.zero;
             return go;
+        }
+
+        /// <summary>Creates a non-interactive Image GameObject (raycast off, aspect preserved).</summary>
+        private static Image MakeImage(GameObject parent, string name, Sprite sprite)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent.transform, false);
+            var img = go.AddComponent<Image>();
+            if (sprite != null) { img.sprite = sprite; img.preserveAspect = true; }
+            else                  img.color  = new Color(1f, 1f, 1f, 0f); // invisible if missing
+            img.raycastTarget = false;
+            return img;
+        }
+
+        /// <summary>Places a decorative diamond sprite inside the SHOP button.</summary>
+        private static void MakeDiamond(GameObject parent, string name, Sprite sprite,
+                                        Vector2 anchorMin, Vector2 anchorMax,
+                                        Vector2 offsetMin, Vector2 offsetMax)
+        {
+            var img = MakeImage(parent, name, sprite);
+            if (sprite == null) img.color = new Color(0.8f, 0.5f, 1f, 0.9f);
+            var rt = img.rectTransform;
+            rt.anchorMin = anchorMin; rt.anchorMax = anchorMax;
+            rt.pivot     = new Vector2(0.5f, 0.5f);
+            rt.offsetMin = offsetMin; rt.offsetMax = offsetMax;
         }
 
         private static void Stretch(RectTransform rt)

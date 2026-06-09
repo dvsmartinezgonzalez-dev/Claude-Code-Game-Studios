@@ -483,7 +483,9 @@ namespace BoltSort.Gameplay
             {
                 var es = new GameObject("EventSystem");
                 es.AddComponent<EventSystem>();
-                es.AddComponent<InputSystemUIInputModule>();
+                // Without AssignDefaultActions() the procedural input module has no
+                // actions and no clicks register (dead buttons in editor & build).
+                es.AddComponent<InputSystemUIInputModule>().AssignDefaultActions();
             }
         }
 

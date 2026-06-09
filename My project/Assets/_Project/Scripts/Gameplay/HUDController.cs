@@ -311,7 +311,9 @@ namespace BoltSort.Gameplay
             {
                 var esGO = new GameObject("EventSystem");
                 esGO.AddComponent<EventSystem>();
-                esGO.AddComponent<InputSystemUIInputModule>();
+                // Without AssignDefaultActions() the procedural input module has no
+                // actions and no clicks register (dead buttons in editor & build).
+                esGO.AddComponent<InputSystemUIInputModule>().AssignDefaultActions();
             }
 
             Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
