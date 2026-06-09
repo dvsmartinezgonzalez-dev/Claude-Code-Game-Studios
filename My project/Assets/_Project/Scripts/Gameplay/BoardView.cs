@@ -165,6 +165,10 @@ namespace BoltSort.Gameplay
                     AudioMgr.Instance?.PlaySFX("bolt_pick");
                     if (_selCoroutine != null) StopCoroutine(_selCoroutine);
                     _selCoroutine = StartCoroutine(AnimateLift());
+                    // D.2-E: column squish pop on pickup
+                    int src = _sortMechanic.HeldSourceIndex;
+                    if (_columnTransforms != null && src >= 0 && src < _columnTransforms.Length)
+                        StartCoroutine(ColumnPickupPop(_columnTransforms[src]));
                 }
                 else if (_prevFsmState == SortMechState.BoltSelected &&
                          cur != SortMechState.MoveExecuting)
@@ -212,6 +216,56 @@ namespace BoltSort.Gameplay
             }
             _selYOffset = 0f;
             _selScale   = 1f;
+        }
+
+        // ── Column scale pop animations ───────────────────────────────────────────
+
+        /// <summary>Squish-and-spring when a bolt is picked up from a column. D.2-E.</summary>
+        private IEnumerator ColumnPickupPop(Transform colTr)
+        {
+            if (colTr == null) yield break;
+            Vector3 orig   = colTr.localScale;
+            Vector3 squish = new Vector3(orig.x * 1.08f, orig.y * 0.94f, orig.z);
+            float dur = 0.06f, elapsed = 0f;
+            while (elapsed < dur)
+            {
+                elapsed += Time.deltaTime;
+                colTr.localScale = Vector3.LerpUnclamped(orig, squish, elapsed / dur);
+                yield return null;
+            }
+            elapsed = 0f; dur = 0.10f;
+            while (elapsed < dur)
+            {
+                elapsed += Time.deltaTime;
+                float t = TweenUtility.EaseOutBack(Mathf.Clamp01(elapsed / dur));
+                colTr.localScale = Vector3.LerpUnclamped(squish, orig, t);
+                yield return null;
+            }
+            if (colTr != null) colTr.localScale = orig;
+        }
+
+        /// <summary>Squish-and-bounce when a bolt lands in a column. D.2-F.</summary>
+        private IEnumerator ColumnLandPop(Transform colTr)
+        {
+            if (colTr == null) yield break;
+            Vector3 orig   = colTr.localScale;
+            Vector3 squish = new Vector3(orig.x * 1.06f, orig.y * 0.95f, orig.z);
+            float dur = 0.05f, elapsed = 0f;
+            while (elapsed < dur)
+            {
+                elapsed += Time.deltaTime;
+                colTr.localScale = Vector3.LerpUnclamped(orig, squish, elapsed / dur);
+                yield return null;
+            }
+            elapsed = 0f; dur = 0.12f;
+            while (elapsed < dur)
+            {
+                elapsed += Time.deltaTime;
+                float t = TweenUtility.EaseOutBounce(Mathf.Clamp01(elapsed / dur));
+                colTr.localScale = Vector3.LerpUnclamped(squish, orig, t);
+                yield return null;
+            }
+            if (colTr != null) colTr.localScale = orig;
         }
 
         // ── Arc movement animation ────────────────────────────────────────────────
@@ -319,6 +373,8 @@ namespace BoltSort.Gameplay
 
             // Landing squish: scale X*1.2 Y*0.85 then spring back (EaseOutElastic, 80ms)
             SpawnLandingDust(dstWorld, BoltSortTheme.BoltColorForId(colorId));
+            if (dst >= 0 && dst < _columnTransforms.Length && _columnTransforms[dst] != null)
+                StartCoroutine(ColumnLandPop(_columnTransforms[dst]));
 
             float squishDur = 0.08f;
             elapsed = 0f;
@@ -934,7 +990,7 @@ namespace BoltSort.Gameplay
                     if (col == heldCol)
                     {
                         Color gc = BoltSortTheme.TubeSelected;
-                        gc.a = 0.30f + Mathf.Sin(Time.time * 2f) * 0.05f;
+                        gc.a = 0.50f + Mathf.Sin(Time.time * 2f) * 0.05f; // D.2-E: raised from 0.30
                         gsr.color = gc;
                     }
                     else

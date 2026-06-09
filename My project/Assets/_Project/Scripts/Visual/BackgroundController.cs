@@ -64,8 +64,8 @@ namespace BoltSort.Visual
                 {
                     float dx = x + 0.5f - cx, dy = y + 0.5f - cy;
                     float t  = Mathf.Clamp01(Mathf.Sqrt(dx * dx + dy * dy) / maxDist);
-                    float a  = Mathf.Clamp01((t - 0.4f) / 0.6f);
-                    a        = a * a * 0.45f; // soft quadratic falloff, max ~45% alpha
+                    float a  = Mathf.Clamp01((t - 0.55f) / 0.45f);
+                    a        = a * a * 0.20f; // soft quadratic falloff, max ~20% alpha
                     tex.SetPixel(x, y, new Color(0f, 0f, 0f, a));
                 }
             }
@@ -95,17 +95,18 @@ namespace BoltSort.Visual
             var ps   = go.AddComponent<ParticleSystem>();
             var main = ps.main;
             main.loop            = true;
-            main.maxParticles    = 20;
-            main.startLifetime   = new ParticleSystem.MinMaxCurve(4f, 8f);
-            main.startSize       = new ParticleSystem.MinMaxCurve(0.03f, 0.07f);
+            main.maxParticles    = 40;
+            main.startLifetime   = new ParticleSystem.MinMaxCurve(5f, 10f);
+            main.startSize       = new ParticleSystem.MinMaxCurve(0.05f, 0.13f);
             main.startColor      = new ParticleSystem.MinMaxGradient(
-                new Color(1f, 1f, 1f, 0.06f), new Color(1f, 1f, 1f, 0.18f));
+                new Color(0.85f, 0.70f, 1.00f, 0.18f),   // soft lavender
+                new Color(1.00f, 0.90f, 1.00f, 0.45f));  // near-white pink
             main.startSpeed      = new ParticleSystem.MinMaxCurve(0.05f, 0.25f);
             main.gravityModifier = 0f;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
 
             var emission = ps.emission;
-            emission.rateOverTime = 2.5f;
+            emission.rateOverTime = 4f;
 
             Camera cam  = Camera.main;
             float  camH = cam != null ? cam.orthographicSize * 2f : 19.2f;
@@ -119,7 +120,7 @@ namespace BoltSort.Visual
             var vel = ps.velocityOverLifetime;
             vel.enabled = true;
             vel.x       = new ParticleSystem.MinMaxCurve(-0.04f, 0.04f);
-            vel.y       = new ParticleSystem.MinMaxCurve(0.05f,  0.20f);
+            vel.y       = new ParticleSystem.MinMaxCurve(0.08f,  0.30f);
             vel.z       = new ParticleSystem.MinMaxCurve(0f, 0f);
 
             var col = ps.colorOverLifetime;

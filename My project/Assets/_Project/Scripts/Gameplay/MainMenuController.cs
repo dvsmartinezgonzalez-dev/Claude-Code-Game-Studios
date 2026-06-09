@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -176,6 +177,64 @@ namespace BoltSort.Gameplay
             shopHost.transform.SetParent(canvasGO.transform, false);
             _shopController = shopHost.AddComponent<ShopController>();
             _shopController.Initialize(font, canvasGO.transform);
+
+            // D.3-C: stagger entrance + D.2-A: idle float on PLAY button after entrance
+            var playRt   = playBtn.GetComponent<RectTransform>();
+            var levelsRt = levelsBtn.GetComponent<RectTransform>();
+            var shopRt   = shopBtn.GetComponent<RectTransform>();
+            StartCoroutine(StaggerEntrance(
+                (titleText.rectTransform, 0f),
+                (playRt,                  0.08f),
+                (levelsRt,                0.14f),
+                (shopRt,                  0.20f)));
+            StartCoroutine(DelayedStart(0.40f, () =>
+                StartCoroutine(IdleFloatButton(playRt, 5f, 1.8f))));
+        }
+
+        // ── Entrance & idle animations ────────────────────────────────────────────
+
+        /// <summary>Slides UI elements in from below with stagger delay. D.3-C.</summary>
+        private IEnumerator StaggerEntrance(params (RectTransform rt, float delay)[] items)
+        {
+            foreach (var (rt, delay) in items)
+            {
+                if (delay > 0f) yield return new WaitForSeconds(delay);
+                if (rt == null) continue;
+                Vector2 finalPos = rt.anchoredPosition;
+                rt.anchoredPosition = new Vector2(finalPos.x, finalPos.y - 80f);
+                float dur = 0.25f, elapsed = 0f;
+                while (elapsed < dur)
+                {
+                    elapsed += Time.deltaTime;
+                    float t = TweenUtility.EaseOutBack(Mathf.Clamp01(elapsed / dur));
+                    rt.anchoredPosition = Vector2.LerpUnclamped(
+                        new Vector2(finalPos.x, finalPos.y - 80f), finalPos, t);
+                    yield return null;
+                }
+                rt.anchoredPosition = finalPos;
+            }
+        }
+
+        /// <summary>Gently floats a button up and down in a loop. D.2-A.</summary>
+        private IEnumerator IdleFloatButton(RectTransform rt, float amplitude, float period)
+        {
+            Vector2 origin  = rt.anchoredPosition;
+            float   elapsed = 0f;
+            while (rt != null)
+            {
+                elapsed += Time.deltaTime;
+                float t       = elapsed / period;
+                float offsetY = Mathf.Sin(t * Mathf.PI * 2f) * amplitude;
+                rt.anchoredPosition = new Vector2(origin.x, origin.y + offsetY);
+                yield return null;
+            }
+        }
+
+        /// <summary>Waits <paramref name="delay"/> seconds then invokes <paramref name="action"/>.</summary>
+        private IEnumerator DelayedStart(float delay, System.Action action)
+        {
+            yield return new WaitForSeconds(delay);
+            action?.Invoke();
         }
 
         private Image _soundBtnImg;

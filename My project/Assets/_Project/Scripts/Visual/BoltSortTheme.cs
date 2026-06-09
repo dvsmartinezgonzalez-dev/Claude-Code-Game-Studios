@@ -4,13 +4,13 @@ namespace BoltSort.Visual
 {
     public static class BoltSortTheme
     {
-        public static readonly Color BackgroundDeep = HexColor("0A0A1A");
-        public static readonly Color BackgroundMid  = HexColor("0D0D2B");
+        public static readonly Color BackgroundDeep = HexColor("1A0B3E");
+        public static readonly Color BackgroundMid  = HexColor("2D1060");
 
-        public static readonly Color TubeBody     = HexColor("1A1A3E");
-        public static readonly Color TubeRim      = HexColor("2A2A5E");
-        public static readonly Color TubeGlow     = HexColor("3A3AFF", 0.15f);
-        public static readonly Color TubeSelected = HexColor("4A90FF", 0.30f);
+        public static readonly Color TubeBody     = HexColor("1C0F45");
+        public static readonly Color TubeRim      = HexColor("5C35B0");
+        public static readonly Color TubeGlow     = HexColor("9B6AFF", 0.22f);
+        public static readonly Color TubeSelected = HexColor("C084FC", 0.55f);
 
         public static readonly Color[] BoltColors =
         {
@@ -25,9 +25,9 @@ namespace BoltSort.Visual
         public static readonly Color BoltShine  = HexColor("FFFFFF", 0.35f);
         public static readonly Color BoltShadow = HexColor("000000", 0.25f);
 
-        public static readonly Color HUDBackground = HexColor("080818", 0.95f);
-        public static readonly Color HUDText       = HexColor("E8E8FF");
-        public static readonly Color HUDAccent     = HexColor("4A90FF");
+        public static readonly Color HUDBackground = HexColor("0E0730", 0.93f);
+        public static readonly Color HUDText       = HexColor("F0EAFF");
+        public static readonly Color HUDAccent     = HexColor("7C3AED");
 
         public static readonly Color WinGold = HexColor("FFD700");
         public static readonly Color WinGlow = HexColor("FFD700", 0.40f);

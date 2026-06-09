@@ -31,6 +31,7 @@ namespace BoltSort.Gameplay
         private Text        _levelText;
         private Text        _movesText;
         private RectTransform _movesRT;
+        private Text        _coinPillText;
         private Text        _deadlockText;
         private GameObject  _winOverlay;
         private RectTransform _winCardRT;
@@ -89,6 +90,10 @@ namespace BoltSort.Gameplay
                 _levelComplete = true;
                 if (_winMovesText != null) _winMovesText.text = $"Moves: {moves}";
                 if (_winOverlay   != null) StartCoroutine(ShowWinOverlay(moves));
+                // D.3-B: refresh coin pill balance after level complete
+                var pillSS = BoltSort.SaveSystem.SaveSystem.Instance;
+                if (_coinPillText != null && pillSS != null && pillSS.IsReady)
+                    _coinPillText.text = pillSS.GetCoinBalance().ToString();
             };
             gsm.OnLevelComplete += _onLevelCompleteHandler;
 
@@ -152,9 +157,44 @@ namespace BoltSort.Gameplay
             if (t != null) t.color = to;
         }
 
+        /// <summary>Brief white flash at win moment. D.2-C.</summary>
+        private IEnumerator WinFlash()
+        {
+            var flashGO  = new GameObject("WinFlash");
+            flashGO.transform.SetParent(_winOverlay.transform, false);
+            var flashImg = flashGO.AddComponent<UnityEngine.UI.Image>();
+            flashImg.color = new Color(1f, 1f, 1f, 0f);
+            var flashRt  = flashGO.GetComponent<RectTransform>();
+            flashRt.anchorMin = Vector2.zero; flashRt.anchorMax = Vector2.one;
+            flashRt.offsetMin = flashRt.offsetMax = Vector2.zero;
+            flashImg.raycastTarget = false;
+
+            // Ramp up to 65% white in 80ms
+            float dur = 0.08f, elapsed = 0f;
+            while (elapsed < dur)
+            {
+                elapsed += Time.deltaTime;
+                flashImg.color = new Color(1f, 1f, 1f, Mathf.Lerp(0f, 0.65f, elapsed / dur));
+                yield return null;
+            }
+            // Fade out to transparent in 220ms
+            elapsed = 0f; dur = 0.22f;
+            while (elapsed < dur)
+            {
+                elapsed += Time.deltaTime;
+                flashImg.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.65f, 0f, elapsed / dur));
+                yield return null;
+            }
+            Destroy(flashGO);
+        }
+
         private IEnumerator ShowWinOverlay(int moves)
         {
             _winOverlay.SetActive(true);
+
+            // D.2-C: brief white flash before card arrives
+            StartCoroutine(WinFlash());
+            yield return new WaitForSeconds(0.06f);
 
             // Confetti burst — fade in + scale pop
             if (_confettiImg != null)
@@ -215,7 +255,7 @@ namespace BoltSort.Gameplay
                 {
                     var si = _winStarImages[i];
                     if (si == null) continue;
-                    yield return new WaitForSeconds(0.12f);
+                    yield return new WaitForSeconds(0.22f);
                     if (i < _winStarCount)
                     {
                         si.color = Color.white;
@@ -328,6 +368,30 @@ namespace BoltSort.Gameplay
                 anchorMin: new Vector2(0.55f, 0f), anchorMax: new Vector2(1f, 1f),
                 offsetMin: new Vector2(0f, 0f), offsetMax: new Vector2(-16f, -safeTop));
             _movesRT = _movesText.GetComponent<RectTransform>();
+
+            // ── Coin pill (top-right corner of top bar) — D.3-B ──────────────────
+            var pillGO  = new GameObject("CoinPill");
+            pillGO.transform.SetParent(topBar.transform, false);
+            var pillImg = pillGO.AddComponent<Image>();
+            pillImg.color = new Color(0f, 0f, 0f, 0.35f);
+            var pillRt  = pillGO.GetComponent<RectTransform>();
+            pillRt.anchorMin        = new Vector2(1f, 0.5f);
+            pillRt.anchorMax        = new Vector2(1f, 0.5f);
+            pillRt.pivot            = new Vector2(1f, 0.5f);
+            pillRt.anchoredPosition = new Vector2(-8f, -safeTop * 0.5f);
+            pillRt.sizeDelta        = new Vector2(110f, 38f);
+
+            _coinPillText = MakeLabel(pillGO, "CoinText", "0", font, 26,
+                TextAnchor.MiddleCenter, bold: true, shadow: false);
+            _coinPillText.color = BoltSortTheme.WinGold;
+            var pillTextRt = _coinPillText.rectTransform;
+            pillTextRt.anchorMin = Vector2.zero; pillTextRt.anchorMax = Vector2.one;
+            pillTextRt.offsetMin = new Vector2(6f, 0f); pillTextRt.offsetMax = new Vector2(-6f, 0f);
+
+            // Seed coin display
+            var coinSS = BoltSort.SaveSystem.SaveSystem.Instance;
+            if (coinSS != null && coinSS.IsReady)
+                _coinPillText.text = coinSS.GetCoinBalance().ToString();
 
             // ── Deadlock banner ──────────────────────────────────────────────────
             _deadlockText = MakeLabel(canvasGO, "DeadlockBanner",
