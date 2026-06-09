@@ -1,8 +1,15 @@
 # Session State — BoltSort
 
-**Last Updated**: 2026-05-17
+**Last Updated**: 2026-06-09
 **Current Stage**: **Production** (advanced 2026-05-17 — gate verdict CONCERNS, user accepted)
-**Current Task**: Sprint 2 begins 2026-05-19. First tasks: S2-01 (CI green run), S2-02 (/create-stories sort-mechanic), S2-03 (/qa-plan sprint).
+**Current Task**: Phase A UX/UI Critical Fixes COMPLETE (2026-06-09) — all 8 🔴 audit findings resolved.
+
+## Session Extract — Sprint D Visual Excellence 2026-05-27
+- Commit: 1ed3b18 — "feat: Sprint D — premium visual polish and animation system"
+- Files created: BoltSort.Visual.asmdef, BoltSortTheme.cs, TweenUtility.cs, SceneTransitionManager.cs, BackgroundController.cs
+- Files modified: BoardView.cs, HUDController.cs, LevelSelectController.cs, GameBootstrap.cs, MainMenuController.cs, AudioManager.cs, BoltSort.Gameplay.asmdef
+- All 10 task groups implemented (see commit message for details)
+- Next: User reviews and approves Sprint D before Sprint E begins
 
 ## Progress Checklist
 

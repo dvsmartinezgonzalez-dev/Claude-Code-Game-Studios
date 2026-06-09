@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
+using BoltSort.Visual;
 using AudioMgr = BoltSort.Audio.AudioManager;
 
 namespace BoltSort.Gameplay
@@ -77,8 +78,15 @@ namespace BoltSort.Gameplay
             });
             y -= 80f;
 
-            // Rate button
-            AddActionButton(card, font, "Rate the Game ★", y, () => { /* placeholder */ });
+            // Rate button — SET-01: open store page instead of no-op
+            AddActionButton(card, font, "Rate the Game ★", y, () =>
+            {
+#if UNITY_IOS
+                Application.OpenURL("itms-apps://itunes.apple.com/app/id0000000000");
+#else
+                Application.OpenURL("https://play.google.com/store/apps/details?id=com.dvsstudio.boltsort");
+#endif
+            });
             y -= 70f;
 
             // Privacy Policy button
@@ -91,15 +99,16 @@ namespace BoltSort.Gameplay
                      TextAnchor.MiddleCenter, new Color(0.6f, 0.6f, 0.7f, 1f), y);
             y -= 50f;
 
-            // Close button
-            var closeBtn = CreateButton(card, "CloseBtn", "✕  Close", font, 36,
+            // Close button — btn_close sprite; falls back to blue rect in builds
+            var closeBtn = CreateButton(card, "CloseBtn", "", font, 36,
                                         new Color(0.290f, 0.565f, 0.851f, 1f),
                                         () => _overlay.SetActive(false));
+            GameAssets.Apply(closeBtn.GetComponent<Image>(), GameAssets.BtnClose, preserveAspect: true);
             var cr = closeBtn.GetComponent<RectTransform>();
             cr.anchorMin = new Vector2(0.5f, 0.5f); cr.anchorMax = new Vector2(0.5f, 0.5f);
             cr.pivot     = new Vector2(0.5f, 0.5f);
             cr.anchoredPosition = new Vector2(0f, y);
-            cr.sizeDelta        = new Vector2(280f, 64f);
+            cr.sizeDelta        = new Vector2(120f, 120f);
         }
 
         private static void AddLabel(GameObject parent, string name, string text, Font font,

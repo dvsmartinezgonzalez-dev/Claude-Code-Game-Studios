@@ -36,6 +36,11 @@ namespace BoltSort.Gameplay
         private Text        _winMovesText;
         private Text        _moreLevelsText;
         private Image[]     _winStarImages;
+        private Text        _winCoinsText;     // WIN-04
+        private int         _winStarCount = 3; // WIN-01: set by GameBootstrap before HUD handler fires
+        private int         _winCoins     = 0; // WIN-04
+        private Image       _confettiImg;
+        private Image       _trophyImg;
         private SettingsPanel _settingsPanel;
 
         // ── Move counter animation ────────────────────────────────────────────────
@@ -72,6 +77,7 @@ namespace BoltSort.Gameplay
                 _lastMoveCount = 0;
                 RefreshDeadlock();
                 if (_winOverlay != null) _winOverlay.SetActive(false);
+                if (_confettiImg != null) { var c = _confettiImg.color; c.a = 0f; _confettiImg.color = c; }
             };
             gsm.OnLevelLoaded += _onLevelLoadedHandler;
 
@@ -115,6 +121,21 @@ namespace BoltSort.Gameplay
                 StartCoroutine(FadeTextColor(_movesText, BoltSortTheme.HUDAccent, Color.white, 0.20f));
         }
 
+        private static IEnumerator FadeImageIn(Image img, float dur)
+        {
+            float elapsed = 0f;
+            while (elapsed < dur)
+            {
+                if (img == null) yield break;
+                elapsed += Time.deltaTime;
+                var c = img.color;
+                c.a = Mathf.Clamp01(elapsed / dur);
+                img.color = c;
+                yield return null;
+            }
+            if (img != null) { var c = img.color; c.a = 1f; img.color = c; }
+        }
+
         private IEnumerator FadeTextColor(Text t, Color from, Color to, float dur)
         {
             float elapsed = 0f;
@@ -131,6 +152,17 @@ namespace BoltSort.Gameplay
         private IEnumerator ShowWinOverlay(int moves)
         {
             _winOverlay.SetActive(true);
+
+            // Confetti burst — fade in + scale pop
+            if (_confettiImg != null)
+            {
+                _confettiImg.color = new Color(1f, 1f, 1f, 0f);
+                var crt = _confettiImg.GetComponent<RectTransform>();
+                if (crt != null) crt.localScale = new Vector3(0.6f, 0.6f, 1f);
+                StartCoroutine(FadeImageIn(_confettiImg, 0.35f));
+                if (crt != null) StartCoroutine(TweenUtility.LerpRectScale(
+                    crt, Vector3.one, 0.35f, TweenUtility.EaseOutBack));
+            }
 
             // Dim all stars first
             if (_winStarImages != null)
@@ -169,19 +201,25 @@ namespace BoltSort.Gameplay
                 _winMovesText.text = $"Moves: {moves}";
             }
 
-            // Light up stars one by one (assume GSM fires OnLevelComplete with star count
-            // separately; here we flash all 3 since we don't have star count in this callback)
+            // Show coins earned (WIN-04)
+            if (_winCoinsText != null)
+                _winCoinsText.text = _winCoins > 0 ? $"+{_winCoins} coins" : "";
+
+            // Light up only earned stars (WIN-01); leave unearned stars at dim alpha
             if (_winStarImages != null)
             {
-                foreach (var si in _winStarImages)
+                for (int i = 0; i < _winStarImages.Length; i++)
                 {
+                    var si = _winStarImages[i];
                     if (si == null) continue;
                     yield return new WaitForSeconds(0.12f);
-                    si.color = Color.white;
-                    // Small pop scale
-                    var rt = si.GetComponent<RectTransform>();
-                    if (rt != null) StartCoroutine(TweenUtility.LerpRectScale(
-                        rt, new Vector3(1.3f, 1.3f, 1f), 0.08f, TweenUtility.EaseOutBack));
+                    if (i < _winStarCount)
+                    {
+                        si.color = Color.white;
+                        var rt = si.GetComponent<RectTransform>();
+                        if (rt != null) StartCoroutine(TweenUtility.LerpRectScale(
+                            rt, new Vector3(1.3f, 1.3f, 1f), 0.08f, TweenUtility.EaseOutBack));
+                    }
                 }
             }
         }
@@ -195,6 +233,14 @@ namespace BoltSort.Gameplay
         public void ShowMoreLevelsSoon()
         {
             if (_moreLevelsText != null) _moreLevelsText.gameObject.SetActive(true);
+        }
+
+        // Called by GameBootstrap.HandleLevelComplete (subscribed in Awake) before this
+        // component's own OnLevelComplete handler (subscribed in Initialize/Start) fires.
+        public void SetWinResult(int stars, int coins)
+        {
+            _winStarCount = Mathf.Clamp(stars, 0, 3);
+            _winCoins     = Mathf.Max(0, coins);
         }
 
         private void OnDestroy()
@@ -347,6 +393,17 @@ namespace BoltSort.Gameplay
             winRect.anchorMin = Vector2.zero; winRect.anchorMax = Vector2.one;
             winRect.offsetMin = winRect.offsetMax = Vector2.zero;
 
+            // Confetti fullscreen overlay (renders behind win card, above dim)
+            var confettiGO = new GameObject("Confetti");
+            confettiGO.transform.SetParent(_winOverlay.transform, false);
+            _confettiImg = confettiGO.AddComponent<Image>();
+            GameAssets.Apply(_confettiImg, GameAssets.Confetti, preserveAspect: true);
+            if (GameAssets.Confetti == null) _confettiImg.color = new Color(0f, 0f, 0f, 0f);
+            var confettiRt = confettiGO.GetComponent<RectTransform>();
+            confettiRt.anchorMin = Vector2.zero; confettiRt.anchorMax = Vector2.one;
+            confettiRt.offsetMin = confettiRt.offsetMax = Vector2.zero;
+            _confettiImg.raycastTarget = false;
+
             // Win card — use victory_screen sprite as background if available
             var winCard  = MakePanel(_winOverlay, "WinCard", new Color(0.071f, 0.071f, 0.118f, 0.97f));
             _winCardRT   = winCard.GetComponent<RectTransform>();
@@ -355,6 +412,19 @@ namespace BoltSort.Gameplay
             _winCardRT.pivot            = new Vector2(0.5f, 0.5f);
             _winCardRT.anchoredPosition = Vector2.zero;
             _winCardRT.sizeDelta        = new Vector2(520f, 680f);
+
+            // Trophy image at top of win card
+            var trophyGO = new GameObject("Trophy");
+            trophyGO.transform.SetParent(winCard.transform, false);
+            _trophyImg = trophyGO.AddComponent<Image>();
+            GameAssets.Apply(_trophyImg, GameAssets.Trophy, preserveAspect: true);
+            if (GameAssets.Trophy == null) _trophyImg.color = new Color(0f, 0f, 0f, 0f);
+            var trt = trophyGO.GetComponent<RectTransform>();
+            trt.anchorMin = trt.anchorMax = new Vector2(0.5f, 1f);
+            trt.pivot     = new Vector2(0.5f, 1f);
+            trt.anchoredPosition = new Vector2(0f, 30f); // floats above card top
+            trt.sizeDelta        = new Vector2(180f, 180f);
+            _trophyImg.raycastTarget = false;
 
             // 3 star icons near the top of the win card
             _winStarImages = new Image[3];
@@ -391,27 +461,46 @@ namespace BoltSort.Gameplay
             wmRect.anchorMin = new Vector2(0f, 0.44f); wmRect.anchorMax = new Vector2(1f, 0.56f);
             wmRect.offsetMin = wmRect.offsetMax = Vector2.zero;
 
-            // Next Level button — btn_continue sprite
-            var nextBtn = MakeIconButton(winCard, "NextLevelButton", "NEXT", font, 34,
-                                         GameAssets.BtnContinue, _onNextLevel);
-            if (GameAssets.BtnContinue == null)
-                nextBtn.GetComponent<Image>().color = BoltSortTheme.HUDAccent;
-            var nbRect  = nextBtn.GetComponent<RectTransform>();
-            nbRect.anchorMin = nbRect.anchorMax = new Vector2(0.5f, 0f);
-            nbRect.pivot     = new Vector2(0.5f, 0f);
-            nbRect.anchoredPosition = new Vector2(-70f, 30f);
-            nbRect.sizeDelta        = new Vector2(120f, 120f);
+            // Coins earned label (WIN-04)
+            _winCoinsText = MakeLabel(winCard, "WinCoins", "",
+                                      font, 30, TextAnchor.MiddleCenter, bold: false, shadow: false);
+            _winCoinsText.color = new Color(1f, 0.85f, 0.2f, 1f);
+            var wcRect = _winCoinsText.GetComponent<RectTransform>();
+            wcRect.anchorMin = new Vector2(0f, 0.34f); wcRect.anchorMax = new Vector2(1f, 0.44f);
+            wcRect.offsetMin = wcRect.offsetMax = Vector2.zero;
 
-            // Replay button — btn_retry sprite
-            var replayBtn = MakeIconButton(winCard, "ReplayButton", "", font, 28,
+            // Replay button (left) — btn_retry sprite; "↩" fallback label (WIN-06)
+            var replayBtn = MakeIconButton(winCard, "ReplayButton", "↩", font, 28,
                                            GameAssets.BtnRetry, _onReplay ?? _onReset);
             if (GameAssets.BtnRetry == null)
                 replayBtn.GetComponent<Image>().color = new Color(0.22f, 0.22f, 0.36f, 1f);
             var rpRect = replayBtn.GetComponent<RectTransform>();
             rpRect.anchorMin = rpRect.anchorMax = new Vector2(0.5f, 0f);
-            rpRect.pivot     = new Vector2(0f, 0f);
-            rpRect.anchoredPosition = new Vector2(20f, 30f);
-            rpRect.sizeDelta        = new Vector2(120f, 120f);
+            rpRect.pivot     = new Vector2(0.5f, 0f);
+            rpRect.anchoredPosition = new Vector2(-130f, 30f);
+            rpRect.sizeDelta        = new Vector2(110f, 110f);
+
+            // Next Level button (center) — btn_continue sprite
+            var nextBtn = MakeIconButton(winCard, "NextLevelButton", "NEXT", font, 34,
+                                         GameAssets.BtnContinue, _onNextLevel);
+            if (GameAssets.BtnContinue == null)
+                nextBtn.GetComponent<Image>().color = BoltSortTheme.HUDAccent;
+            var nbRect = nextBtn.GetComponent<RectTransform>();
+            nbRect.anchorMin = nbRect.anchorMax = new Vector2(0.5f, 0f);
+            nbRect.pivot     = new Vector2(0.5f, 0f);
+            nbRect.anchoredPosition = new Vector2(0f, 30f);
+            nbRect.sizeDelta        = new Vector2(110f, 110f);
+
+            // Home button (right) — btn_home sprite (WIN-02)
+            var homeBtn = MakeIconButton(winCard, "HomeButton", "HOME", font, 28,
+                                         GameAssets.BtnHome, _onMenu);
+            if (GameAssets.BtnHome == null)
+                homeBtn.GetComponent<Image>().color = new Color(0.22f, 0.36f, 0.22f, 1f);
+            var hbRect = homeBtn.GetComponent<RectTransform>();
+            hbRect.anchorMin = hbRect.anchorMax = new Vector2(0.5f, 0f);
+            hbRect.pivot     = new Vector2(0.5f, 0f);
+            hbRect.anchoredPosition = new Vector2(130f, 30f);
+            hbRect.sizeDelta        = new Vector2(110f, 110f);
 
             _moreLevelsText = MakeLabel(winCard, "MoreLevels", "More levels coming soon!",
                                         font, 26, TextAnchor.MiddleCenter, bold: false, shadow: false);

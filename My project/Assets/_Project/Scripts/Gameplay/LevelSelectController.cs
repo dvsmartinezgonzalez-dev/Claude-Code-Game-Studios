@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
@@ -17,8 +18,8 @@ namespace BoltSort.Gameplay
     /// </summary>
     public class LevelSelectController : MonoBehaviour
     {
-        private const int TotalLevels = 30;
-        private const int Columns     = 5;
+        private const int MaxLevels = 30;
+        private const int Columns   = 5;
 
         private int _currentLevelId = 1;
         private SettingsPanel _settingsPanel;
@@ -65,6 +66,7 @@ namespace BoltSort.Gameplay
         private void BuildUI(SaveSystem.ISaveSystem ss)
         {
             _currentLevelId = ss != null ? ss.GetCurrentLevelId() : 1;
+            int totalLevels = GetAvailableLevelCount();
 
             Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
                      ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
@@ -110,6 +112,19 @@ namespace BoltSort.Gameplay
             bbr.pivot     = new Vector2(0f, 0.5f);
             bbr.offsetMin = new Vector2(8f, 8f); bbr.offsetMax = new Vector2(100f, -8f);
 
+            // Settings button (top-right of header) — LS-01
+            var settingsBtn = MakeAnimatedButton(header, "SettingsButton", "", font, 36,
+                                                 () => _settingsPanel?.Toggle());
+            var settingsImg = settingsBtn.GetComponent<Image>();
+            if (GameAssets.BtnSettings != null)
+                GameAssets.Apply(settingsImg, GameAssets.BtnSettings, preserveAspect: true);
+            else
+                settingsImg.color = new Color(0.12f, 0.12f, 0.22f, 0.9f);
+            var sbr = settingsBtn.GetComponent<RectTransform>();
+            sbr.anchorMin = new Vector2(1f, 0f); sbr.anchorMax = new Vector2(1f, 1f);
+            sbr.pivot     = new Vector2(1f, 0.5f);
+            sbr.offsetMin = new Vector2(-100f, 8f); sbr.offsetMax = new Vector2(-8f, -8f);
+
             // Scroll area
             var scrollGO  = new GameObject("ScrollView");
             scrollGO.transform.SetParent(canvasGO.transform, false);
@@ -147,14 +162,14 @@ namespace BoltSort.Gameplay
             const float cellGap  = 16f;
             const float padX     = 20f;
             const float padTop   = 20f;
-            int   rows   = Mathf.CeilToInt((float)TotalLevels / Columns);
+            int   rows   = Mathf.CeilToInt((float)totalLevels / Columns);
             float totalH = rows * (cellSize + cellGap) + padTop;
             contentRt.sizeDelta = new Vector2(0f, totalH);
 
             _pulseCells.Clear();
             _entranceCells.Clear();
 
-            for (int i = 0; i < TotalLevels; i++)
+            for (int i = 0; i < totalLevels; i++)
             {
                 int levelId     = i + 1;
                 int row         = i / Columns;
@@ -239,21 +254,44 @@ namespace BoltSort.Gameplay
                 }
 
                 // Lock icon overlay for locked cells
-                if (isLocked && GameAssets.TileLevelLocked == null)
+                if (isLocked)
                 {
-                    // Fallback text lock icon when sprite isn't imported
-                    var lockLbl = MakeLabel(cell, "LockIcon", "🔒",
-                                           font, 30, TextAnchor.MiddleCenter,
-                                           bold: false, shadow: false);
-                    lockLbl.color = new Color(0.5f, 0.5f, 0.5f, 0.7f);
-                    Stretch(lockLbl.GetComponent<RectTransform>());
+                    var lockGO  = new GameObject("LockIcon");
+                    lockGO.transform.SetParent(cell.transform, false);
+                    var lockImg = lockGO.AddComponent<Image>();
+                    Sprite lockSpr = GameAssets.LockIcon;
+                    if (lockSpr != null)
+                    {
+                        lockImg.sprite         = lockSpr;
+                        lockImg.color          = Color.white;
+                        lockImg.preserveAspect = true;
+                    }
+                    else
+                        lockImg.color = new Color(0f, 0f, 0f, 0f);
+                    var lrt = lockGO.GetComponent<RectTransform>();
+                    lrt.anchorMin = new Vector2(0.5f, 0.5f); lrt.anchorMax = new Vector2(0.5f, 0.5f);
+                    lrt.pivot     = new Vector2(0.5f, 0.5f);
+                    lrt.anchoredPosition = Vector2.zero;
+                    lrt.sizeDelta        = new Vector2(64f, 64f);
+                    lockImg.raycastTarget = false;
+
+                    // LS-02: tap locked cell → invalid SFX + shake feedback
+                    var lockBtn = cell.AddComponent<Button>();
+                    var lockCs  = lockBtn.colors;
+                    lockCs.normalColor = Color.white; lockCs.highlightedColor = Color.white;
+                    lockCs.pressedColor = new Color(0.85f, 0.85f, 0.85f, 1f);
+                    lockBtn.colors = lockCs;
+                    lockBtn.onClick.AddListener(() =>
+                    {
+                        AudioMgr.Instance?.PlaySFX("bolt_invalid");
+                        StartCoroutine(ShakeLocked(cr));
+                    });
                 }
 
                 if (!isLocked)
                 {
                     int captured = levelId;
                     var btn = cell.AddComponent<Button>();
-                    // Use sprite-mode button colors (white → light grey on press)
                     var cs  = btn.colors;
                     cs.normalColor      = Color.white;
                     cs.highlightedColor = new Color(0.92f, 0.92f, 0.92f, 1f);
@@ -355,6 +393,51 @@ namespace BoltSort.Gameplay
                 rt.anchoredPosition = new Vector2(startX + i * (starSize + 2f), 4f);
                 rt.sizeDelta        = new Vector2(starSize, starSize);
             }
+        }
+
+        // LS-02: horizontal shake for locked cell taps
+        private IEnumerator ShakeLocked(RectTransform rt)
+        {
+            if (rt == null) yield break;
+            Vector2 orig = rt.anchoredPosition;
+            float px = 8f;
+            (float dx, float dur)[] frames =
+            {
+                ( px,      0.04f),
+                (-px,      0.04f),
+                ( px * 0.5f, 0.04f),
+                ( 0f,      0.03f),
+            };
+            foreach (var (dx, dur) in frames)
+            {
+                float elapsed = 0f, startX = rt.anchoredPosition.x, targetX = orig.x + dx;
+                while (elapsed < dur)
+                {
+                    if (rt == null) yield break;
+                    elapsed += Time.deltaTime;
+                    rt.anchoredPosition = new Vector2(
+                        Mathf.Lerp(startX, targetX, elapsed / dur), orig.y);
+                    yield return null;
+                }
+            }
+            if (rt != null) rt.anchoredPosition = orig;
+        }
+
+        // LS-03: derive level count from loaded data; never exceed MaxLevels
+        private static int GetAvailableLevelCount()
+        {
+            var lds = LevelData.LevelDataSystem.Instance;
+            if (lds != null && lds.IsReady)
+                return lds.GetRange(1, MaxLevels).Length;
+            try
+            {
+                var asset = Resources.Load<TextAsset>("levels");
+                if (asset == null) return MaxLevels;
+                var root = JObject.Parse(asset.text);
+                var arr  = (root["levels"] ?? root["Levels"]) as JArray;
+                return arr != null ? Mathf.Clamp(arr.Count, 1, MaxLevels) : MaxLevels;
+            }
+            catch { return MaxLevels; }
         }
 
         private static void LoadLevel(int levelId)

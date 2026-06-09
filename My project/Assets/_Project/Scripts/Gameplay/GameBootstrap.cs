@@ -111,9 +111,18 @@ namespace BoltSort.Gameplay
 
         private async void HandleLevelComplete(int levelId, int moves, int par, long seqId)
         {
-            int stars     = moves <= par ? 3 : moves <= (int)(par * 1.5f) ? 2 : 1;
-            var ss        = SaveSystem.SaveSystem.Instance;
+            int stars       = moves <= par ? 3 : moves <= (int)(par * 1.5f) ? 2 : 1;
+            int coinsEarned = stars * 10;
+
+            // SetWinResult runs synchronously here (GameBootstrap subscribed in Awake, before
+            // HUD subscribed in Start) so _winStarCount/_winCoins are set before HUD's handler
+            // calls ShowWinOverlay.
+            _hud?.SetWinResult(stars, coinsEarned);
+
+            var ss = SaveSystem.SaveSystem.Instance;
             if (ss == null || !ss.IsReady) return;
+
+            ss.SetCoinBalance(ss.GetCoinBalance() + coinsEarned);
 
             int savedCurrent = ss.GetCurrentLevelId();
             int newCurrent   = Math.Max(levelId + 1, savedCurrent);
