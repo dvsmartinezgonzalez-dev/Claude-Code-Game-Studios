@@ -2,7 +2,9 @@ using System;
 using System.Collections;
 using System.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using BoltSort.Visual;
+using BoltSort.SortMechanic;
 using AudioMgr = BoltSort.Audio.AudioManager;
 
 namespace BoltSort.Gameplay
@@ -21,6 +23,7 @@ namespace BoltSort.Gameplay
         private HUDController                              _hud;
 
         private int _currentLevelId = 1;
+        private bool _levelComplete;
         private const int MaxLevelId = 30;
         private const string NextLevelKey = "bs.next_level";
 
@@ -82,6 +85,7 @@ namespace BoltSort.Gameplay
 
         public void ResetLevel()
         {
+            _levelComplete = false;
             _gsm.ExitLevel();
             _gsm.LoadLevel(_currentLevelId);
         }
@@ -93,6 +97,7 @@ namespace BoltSort.Gameplay
                 _hud?.ShowMoreLevelsSoon();
                 return;
             }
+            _levelComplete = false;
             _currentLevelId++;
             _gsm.ExitLevel();
             _gsm.LoadLevel(_currentLevelId);
@@ -107,10 +112,34 @@ namespace BoltSort.Gameplay
             else UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
         }
 
+        // ── Android back button (GP-02) ───────────────────────────────────────────
+
+        private void Update()
+        {
+            if (Keyboard.current == null) return;
+            if (!Keyboard.current.escapeKey.wasPressedThisFrame) return;
+
+            // If settings panel is open, close it first.
+            if (_hud != null && _hud.IsSettingsOpen)
+            {
+                _hud.CloseSettings();
+                return;
+            }
+
+            // If bolt is held, SortMechanic handles cancellation (existing AC-12 logic).
+            if (_sortMechanic != null && _sortMechanic.CurrentState == SortMechState.BoltSelected)
+                return;
+
+            // Win overlay showing or in gameplay — go to main menu.
+            OnMenuClicked();
+        }
+
         // ── Save wiring ───────────────────────────────────────────────────────────
 
         private async void HandleLevelComplete(int levelId, int moves, int par, long seqId)
         {
+            _levelComplete = true;
+
             int stars       = moves <= par ? 3 : moves <= (int)(par * 1.5f) ? 2 : 1;
             int coinsEarned = stars * 10;
 

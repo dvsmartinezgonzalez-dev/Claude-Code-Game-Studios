@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.EnhancedTouch;
 using BoltSort.GameStateManager;
+using BoltSort.Gameplay;
 
 namespace BoltSort.SortMechanic
 {
@@ -62,6 +63,13 @@ namespace BoltSort.SortMechanic
         /// initialization assertion failure (AC-18c).
         /// </summary>
         private bool _inputBlocked;
+
+        /// <summary>
+        /// When TRUE, all input processing is suspended while the settings panel is open.
+        /// Set via <see cref="OnPauseStateChanged"/> which subscribes to
+        /// <see cref="SettingsPanel.OnGamePaused"/>. GP-01: does NOT use Time.timeScale.
+        /// </summary>
+        private bool _paused;
 
         // ── Held-bolt State ───────────────────────────────────────────────────────
 
@@ -179,6 +187,9 @@ namespace BoltSort.SortMechanic
             // Subscribe to GSM events using named methods (control manifest: no lambdas).
             if (_gsm != null)
                 SubscribeToGsm();
+
+            // GP-01: subscribe to settings panel pause event to block input while open.
+            SettingsPanel.OnGamePaused += OnPauseStateChanged;
         }
 
         private void OnDestroy()
@@ -187,6 +198,9 @@ namespace BoltSort.SortMechanic
 
             if (_gsm != null)
                 UnsubscribeFromGsm();
+
+            // GP-01: unsubscribe to avoid dangling references after scene unload.
+            SettingsPanel.OnGamePaused -= OnPauseStateChanged;
         }
 
         /// <summary>
@@ -252,6 +266,20 @@ namespace BoltSort.SortMechanic
 
             _currentState = SortMechState.Idle;
             DiscardPendingTap(); // Watchdog IDLE: discard buffer without firing
+        }
+
+        // ── Settings Pause Handler ────────────────────────────────────────────────
+
+        /// <summary>
+        /// Called when the settings panel opens or closes (GP-01).
+        /// Cancels any in-progress bolt hold so the board is always in a clean state
+        /// when the overlay is dismissed.
+        /// </summary>
+        private void OnPauseStateChanged(bool paused)
+        {
+            _paused = paused;
+            if (paused && _currentState == SortMechState.BoltSelected)
+                ExecuteCancellation();
         }
 
         // ── Initialization ────────────────────────────────────────────────────────
@@ -389,6 +417,7 @@ namespace BoltSort.SortMechanic
         private void Update()
         {
             if (_inputBlocked) return;
+            if (_paused) return;  // GP-01: block all input while settings panel is open
 
             // Android hardware back gesture — cancel held bolt (AC-12, ADR-0007).
             // Keyboard.current null guard is a REQUIRED implementation contract (AC-12):

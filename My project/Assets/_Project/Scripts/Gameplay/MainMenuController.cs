@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 using BoltSort.Visual;
@@ -14,7 +15,8 @@ namespace BoltSort.Gameplay
     /// </summary>
     public class MainMenuController : MonoBehaviour
     {
-        private SettingsPanel _settingsPanel;
+        private SettingsPanel  _settingsPanel;
+        private ShopController _shopController;
 
         private void Start()
         {
@@ -25,6 +27,24 @@ namespace BoltSort.Gameplay
             ConfigureCamera();
             BuildUI();
             AudioMgr.Instance?.PlayMusic();
+        }
+
+        // ── Android back button (GP-02) ───────────────────────────────────────────
+
+        private void Update()
+        {
+            if (Keyboard.current == null) return;
+            if (!Keyboard.current.escapeKey.wasPressedThisFrame) return;
+
+            // If settings panel is open, close it first.
+            if (_settingsPanel != null && _settingsPanel.IsOpen)
+            {
+                _settingsPanel.Toggle();
+                return;
+            }
+
+            // Main menu: back = quit application.
+            Application.Quit();
         }
 
         private void BuildUI()
@@ -42,6 +62,10 @@ namespace BoltSort.Gameplay
             scaler.referenceResolution = new Vector2(720f, 1280f);
             scaler.matchWidthOrHeight  = 1f;
             canvasGO.AddComponent<GraphicRaycaster>();
+
+            // MM-04: safe area — push top-corner buttons below notch/Dynamic Island
+            float lpu     = 1280f / Screen.height;
+            float safeTop = (Screen.height - Screen.safeArea.yMax) * lpu;
 
             // Background — use game_background sprite if available, else solid color
             var bg    = MakePanel(canvasGO, "Background", BoltSortTheme.BackgroundDeep);
@@ -66,15 +90,16 @@ namespace BoltSort.Gameplay
             SetAnchors(playBtn.GetComponent<RectTransform>(),
                 new Vector2(0.08f, 0.42f), new Vector2(0.72f, 0.55f));
 
-            // LEVELS button — no dedicated sprite; use btn_continue (right arrow) + label
+            // LEVELS button — use dedicated Levels.png from assets_admin
             var levelsBtn = MakeAnimatedButton(canvasGO, "LevelsButton", "LEVELS", font, 44, OnLevelsClicked);
             var levelsImg = levelsBtn.GetComponent<Image>();
-            if (GameAssets.BtnContinue != null)
-                GameAssets.Apply(levelsImg, GameAssets.BtnContinue, preserveAspect: true);
+            Sprite levelsSpr = GameAssets.BtnLevels;
+            if (levelsSpr != null)
+                GameAssets.Apply(levelsImg, levelsSpr, preserveAspect: true);
             else
                 levelsImg.color = new Color(0.20f, 0.40f, 0.65f, 1f);
             SetAnchors(levelsBtn.GetComponent<RectTransform>(),
-                new Vector2(0.12f, 0.28f), new Vector2(0.88f, 0.39f));
+                new Vector2(0.08f, 0.28f), new Vector2(0.92f, 0.40f));
 
             // Settings button (top-left corner) — btn_settings sprite (red gear circle)
             var settingsBtn = MakeAnimatedButton(canvasGO, "SettingsButton", "", font, 44, OnSettingsClicked);
@@ -87,7 +112,7 @@ namespace BoltSort.Gameplay
             sr.anchorMin        = new Vector2(0f, 1f);
             sr.anchorMax        = new Vector2(0f, 1f);
             sr.pivot            = new Vector2(0f, 1f);
-            sr.anchoredPosition = new Vector2(16f, -16f);
+            sr.anchoredPosition = new Vector2(16f, -(16f + safeTop));
             sr.sizeDelta        = new Vector2(110f, 110f);
 
             // Sound toggle button (top-right corner) — btn_sound sprite
@@ -99,13 +124,25 @@ namespace BoltSort.Gameplay
             soundRT.anchorMin        = new Vector2(1f, 1f);
             soundRT.anchorMax        = new Vector2(1f, 1f);
             soundRT.pivot            = new Vector2(1f, 1f);
-            soundRT.anchoredPosition = new Vector2(-16f, -16f);
+            soundRT.anchoredPosition = new Vector2(-16f, -(16f + safeTop));
             soundRT.sizeDelta        = new Vector2(110f, 110f);
+
+            // SHOP button — below LEVELS, uses diamond icon color + label
+            var shopBtn = MakeAnimatedButton(canvasGO, "ShopButton", "SHOP", font, 40, OnShopClicked);
+            var shopImg = shopBtn.GetComponent<Image>();
+            shopImg.color = new Color(0.55f, 0.25f, 0.75f, 1f); // purple
+            SetAnchors(shopBtn.GetComponent<RectTransform>(),
+                new Vector2(0.08f, 0.14f), new Vector2(0.92f, 0.25f));
 
             var spHost = new GameObject("SettingsPanelHost");
             spHost.transform.SetParent(canvasGO.transform, false);
             _settingsPanel = spHost.AddComponent<SettingsPanel>();
             _settingsPanel.Initialize(font, canvasGO.transform);
+
+            var shopHost = new GameObject("ShopControllerHost");
+            shopHost.transform.SetParent(canvasGO.transform, false);
+            _shopController = shopHost.AddComponent<ShopController>();
+            _shopController.Initialize(font, canvasGO.transform);
         }
 
         private Image _soundBtnImg;
@@ -149,6 +186,7 @@ namespace BoltSort.Gameplay
         }
 
         private void OnSettingsClicked() => _settingsPanel?.Toggle();
+        private void OnShopClicked()     => _shopController?.Toggle();
 
         private static int GetCurrentLevel()
         {

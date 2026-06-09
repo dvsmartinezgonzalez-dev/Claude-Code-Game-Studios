@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.UI;
 using BoltSort.Visual;
@@ -61,6 +62,15 @@ namespace BoltSort.Gameplay
                     border.color = c;
                 }
             }
+
+            // GP-02: Android back button
+            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            {
+                if (_settingsPanel != null && _settingsPanel.IsOpen)
+                    _settingsPanel.Toggle();
+                else
+                    OnBackClicked();
+            }
         }
 
         private void BuildUI(SaveSystem.ISaveSystem ss)
@@ -83,6 +93,10 @@ namespace BoltSort.Gameplay
             scaler.matchWidthOrHeight  = 1f;
             canvasGO.AddComponent<GraphicRaycaster>();
 
+            // LS-04: safe area — push header and scroll view down past notch/Dynamic Island
+            float lpu     = 1280f / Screen.height;
+            float safeTop = (Screen.height - Screen.safeArea.yMax) * lpu;
+
             // Background — game_background sprite if available, else solid color
             var bg    = MakePanel(canvasGO, "Background", BoltSortTheme.BackgroundDeep);
             GameAssets.Apply(bg.GetComponent<Image>(), GameAssets.GameBackground);
@@ -93,7 +107,7 @@ namespace BoltSort.Gameplay
             var hr = header.GetComponent<RectTransform>();
             hr.anchorMin = new Vector2(0f, 1f); hr.anchorMax = new Vector2(1f, 1f);
             hr.pivot = new Vector2(0.5f, 1f);
-            hr.offsetMin = new Vector2(0f, -100f); hr.offsetMax = Vector2.zero;
+            hr.offsetMin = new Vector2(0f, -(100f + safeTop)); hr.offsetMax = Vector2.zero;
 
             var titleText = MakeLabel(header, "Title", "LEVELS", font,
                                       52, TextAnchor.MiddleCenter, bold: true, shadow: true);
@@ -137,7 +151,7 @@ namespace BoltSort.Gameplay
 
             var scrollRt = scrollGO.GetComponent<RectTransform>();
             scrollRt.anchorMin = Vector2.zero; scrollRt.anchorMax = Vector2.one;
-            scrollRt.offsetMin = new Vector2(0f, 0f); scrollRt.offsetMax = new Vector2(0f, -100f);
+            scrollRt.offsetMin = new Vector2(0f, 0f); scrollRt.offsetMax = new Vector2(0f, -(100f + safeTop));
 
             // Viewport
             var viewportGO = new GameObject("Viewport");

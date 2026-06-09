@@ -254,6 +254,12 @@ namespace BoltSort.Gameplay
 
         private void OnSettingsClicked() => _settingsPanel?.Toggle();
 
+        /// <summary>True when the settings overlay is currently visible. GP-02: queried by GameBootstrap.</summary>
+        public bool IsSettingsOpen => _settingsPanel != null && _settingsPanel.IsOpen;
+
+        /// <summary>Closes the settings panel if it is open. GP-02: called by GameBootstrap on back gesture.</summary>
+        public void CloseSettings() => _settingsPanel?.Toggle();
+
         // ── UI construction ───────────────────────────────────────────────────────
 
         private void BuildUI()

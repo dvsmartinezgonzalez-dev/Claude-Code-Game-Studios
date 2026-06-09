@@ -17,16 +17,32 @@ namespace BoltSort.Gameplay
 
         private GameObject _overlay;
 
+        /// <summary>
+        /// Fired before the overlay's active state changes.
+        /// True = panel is opening; false = panel is closing.
+        /// GP-01: SortMechanic subscribes to block input while settings is open.
+        /// </summary>
+        public static event Action<bool> OnGamePaused;
+
+        /// <summary>True when the settings overlay is currently visible.</summary>
+        public bool IsOpen => _overlay != null && _overlay.activeSelf;
+
         public void Initialize(Font font, Transform canvasRoot)
         {
             BuildOverlay(font, canvasRoot);
             _overlay.SetActive(false);
         }
 
+        /// <summary>
+        /// Toggles the settings overlay. Fires <see cref="OnGamePaused"/> before changing
+        /// visibility so subscribers can react before the panel animates open or closed.
+        /// </summary>
         public void Toggle()
         {
-            if (_overlay != null)
-                _overlay.SetActive(!_overlay.activeSelf);
+            if (_overlay == null) return;
+            bool opening = !_overlay.activeSelf;
+            OnGamePaused?.Invoke(opening);
+            _overlay.SetActive(opening);
         }
 
         private void BuildOverlay(Font font, Transform canvasRoot)
@@ -41,7 +57,7 @@ namespace BoltSort.Gameplay
 
             // Block raycasts so dim background is tappable (closes panel)
             var btn = _overlay.AddComponent<Button>();
-            btn.onClick.AddListener(() => _overlay.SetActive(false));
+            btn.onClick.AddListener(() => Toggle());
 
             // Card
             var card = new GameObject("Card");
@@ -102,7 +118,7 @@ namespace BoltSort.Gameplay
             // Close button — btn_close sprite; falls back to blue rect in builds
             var closeBtn = CreateButton(card, "CloseBtn", "", font, 36,
                                         new Color(0.290f, 0.565f, 0.851f, 1f),
-                                        () => _overlay.SetActive(false));
+                                        () => Toggle());
             GameAssets.Apply(closeBtn.GetComponent<Image>(), GameAssets.BtnClose, preserveAspect: true);
             var cr = closeBtn.GetComponent<RectTransform>();
             cr.anchorMin = new Vector2(0.5f, 0.5f); cr.anchorMax = new Vector2(0.5f, 0.5f);
