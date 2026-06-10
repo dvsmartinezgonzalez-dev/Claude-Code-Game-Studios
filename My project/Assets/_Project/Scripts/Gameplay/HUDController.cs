@@ -311,13 +311,11 @@ namespace BoltSort.Gameplay
             {
                 var esGO = new GameObject("EventSystem");
                 esGO.AddComponent<EventSystem>();
-                // Without AssignDefaultActions() the procedural input module has no
-                // actions and no clicks register (dead buttons in editor & build).
+                // Defensive: module self-assigns default UI actions in OnEnable too.
                 esGO.AddComponent<InputSystemUIInputModule>().AssignDefaultActions();
             }
 
-            Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
-                     ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+            Font font = GameAssets.MenuFont; // Gummy display font (falls back to built-in)
 
             float lpu        = 1280f / Screen.height;
             float safeTop    = (Screen.height - Screen.safeArea.yMax) * lpu;
@@ -356,34 +354,38 @@ namespace BoltSort.Gameplay
             blRT.pivot     = new Vector2(0.5f, 1f);
             blRT.sizeDelta = new Vector2(0f, 2f);
 
-            _levelText = MakeLabel(topBar, "LevelText", "Level —", font, 50,
+            // GP-06: clean header layout — Level centered & small, Moves small top-right,
+            // score/coin pill stacked directly below Moves. Nothing overlaps.
+            // Level title — centered horizontally at top, small GummyPop label.
+            _levelText = MakeLabel(topBar, "LevelText", "Level —", font, 34,
                                    TextAnchor.MiddleCenter, bold: true, shadow: true);
             _levelText.color = BoltSortTheme.HUDText;
             SetAnchors(_levelText.rectTransform,
-                anchorMin: new Vector2(0f, 0f), anchorMax: new Vector2(0.55f, 1f),
-                offsetMin: new Vector2(16f, 0f), offsetMax: new Vector2(0f, -safeTop));
+                anchorMin: new Vector2(0.25f, 0f), anchorMax: new Vector2(0.75f, 1f),
+                offsetMin: new Vector2(0f, 0f), offsetMax: new Vector2(0f, -safeTop));
 
-            _movesText = MakeLabel(topBar, "MovesText", "Moves: 0", font, 50,
-                                   TextAnchor.MiddleRight, bold: true, shadow: true);
+            // Moves — small, top-right, upper half of the bar.
+            _movesText = MakeLabel(topBar, "MovesText", "Moves: 0", font, 26,
+                                   TextAnchor.UpperRight, bold: true, shadow: true);
             _movesText.color = BoltSortTheme.HUDText;
             SetAnchors(_movesText.rectTransform,
-                anchorMin: new Vector2(0.55f, 0f), anchorMax: new Vector2(1f, 1f),
-                offsetMin: new Vector2(0f, 0f), offsetMax: new Vector2(-16f, -safeTop));
+                anchorMin: new Vector2(0.6f, 0.5f), anchorMax: new Vector2(1f, 1f),
+                offsetMin: new Vector2(0f, 0f), offsetMax: new Vector2(-14f, -(safeTop + 8f)));
             _movesRT = _movesText.GetComponent<RectTransform>();
 
-            // ── Coin pill (top-right corner of top bar) — D.3-B ──────────────────
+            // ── Coin/score pill — directly BELOW Moves (lower half, right) ───────
             var pillGO  = new GameObject("CoinPill");
             pillGO.transform.SetParent(topBar.transform, false);
             var pillImg = pillGO.AddComponent<Image>();
             pillImg.color = new Color(0f, 0f, 0f, 0.35f);
             var pillRt  = pillGO.GetComponent<RectTransform>();
-            pillRt.anchorMin        = new Vector2(1f, 0.5f);
-            pillRt.anchorMax        = new Vector2(1f, 0.5f);
-            pillRt.pivot            = new Vector2(1f, 0.5f);
-            pillRt.anchoredPosition = new Vector2(-8f, -safeTop * 0.5f);
-            pillRt.sizeDelta        = new Vector2(110f, 38f);
+            pillRt.anchorMin        = new Vector2(1f, 0f);
+            pillRt.anchorMax        = new Vector2(1f, 0f);
+            pillRt.pivot            = new Vector2(1f, 0f);
+            pillRt.anchoredPosition = new Vector2(-14f, 14f);
+            pillRt.sizeDelta        = new Vector2(96f, 32f);
 
-            _coinPillText = MakeLabel(pillGO, "CoinText", "0", font, 26,
+            _coinPillText = MakeLabel(pillGO, "CoinText", "0", font, 22,
                 TextAnchor.MiddleCenter, bold: true, shadow: false);
             _coinPillText.color = BoltSortTheme.WinGold;
             var pillTextRt = _coinPillText.rectTransform;
@@ -418,47 +420,38 @@ namespace BoltSort.Gameplay
 
             float btnY = safeBottom + 22f;
 
-            // Retry / Reset button — btn_retry sprite
+            // Retry / Reset button (far bottom-left) — retry_button.png
             var resetBtn  = MakeIconButton(bottomBar, "ResetButton", "Reset", font, 30,
-                                           GameAssets.BtnRetry, _onReset);
+                                           GameAssets.BtnRetryAction, _onReset);
             var resetRect = resetBtn.GetComponent<RectTransform>();
-            resetRect.anchorMin = resetRect.anchorMax = new Vector2(0.04f, 0f);
+            resetRect.anchorMin = resetRect.anchorMax = new Vector2(0.06f, 0f);
             resetRect.pivot     = new Vector2(0f, 0f);
             resetRect.anchoredPosition = new Vector2(0f, btnY);
             resetRect.sizeDelta        = new Vector2(90f, 90f);
 
-            // Undo button — no BtnUndo sprite; use "↩" text fallback (GP-03)
+            // Undo button (center) — undo_button.png
             var undoBtn  = MakeIconButton(bottomBar, "UndoButton", "↩", font, 42,
-                                          null, _onUndo);
+                                          GameAssets.BtnUndoAction, _onUndo);
             var undoRect = undoBtn.GetComponent<RectTransform>();
-            undoRect.anchorMin = undoRect.anchorMax = new Vector2(0.36f, 0f);
+            undoRect.anchorMin = undoRect.anchorMax = new Vector2(0.5f, 0f);
             undoRect.pivot     = new Vector2(0.5f, 0f);
             undoRect.anchoredPosition = new Vector2(0f, btnY);
             undoRect.sizeDelta        = new Vector2(90f, 90f);
 
-            // Levels button — btn_levels sprite (GP-06)
-            var levelsBtn  = MakeIconButton(bottomBar, "LevelsButton", "Lvls", font, 24,
-                                            GameAssets.BtnLevels, _onLevels);
-            var levelsRect = levelsBtn.GetComponent<RectTransform>();
-            levelsRect.anchorMin = levelsRect.anchorMax = new Vector2(0.64f, 0f);
-            levelsRect.pivot     = new Vector2(0.5f, 0f);
-            levelsRect.anchoredPosition = new Vector2(0f, btnY);
-            levelsRect.sizeDelta        = new Vector2(90f, 90f);
-
-            // Menu / Home button — btn_home sprite
+            // Menu / Home button (far bottom-right) — home_button.png
             var menuBtn  = MakeIconButton(bottomBar, "MenuButton", "Menu", font, 30,
-                                          GameAssets.BtnHome, _onMenu);
+                                          GameAssets.BtnHomeAction, _onMenu);
             var menuRect = menuBtn.GetComponent<RectTransform>();
-            menuRect.anchorMin = menuRect.anchorMax = new Vector2(0.96f, 0f);
+            menuRect.anchorMin = menuRect.anchorMax = new Vector2(0.94f, 0f);
             menuRect.pivot     = new Vector2(1f, 0f);
             menuRect.anchoredPosition = new Vector2(0f, btnY);
             menuRect.sizeDelta        = new Vector2(90f, 90f);
 
-            // Settings button (top-left corner) — btn_settings_pause sprite (yellow gear)
+            // Settings button (top-left corner) — settings_button.png
             var settingsBtn = MakeIconButton(canvasGO, "SettingsButton", "",  font, 36,
-                                             GameAssets.BtnSettingsPause, OnSettingsClicked);
+                                             GameAssets.NavSettings, OnSettingsClicked);
             var settingsImg = settingsBtn.GetComponent<Image>();
-            if (GameAssets.BtnSettingsPause == null)
+            if (GameAssets.NavSettings == null)
                 settingsImg.color = new Color(0.12f, 0.12f, 0.22f, 0.85f);
             var sgr = settingsBtn.GetComponent<RectTransform>();
             sgr.anchorMin = sgr.anchorMax = new Vector2(0f, 1f);

@@ -39,6 +39,20 @@ namespace BoltSort.Visual
         /// <summary>Decorative shop diamonds (1-5). Returns null if missing.</summary>
         public static Sprite MenuDiamond(int index) => LoadRes($"Sprites/Menu/diamond_{index}");
 
+        // Navigation buttons (assets_admin/Buttons → Resources/Sprites/Menu/)
+        public static Sprite NavBack        => LoadRes("Sprites/Menu/back_button");
+        public static Sprite NavSettings    => LoadRes("Sprites/Menu/settings_button");
+
+        // Action buttons (assets_admin/Buttons → Resources/Sprites/Buttons/, single sprites)
+        public static Sprite BtnRetryAction => LoadRes("Sprites/Buttons/retry_button");
+        public static Sprite BtnUndoAction  => LoadRes("Sprites/Buttons/undo_button");
+        public static Sprite BtnHomeAction  => LoadRes("Sprites/Buttons/home_button");
+        public static Sprite BtnExit        => LoadRes("Sprites/Buttons/exit_button");
+
+        // Level select tiles (assets_admin/Levels → Resources/Sprites/Levels/)
+        public static Sprite LevelBackground => LoadRes("Sprites/Levels/level_background");
+        public static Sprite LevelLock       => LoadRes("Sprites/Levels/lock");
+
         // ── Fonts ───────────────────────────────────────────────────────────────────
         private static Font _menuFont;
 
