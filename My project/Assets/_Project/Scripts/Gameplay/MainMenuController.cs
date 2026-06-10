@@ -16,8 +16,8 @@ namespace BoltSort.Gameplay
     /// </summary>
     public class MainMenuController : MonoBehaviour
     {
-        private SettingsPanel  _settingsPanel;
-        private ShopController _shopController;
+        private SettingsPanel _settingsPanel;
+        private NoAdsPopup    _noAdsPopup;
 
         private void Start()
         {
@@ -140,17 +140,19 @@ namespace BoltSort.Gameplay
             sr.anchoredPosition = new Vector2(16f, -(16f + safeTop));
             sr.sizeDelta        = new Vector2(110f, 110f);
 
-            // Sound toggle button (top-right corner) — btn_sound sprite
-            bool musicOn = PlayerPrefs.GetInt("bs.music_on", 1) == 1;
-            var soundBtn = MakeAnimatedButton(canvasGO, "SoundButton", "", font, 32, OnSoundClicked);
-            _soundBtnImg = soundBtn.GetComponent<Image>();
-            RefreshSoundSprite();
-            var soundRT = soundBtn.GetComponent<RectTransform>();
-            soundRT.anchorMin        = new Vector2(1f, 1f);
-            soundRT.anchorMax        = new Vector2(1f, 1f);
-            soundRT.pivot            = new Vector2(1f, 1f);
-            soundRT.anchoredPosition = new Vector2(-16f, -(16f + safeTop));
-            soundRT.sizeDelta        = new Vector2(110f, 110f);
+            // No Ads button (top-right corner) — no_ads.png (sound config now lives in Settings)
+            var noAdsBtn = MakeAnimatedButton(canvasGO, "NoAdsButton", "", font, 32, OnNoAdsClicked);
+            var noAdsImg = noAdsBtn.GetComponent<Image>();
+            if (GameAssets.MenuNoAds != null)
+                GameAssets.Apply(noAdsImg, GameAssets.MenuNoAds, preserveAspect: true);
+            else
+                noAdsImg.color = new Color(0.9f, 0.3f, 0.3f, 1f);
+            var noAdsRT = noAdsBtn.GetComponent<RectTransform>();
+            noAdsRT.anchorMin        = new Vector2(1f, 1f);
+            noAdsRT.anchorMax        = new Vector2(1f, 1f);
+            noAdsRT.pivot            = new Vector2(1f, 1f);
+            noAdsRT.anchoredPosition = new Vector2(-16f, -(16f + safeTop));
+            noAdsRT.sizeDelta        = new Vector2(110f, 110f);
 
             // SHOP button — shared general_button.png base + independent text label
             var shopBtn = MakeAnimatedButton(canvasGO, "ShopButton", "SHOP", font, 40, OnShopClicked);
@@ -178,10 +180,10 @@ namespace BoltSort.Gameplay
             _settingsPanel = spHost.AddComponent<SettingsPanel>();
             _settingsPanel.Initialize(font, canvasGO.transform);
 
-            var shopHost = new GameObject("ShopControllerHost");
-            shopHost.transform.SetParent(canvasGO.transform, false);
-            _shopController = shopHost.AddComponent<ShopController>();
-            _shopController.Initialize(font, canvasGO.transform);
+            var noAdsHost = new GameObject("NoAdsPopupHost");
+            noAdsHost.transform.SetParent(canvasGO.transform, false);
+            _noAdsPopup = noAdsHost.AddComponent<NoAdsPopup>();
+            _noAdsPopup.Initialize(font, canvasGO.transform);
 
             // D.3-C: stagger entrance + D.2-A: idle float on PLAY button after entrance
             var playRt   = playBtn.GetComponent<RectTransform>();
@@ -265,35 +267,6 @@ namespace BoltSort.Gameplay
             action?.Invoke();
         }
 
-        private Image _soundBtnImg;
-
-        private void OnSoundClicked()
-        {
-            bool current = PlayerPrefs.GetInt("bs.music_on", 1) == 1;
-            bool next    = !current;
-            PlayerPrefs.SetInt("bs.music_on", next ? 1 : 0);
-            AudioMgr.Instance?.SetMusicEnabled(next);
-            RefreshSoundSprite();
-        }
-
-        private void RefreshSoundSprite()
-        {
-            if (_soundBtnImg == null) return;
-            bool on = PlayerPrefs.GetInt("bs.music_on", 1) == 1;
-            // Single volume.png sprite for both states; dim + half-alpha when muted.
-            if (GameAssets.MenuVolume != null)
-            {
-                GameAssets.Apply(_soundBtnImg, GameAssets.MenuVolume, preserveAspect: true);
-                _soundBtnImg.color = on ? Color.white : new Color(0.6f, 0.6f, 0.6f, 0.6f);
-            }
-            else
-            {
-                _soundBtnImg.color = on
-                    ? new Color(0.12f, 0.55f, 0.55f, 1f)
-                    : new Color(0.40f, 0.40f, 0.40f, 0.8f);
-            }
-        }
-
         private void OnPlayClicked()
         {
             int levelId = GetCurrentLevel();
@@ -311,7 +284,14 @@ namespace BoltSort.Gameplay
         }
 
         private void OnSettingsClicked() => _settingsPanel?.Toggle();
-        private void OnShopClicked()     => _shopController?.Toggle();
+        private void OnNoAdsClicked()    => _noAdsPopup?.Open();
+
+        private void OnShopClicked()
+        {
+            var tm = SceneTransitionManager.Instance;
+            if (tm != null) tm.TransitionTo("Shop");
+            else UnityEngine.SceneManagement.SceneManager.LoadScene("Shop");
+        }
 
         private static int GetCurrentLevel()
         {
@@ -344,9 +324,9 @@ namespace BoltSort.Gameplay
             {
                 var es = new GameObject("EventSystem");
                 es.AddComponent<EventSystem>();
-                // Procedurally-added UI input modules ship with NO actions assigned,
-                // so pointer/click events never fire (dead buttons in editor & build).
-                // AssignDefaultActions() wires up the package's default UI action map.
+                // Explicit default-action assignment for clarity. (The module also
+                // self-assigns these in OnEnable when none are present, so this is
+                // defensive, not load-bearing.)
                 es.AddComponent<InputSystemUIInputModule>().AssignDefaultActions();
             }
         }
