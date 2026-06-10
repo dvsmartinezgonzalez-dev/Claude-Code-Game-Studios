@@ -78,8 +78,7 @@ namespace BoltSort.Gameplay
             _currentLevelId = ss != null ? ss.GetCurrentLevelId() : 1;
             int totalLevels = GetAvailableLevelCount();
 
-            Font font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf")
-                     ?? Resources.GetBuiltinResource<Font>("Arial.ttf");
+            Font font = GameAssets.MenuFont; // Gummy display font (falls back to built-in)
 
             // Root Canvas
             var canvasGO = new GameObject("Canvas");
@@ -114,11 +113,12 @@ namespace BoltSort.Gameplay
             titleText.color = BoltSortTheme.HUDText;
             Stretch(titleText.GetComponent<RectTransform>());
 
+            // Left header slot → "back to main menu" → back_button.png (logical match)
             var backBtn = MakeAnimatedButton(header, "BackButton", "", font, 36,
                                              OnBackClicked);
             var backImg = backBtn.GetComponent<Image>();
-            if (GameAssets.BtnBack != null)
-                GameAssets.Apply(backImg, GameAssets.BtnBack, preserveAspect: true);
+            if (GameAssets.NavBack != null)
+                GameAssets.Apply(backImg, GameAssets.NavBack, preserveAspect: true);
             else
                 backImg.color = new Color(0.12f, 0.12f, 0.22f, 0.9f);
             var bbr = backBtn.GetComponent<RectTransform>();
@@ -126,12 +126,12 @@ namespace BoltSort.Gameplay
             bbr.pivot     = new Vector2(0f, 0.5f);
             bbr.offsetMin = new Vector2(8f, 8f); bbr.offsetMax = new Vector2(100f, -8f);
 
-            // Settings button (top-right of header) — LS-01
+            // Right header slot → opens settings panel → settings_button.png (logical match)
             var settingsBtn = MakeAnimatedButton(header, "SettingsButton", "", font, 36,
                                                  () => _settingsPanel?.Toggle());
             var settingsImg = settingsBtn.GetComponent<Image>();
-            if (GameAssets.BtnSettings != null)
-                GameAssets.Apply(settingsImg, GameAssets.BtnSettings, preserveAspect: true);
+            if (GameAssets.NavSettings != null)
+                GameAssets.Apply(settingsImg, GameAssets.NavSettings, preserveAspect: true);
             else
                 settingsImg.color = new Color(0.12f, 0.12f, 0.22f, 0.9f);
             var sbr = settingsBtn.GetComponent<RectTransform>();
@@ -162,7 +162,13 @@ namespace BoltSort.Gameplay
             Stretch(viewportGO.GetComponent<RectTransform>());
             scrollRect.viewport = viewportGO.GetComponent<RectTransform>();
 
-            // Content
+            // Content — organised automatically by a GridLayoutGroup; a
+            // ContentSizeFitter drives the scrollable height to fit all rows.
+            const float cellSize = 120f;
+            const float cellGap  = 16f;
+            const float padX     = 20f;
+            const float padTop   = 20f;
+
             var contentGO = new GameObject("Content", typeof(RectTransform));
             contentGO.transform.SetParent(viewportGO.transform, false);
             var contentRt = contentGO.GetComponent<RectTransform>();
@@ -171,64 +177,57 @@ namespace BoltSort.Gameplay
             contentRt.offsetMin = contentRt.offsetMax = Vector2.zero;
             scrollRect.content  = contentRt;
 
-            // Grid
-            const float cellSize = 120f;
-            const float cellGap  = 16f;
-            const float padX     = 20f;
-            const float padTop   = 20f;
-            int   rows   = Mathf.CeilToInt((float)totalLevels / Columns);
-            float totalH = rows * (cellSize + cellGap) + padTop;
-            contentRt.sizeDelta = new Vector2(0f, totalH);
+            var grid = contentGO.AddComponent<GridLayoutGroup>();
+            grid.cellSize        = new Vector2(cellSize, cellSize);
+            grid.spacing         = new Vector2(cellGap, cellGap);
+            grid.padding         = new RectOffset((int)padX, (int)padX, (int)padTop, (int)padTop);
+            grid.constraint      = GridLayoutGroup.Constraint.FixedColumnCount;
+            grid.constraintCount = Columns;
+            grid.childAlignment  = TextAnchor.UpperCenter;
+
+            var fitter = contentGO.AddComponent<ContentSizeFitter>();
+            fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
             _pulseCells.Clear();
             _entranceCells.Clear();
 
             for (int i = 0; i < totalLevels; i++)
             {
-                int levelId     = i + 1;
-                int row         = i / Columns;
-                int col         = i % Columns;
+                int levelId = i + 1;
 
+                // Visual state is driven by COMPLETION, not unlock:
+                //  completed     → full-color tile, no lock
+                //  not completed → darkened tile (×0.4) + lock overlay
+                // Interactivity is driven by UNLOCK: an unlocked-but-incomplete
+                // level still shows the lock yet remains tappable.
                 bool isCompleted = ss != null && ss.GetCompletionRecord(levelId) != null;
                 bool isCurrent   = levelId == _currentLevelId;
-                bool isLocked    = levelId > _currentLevelId;
+                bool isUnlocked  = levelId <= _currentLevelId;
 
-                float x = padX + col * (cellSize + cellGap) + cellSize * 0.5f;
-                float y = -(padTop + row * (cellSize + cellGap) + cellSize * 0.5f);
-
-                // Cell — tile_level_unlocked or tile_level_locked sprite
+                // Cell — level_background.png. Always visible (sprite or fallback color).
                 var cell = new GameObject($"Level_{levelId}");
                 cell.transform.SetParent(contentGO.transform, false);
                 var cellImg = cell.AddComponent<Image>();
-                Sprite tileSprite = isLocked ? GameAssets.TileLevelLocked
-                                              : GameAssets.TileLevelUnlocked;
+                Sprite tileSprite = GameAssets.LevelBackground;
                 if (tileSprite != null)
                 {
-                    cellImg.sprite  = tileSprite;
-                    cellImg.color   = Color.white;
-                    cellImg.type    = Image.Type.Simple;
+                    cellImg.sprite         = tileSprite;
+                    cellImg.type           = Image.Type.Simple;
                     cellImg.preserveAspect = false;
-                    // Tint for completed (golden) vs current (bright) vs locked (dark)
-                    if (isCompleted && !isLocked)
-                        cellImg.color = new Color(1.0f, 0.95f, 0.7f, 1f); // warm gold tint
-                    else if (isLocked)
-                        cellImg.color = new Color(0.55f, 0.55f, 0.65f, 1f); // greyed out
+                    cellImg.color = isCompleted ? Color.white
+                                                : new Color(0.4f, 0.4f, 0.4f, 1f); // darken incomplete
                 }
                 else
                 {
-                    // Fallback — solid color if sprites not yet imported
-                    Color cellColor = isLocked
-                        ? new Color(0.20f, 0.20f, 0.24f, 0.6f)
-                        : isCompleted ? BoltSortTheme.HexColor("1A4A22")
-                                      : BoltSortTheme.HexColor("1A2E4A");
-                    cellImg.color = cellColor;
+                    // Fallback — solid color if sprite not yet imported
+                    cellImg.color = isCompleted
+                        ? BoltSortTheme.HexColor("1A4A22")
+                        : new Color(0.20f, 0.20f, 0.24f, 1f);
                 }
 
+                // Position & size are driven by the GridLayoutGroup; we keep the
+                // RectTransform reference only for scale/shake animations.
                 var cr = cell.GetComponent<RectTransform>();
-                cr.anchorMin = new Vector2(0f, 1f); cr.anchorMax = new Vector2(0f, 1f);
-                cr.pivot     = new Vector2(0.5f, 0.5f);
-                cr.anchoredPosition = new Vector2(x, y);
-                cr.sizeDelta = new Vector2(cellSize, cellSize);
 
                 // Pulsing glow border for current level
                 if (isCurrent)
@@ -243,79 +242,75 @@ namespace BoltSort.Gameplay
                     borderImg.color = new Color(
                         BoltSortTheme.WinGold.r, BoltSortTheme.WinGold.g,
                         BoltSortTheme.WinGold.b, 0.9f);
+                    borderImg.raycastTarget = false;
                     _pulseCells.Add((borderImg, true));
                 }
 
-                // Level number label (centered, above stars row)
-                if (!isLocked)
-                {
-                    var numLabel = MakeLabel(cell, "Num", levelId.ToString(),
-                                             font, 34, TextAnchor.MiddleCenter,
-                                             bold: true, shadow: true);
-                    numLabel.color = isCompleted
-                        ? BoltSortTheme.WinGold
-                        : Color.white;
-                    var nlr = numLabel.GetComponent<RectTransform>();
-                    nlr.anchorMin = new Vector2(0f, 0.35f); nlr.anchorMax = new Vector2(1f, 1f);
-                    nlr.offsetMin = nlr.offsetMax = Vector2.zero;
-                }
-
-                // Stars row — real Image sprites for completed levels
-                if (isCompleted && !isLocked)
-                {
-                    int earnedStars = ss!.GetCompletionRecord(levelId)!.Value.best_stars;
-                    AddStarRow(cell, earnedStars, cellSize);
-                }
-
-                // Lock icon overlay for locked cells
-                if (isLocked)
+                // Lock overlay for not-yet-completed levels (rendered BELOW the
+                // number so the number stays legible). Lower-center placement.
+                if (!isCompleted)
                 {
                     var lockGO  = new GameObject("LockIcon");
                     lockGO.transform.SetParent(cell.transform, false);
                     var lockImg = lockGO.AddComponent<Image>();
-                    Sprite lockSpr = GameAssets.LockIcon;
+                    Sprite lockSpr = GameAssets.LevelLock;
                     if (lockSpr != null)
                     {
                         lockImg.sprite         = lockSpr;
-                        lockImg.color          = Color.white;
+                        lockImg.color          = isUnlocked ? new Color(1f, 1f, 1f, 0.85f) : Color.white;
                         lockImg.preserveAspect = true;
                     }
                     else
                         lockImg.color = new Color(0f, 0f, 0f, 0f);
                     var lrt = lockGO.GetComponent<RectTransform>();
-                    lrt.anchorMin = new Vector2(0.5f, 0.5f); lrt.anchorMax = new Vector2(0.5f, 0.5f);
-                    lrt.pivot     = new Vector2(0.5f, 0.5f);
-                    lrt.anchoredPosition = Vector2.zero;
-                    lrt.sizeDelta        = new Vector2(64f, 64f);
+                    lrt.anchorMin = new Vector2(0.5f, 0f); lrt.anchorMax = new Vector2(0.5f, 0f);
+                    lrt.pivot     = new Vector2(0.5f, 0f);
+                    lrt.anchoredPosition = new Vector2(0f, 8f);
+                    lrt.sizeDelta        = new Vector2(46f, 46f);
                     lockImg.raycastTarget = false;
-
-                    // LS-02: tap locked cell → invalid SFX + shake feedback
-                    var lockBtn = cell.AddComponent<Button>();
-                    var lockCs  = lockBtn.colors;
-                    lockCs.normalColor = Color.white; lockCs.highlightedColor = Color.white;
-                    lockCs.pressedColor = new Color(0.85f, 0.85f, 0.85f, 1f);
-                    lockBtn.colors = lockCs;
-                    lockBtn.onClick.AddListener(() =>
-                    {
-                        AudioMgr.Instance?.PlaySFX("bolt_invalid");
-                        StartCoroutine(ShakeLocked(cr));
-                    });
                 }
 
-                if (!isLocked)
+                // Level number label — ALWAYS shown, GummyPop, top area, above lock.
+                var numLabel = MakeLabel(cell, "Num", levelId.ToString(),
+                                         font, 36, TextAnchor.MiddleCenter,
+                                         bold: true, shadow: true);
+                numLabel.color = isCompleted ? BoltSortTheme.WinGold
+                                             : new Color(1f, 1f, 1f, 0.95f);
+                numLabel.raycastTarget = false;
+                var nlr = numLabel.GetComponent<RectTransform>();
+                nlr.anchorMin = new Vector2(0f, 0.42f); nlr.anchorMax = new Vector2(1f, 1f);
+                nlr.offsetMin = nlr.offsetMax = Vector2.zero;
+
+                // Stars row — real Image sprites for completed levels
+                if (isCompleted)
                 {
-                    int captured = levelId;
-                    var btn = cell.AddComponent<Button>();
-                    var cs  = btn.colors;
-                    cs.normalColor      = Color.white;
-                    cs.highlightedColor = new Color(0.92f, 0.92f, 0.92f, 1f);
-                    cs.pressedColor     = new Color(0.75f, 0.75f, 0.75f, 1f);
-                    btn.colors = cs;
+                    int earnedStars = ss!.GetCompletionRecord(levelId)!.Value.best_stars;
+                    AddStarRow(cell, earnedStars, cellSize);
+                }
+
+                // Interactivity: unlocked → load level; locked → invalid SFX + shake.
+                int captured = levelId;
+                var btn = cell.AddComponent<Button>();
+                var cs  = btn.colors;
+                cs.normalColor      = Color.white;
+                cs.highlightedColor = isUnlocked ? new Color(0.92f, 0.92f, 0.92f, 1f) : Color.white;
+                cs.pressedColor     = isUnlocked ? new Color(0.75f, 0.75f, 0.75f, 1f) : Color.white;
+                btn.colors = cs;
+                if (isUnlocked)
+                {
                     btn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
                     btn.onClick.AddListener(() =>
                     {
                         StartCoroutine(TapBounce(cr));
                         LoadLevel(captured);
+                    });
+                }
+                else
+                {
+                    btn.onClick.AddListener(() =>
+                    {
+                        AudioMgr.Instance?.PlaySFX("bolt_invalid");
+                        StartCoroutine(ShakeLocked(cr));
                     });
                 }
 
@@ -483,8 +478,7 @@ namespace BoltSort.Gameplay
             {
                 var es = new GameObject("EventSystem");
                 es.AddComponent<EventSystem>();
-                // Without AssignDefaultActions() the procedural input module has no
-                // actions and no clicks register (dead buttons in editor & build).
+                // Defensive: module self-assigns default UI actions in OnEnable too.
                 es.AddComponent<InputSystemUIInputModule>().AssignDefaultActions();
             }
         }
