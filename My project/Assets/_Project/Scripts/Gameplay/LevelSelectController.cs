@@ -13,21 +13,18 @@ using AudioMgr = BoltSort.Audio.AudioManager;
 namespace BoltSort.Gameplay
 {
     /// <summary>
-    /// Procedurally builds the Level Select screen. 5-column scrollable grid of 30 levels.
-    /// Reads unlock/completion state from SaveSystem. Includes entrance animation, pulsing
-    /// current-level border, and gold glow for completed levels.
+    /// Procedurally builds the Level Select screen. 3-column scrollable grid of 30 levels.
+    /// Reads unlock/completion state from SaveSystem. Includes entrance animation, a
+    /// scale pulse on the next level to play, and a lock-shake on the next locked level.
     /// </summary>
     public class LevelSelectController : MonoBehaviour
     {
         private const int MaxLevels = 30;
-        private const int Columns   = 5;
+        private const int Columns   = 3;
 
         private int _currentLevelId = 1;
         private SettingsPanel _settingsPanel;
 
-        // Cells that need per-frame pulsing
-        private readonly List<(Image border, bool isCurrent)> _pulseCells =
-            new List<(Image, bool)>();
         private readonly List<RectTransform> _entranceCells = new List<RectTransform>();
 
         private void Start()
@@ -50,19 +47,6 @@ namespace BoltSort.Gameplay
 
         private void Update()
         {
-            // Pulse the current-level border
-            float alpha = 0.5f + Mathf.Sin(Time.time * Mathf.PI * 2f * 1f) * 0.4f;
-            foreach (var (border, isCurrent) in _pulseCells)
-            {
-                if (border == null) continue;
-                if (isCurrent)
-                {
-                    var c = border.color;
-                    c.a = alpha;
-                    border.color = c;
-                }
-            }
-
             // GP-02: Android back button
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
             {
@@ -92,21 +76,23 @@ namespace BoltSort.Gameplay
             scaler.matchWidthOrHeight  = 1f;
             canvasGO.AddComponent<GraphicRaycaster>();
 
-            // LS-04: safe area — push header and scroll view down past notch/Dynamic Island
-            float lpu     = 1280f / Screen.height;
-            float safeTop = (Screen.height - Screen.safeArea.yMax) * lpu;
-
             // Background — game_background sprite if available, else solid color
             var bg    = MakePanel(canvasGO, "Background", BoltSortTheme.BackgroundDeep);
             GameAssets.Apply(bg.GetComponent<Image>(), GameAssets.GameBackground);
             Stretch(bg.GetComponent<RectTransform>());
 
+            // LS-04: safe area — wrap header and scroll view so they stay within the
+            // device's safe bounds (notch / Dynamic Island / rounded corners) on all sides.
+            var safeAreaGO = new GameObject("SafeArea", typeof(RectTransform));
+            safeAreaGO.transform.SetParent(canvasGO.transform, false);
+            ApplySafeArea(safeAreaGO.GetComponent<RectTransform>());
+
             // Header bar
-            var header = MakePanel(canvasGO, "Header", BoltSortTheme.HUDBackground);
+            var header = MakePanel(safeAreaGO, "Header", BoltSortTheme.HUDBackground);
             var hr = header.GetComponent<RectTransform>();
             hr.anchorMin = new Vector2(0f, 1f); hr.anchorMax = new Vector2(1f, 1f);
             hr.pivot = new Vector2(0.5f, 1f);
-            hr.offsetMin = new Vector2(0f, -(100f + safeTop)); hr.offsetMax = Vector2.zero;
+            hr.offsetMin = new Vector2(0f, -100f); hr.offsetMax = Vector2.zero;
 
             var titleText = MakeLabel(header, "Title", "LEVELS", font,
                                       52, TextAnchor.MiddleCenter, bold: true, shadow: true);
@@ -141,7 +127,7 @@ namespace BoltSort.Gameplay
 
             // Scroll area
             var scrollGO  = new GameObject("ScrollView");
-            scrollGO.transform.SetParent(canvasGO.transform, false);
+            scrollGO.transform.SetParent(safeAreaGO.transform, false);
             var scrollRect = scrollGO.AddComponent<ScrollRect>();
             scrollRect.horizontal        = false;
             scrollRect.vertical          = true;
@@ -151,7 +137,7 @@ namespace BoltSort.Gameplay
 
             var scrollRt = scrollGO.GetComponent<RectTransform>();
             scrollRt.anchorMin = Vector2.zero; scrollRt.anchorMax = Vector2.one;
-            scrollRt.offsetMin = new Vector2(0f, 0f); scrollRt.offsetMax = new Vector2(0f, -(100f + safeTop));
+            scrollRt.offsetMin = new Vector2(0f, 0f); scrollRt.offsetMax = new Vector2(0f, -100f);
 
             // Viewport
             var viewportGO = new GameObject("Viewport");
@@ -168,10 +154,13 @@ namespace BoltSort.Gameplay
 
             // Content — organised automatically by a GridLayoutGroup; a
             // ContentSizeFitter drives the scrollable height to fit all rows.
-            const float cellSize = 120f;
-            const float cellGap  = 16f;
-            const float padX     = 20f;
+            // Cell size is derived from the actual canvas width so 3 columns +
+            // padding + spacing always fit without clipping on any aspect ratio.
+            const float cellGap  = 12f;
+            const float padX     = 24f;
             const float padTop   = 20f;
+            float canvasWidth = 1280f * Screen.width / Mathf.Max(1f, Screen.height);
+            float cellSize    = (canvasWidth - padX * 2f - cellGap * (Columns - 1)) / Columns;
 
             var contentGO = new GameObject("Content", typeof(RectTransform));
             contentGO.transform.SetParent(viewportGO.transform, false);
@@ -192,8 +181,9 @@ namespace BoltSort.Gameplay
             var fitter = contentGO.AddComponent<ContentSizeFitter>();
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            _pulseCells.Clear();
             _entranceCells.Clear();
+            RectTransform nextLevelCell  = null;
+            RectTransform adjacentLockRt = null;
 
             for (int i = 0; i < totalLevels; i++)
             {
@@ -233,25 +223,23 @@ namespace BoltSort.Gameplay
                 // RectTransform reference only for scale/shake animations.
                 var cr = cell.GetComponent<RectTransform>();
 
-                // Pulsing glow border for current level
-                if (isCurrent)
-                {
-                    var borderGO  = new GameObject("Border");
-                    borderGO.transform.SetParent(cell.transform, false);
-                    var borderImg = borderGO.AddComponent<Image>();
-                    var borderRt  = borderGO.GetComponent<RectTransform>();
-                    borderRt.anchorMin = Vector2.zero; borderRt.anchorMax = Vector2.one;
-                    borderRt.offsetMin = new Vector2(-4f, -4f);
-                    borderRt.offsetMax = new Vector2(4f, 4f);
-                    borderImg.color = new Color(
-                        BoltSortTheme.WinGold.r, BoltSortTheme.WinGold.g,
-                        BoltSortTheme.WinGold.b, 0.9f);
-                    borderImg.raycastTarget = false;
-                    _pulseCells.Add((borderImg, true));
-                }
+                // Level number label — ALWAYS shown, GummyPop, centered, ~80% of the cell.
+                var numLabel = MakeLabel(cell, "Num", levelId.ToString(),
+                                         font, 36, TextAnchor.MiddleCenter,
+                                         bold: true, shadow: true);
+                numLabel.color = isCompleted ? BoltSortTheme.WinGold
+                                             : new Color(1f, 1f, 1f, 0.95f);
+                numLabel.raycastTarget = false;
+                numLabel.resizeTextForBestFit = true;
+                numLabel.resizeTextMinSize    = 24;
+                numLabel.resizeTextMaxSize    = 72;
+                var nlr = numLabel.GetComponent<RectTransform>();
+                nlr.anchorMin = new Vector2(0.1f, 0.1f); nlr.anchorMax = new Vector2(0.9f, 0.9f);
+                nlr.offsetMin = nlr.offsetMax = Vector2.zero;
 
-                // Lock overlay for not-yet-completed levels (rendered BELOW the
-                // number so the number stays legible). Lower-center placement.
+                // Lock overlay for not-yet-completed levels — centered, ~60% of the
+                // cell, drawn after the number so it can sit on top of it.
+                RectTransform lockRt = null;
                 if (!isCompleted)
                 {
                     var lockGO  = new GameObject("LockIcon");
@@ -266,24 +254,21 @@ namespace BoltSort.Gameplay
                     }
                     else
                         lockImg.color = new Color(0f, 0f, 0f, 0f);
-                    var lrt = lockGO.GetComponent<RectTransform>();
-                    lrt.anchorMin = new Vector2(0.5f, 0f); lrt.anchorMax = new Vector2(0.5f, 0f);
-                    lrt.pivot     = new Vector2(0.5f, 0f);
-                    lrt.anchoredPosition = new Vector2(0f, 8f);
-                    lrt.sizeDelta        = new Vector2(46f, 46f);
+                    lockRt = lockGO.GetComponent<RectTransform>();
+                    lockRt.anchorMin = lockRt.anchorMax = new Vector2(0.5f, 0.5f);
+                    lockRt.pivot     = new Vector2(0.5f, 0.5f);
+                    lockRt.anchoredPosition = Vector2.zero;
+                    float lockSize = cellSize * 0.6f * 1.25f;
+                    lockRt.sizeDelta = new Vector2(lockSize, lockSize);
                     lockImg.raycastTarget = false;
                 }
 
-                // Level number label — ALWAYS shown, GummyPop, top area, above lock.
-                var numLabel = MakeLabel(cell, "Num", levelId.ToString(),
-                                         font, 36, TextAnchor.MiddleCenter,
-                                         bold: true, shadow: true);
-                numLabel.color = isCompleted ? BoltSortTheme.WinGold
-                                             : new Color(1f, 1f, 1f, 0.95f);
-                numLabel.raycastTarget = false;
-                var nlr = numLabel.GetComponent<RectTransform>();
-                nlr.anchorMin = new Vector2(0f, 0.42f); nlr.anchorMax = new Vector2(1f, 1f);
-                nlr.offsetMin = nlr.offsetMax = Vector2.zero;
+                // Track the cell to pulse (next level to play) and the next locked
+                // cell whose lock should shake — only one of each, never all cells.
+                if (isCurrent && !isCompleted)
+                    nextLevelCell = cr;
+                if (isCurrent && !isCompleted && lockRt != null)
+                    adjacentLockRt = lockRt;
 
                 // Stars row — real Image sprites for completed levels
                 if (isCompleted)
@@ -320,6 +305,17 @@ namespace BoltSort.Gameplay
 
                 _entranceCells.Add(cr);
             }
+
+            // Continuous pulse on the next level to play (after the entrance settles)
+            if (nextLevelCell != null)
+            {
+                int idx = _entranceCells.IndexOf(nextLevelCell);
+                StartCoroutine(PulseNextLevel(nextLevelCell, idx));
+            }
+
+            // Periodic shake on the next locked level's lock icon
+            if (adjacentLockRt != null)
+                StartCoroutine(ShakeLockLoop(adjacentLockRt));
 
             // Settings panel
             var spHost = new GameObject("SettingsPanelHost");
@@ -405,6 +401,49 @@ namespace BoltSort.Gameplay
                 rt.pivot            = new Vector2(0.5f, 0f);
                 rt.anchoredPosition = new Vector2(startX + i * (starSize + 2f), 4f);
                 rt.sizeDelta        = new Vector2(starSize, starSize);
+            }
+        }
+
+        // LS-05: continuous gentle scale pulse for the next level to play.
+        // 1.0 -> 1.08 -> 1.0 over 1.2s, eased via cosine (smooth in/out), looping.
+        private IEnumerator PulseNextLevel(RectTransform rt, int entranceIndex)
+        {
+            yield return new WaitForSeconds(0.03f * entranceIndex + 0.25f);
+            float startTime = Time.time;
+            while (rt != null)
+            {
+                float phase = (Time.time - startTime) % 1.2f / 1.2f;
+                float scale = 1f + 0.04f * (1f - Mathf.Cos(phase * Mathf.PI * 2f));
+                rt.localScale = new Vector3(scale, scale, 1f);
+                yield return null;
+            }
+        }
+
+        // LS-06: periodic wiggle on a locked level's lock icon, with a randomized
+        // delay between shakes so adjacent locks don't shake in sync.
+        private IEnumerator ShakeLockLoop(RectTransform lockRt)
+        {
+            float[] angles = { 12f, -12f, 8f, -8f, 0f };
+            const float totalDur = 0.5f;
+            float segDur = totalDur / angles.Length;
+
+            while (lockRt != null)
+            {
+                yield return new WaitForSeconds(UnityEngine.Random.Range(2f, 4f));
+                float prevAngle = 0f;
+                foreach (float target in angles)
+                {
+                    float elapsed = 0f;
+                    while (elapsed < segDur)
+                    {
+                        if (lockRt == null) yield break;
+                        elapsed += Time.deltaTime;
+                        float angle = Mathf.LerpAngle(prevAngle, target, elapsed / segDur);
+                        lockRt.localRotation = Quaternion.Euler(0f, 0f, angle);
+                        yield return null;
+                    }
+                    prevAngle = target;
+                }
             }
         }
 
@@ -552,6 +591,19 @@ namespace BoltSort.Gameplay
         private static void Stretch(RectTransform rt)
         {
             rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
+            rt.offsetMin = rt.offsetMax = Vector2.zero;
+        }
+
+        // LS-04: constrain a full-screen RectTransform to the device safe area
+        // (notch / Dynamic Island / rounded corners) on every side.
+        private static void ApplySafeArea(RectTransform rt)
+        {
+            Rect safeArea = Screen.safeArea;
+            Vector2 anchorMin = safeArea.position;
+            Vector2 anchorMax = safeArea.position + safeArea.size;
+            anchorMin.x /= Screen.width;  anchorMin.y /= Screen.height;
+            anchorMax.x /= Screen.width;  anchorMax.y /= Screen.height;
+            rt.anchorMin = anchorMin; rt.anchorMax = anchorMax;
             rt.offsetMin = rt.offsetMax = Vector2.zero;
         }
     }
