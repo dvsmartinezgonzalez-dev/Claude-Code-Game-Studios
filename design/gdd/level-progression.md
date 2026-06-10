@@ -2,7 +2,7 @@
 
 > **Status**: Designed
 > **Author**: Design session + agents
-> **Last Updated**: 2026-04-21
+> **Last Updated**: 2026-06-10
 > **Implements Pillar**: Flow Over Friction, Respect the Session
 
 ## Overview
@@ -101,13 +101,13 @@ Owned by this GDD. Valid parameter envelopes per tier are defined in the Level D
 
 | Tier | Name | Level Range | color_count | stack_depth | temp_slot_count | Notes |
 |---|---|---|---|---|---|---|
-| 1 | Intro | 1–10 | 2–3 | 3–4 | 2–3 | Levels 1–5: 2 colors, depth 3, 3 temp slots (fully scaffolded). Levels 6–10: 3 colors, depth 4, 2 temp slots. |
-| 2 | Easy | 11–50 | 3–4 | 4–5 | 2 | Wide on-ramp. Color count climbs from 3 to 4 across this range. Temp slots stay at 2 — comfort zone. |
-| 3 | Medium | 51–110 | 4–5 | 5–6 | 1–2 | Temp slots begin dropping. Oscillates 1–2, trending toward 1 in the upper range. |
+| 1 | Intro | 1–10 | 2–4 | 3–4 | 2 | Onboarding. Starts at 2 colors / depth 3 and climbs to 4 colors / depth 4 by L8–9. Two full buffers (temp_slot_depth = stack_depth) throughout — generous scaffolding. |
+| 2 | Easy | 11–50 | 4–6 | 4–5 | 2 | Difficulty and variety come from scramble **structure**, not from adding tubes. Colors climb 4→6 and depth 4→5 across the range; two full buffers stay constant. Single and restricted buffers are reserved for Tier 3+. Level 50 (6 colors, depth 5, 2 buffers, optimal ≈ 32 moves) is tuned to ~1/3 of the eventual ceiling. |
+| 3 | Medium | 51–110 | 5–7 | 5–6 | 1–2 | First real buffer pressure: temp slots drop toward 1 and restricted-depth buffers (temp_slot_depth < stack_depth) are introduced here. |
 | 4 | Hard | 111–160 | 5–7 | 6–7 | 1 | Single temp slot only. Major step up — 7 colors possible. |
 | 5 | Expert | 161–200 | 7–8 | 7–8 | 0–1 | Peak complexity. 0-temp-slot levels permitted only at `difficulty_tier ≥ 3` per LDS hint_override rules. |
 
-**Breather levels** appear at every 10th position (levels 10, 20, 30 ... 200). Each is authored one full tier below its surrounding levels:
+**Breather levels** appear at every 10th position (levels 10, 20, 30 ... 200). Each is authored noticeably easier than its immediate neighbours — a lower color count and/or a gentler scramble (a measurably lower difficulty score) — to create a pacing dip. In the implemented 1–50 range this is achieved within the level's tier band (e.g. L20/L30/L40 drop to fewer colors and an easier deal than the levels around them) rather than by always lowering the `difficulty_tier` field. The table below is the intended tier-drop guidance for the broader sequence:
 
 | Breather range | Drop to tier |
 |---|---|

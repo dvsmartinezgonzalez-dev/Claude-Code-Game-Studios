@@ -1,0 +1,2638 @@
+{
+  "catalogue_version": 2,
+  "levels": [
+    {
+      "level_id": 1,
+      "display_name": "Tutorial 1",
+      "difficulty_tier": 1,
+      "schema_version": 1,
+      "color_count": 2,
+      "stack_depth": 3,
+      "color_stacks": [
+        [
+          1,
+          2,
+          2
+        ],
+        [
+          1,
+          1,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 3,
+      "is_tutorial": true,
+      "daily_challenge_eligible": false,
+      "par_moves": 6,
+      "added_version": "2026.06",
+      "_optimal_moves": 4,
+      "_difficulty_score": 14.0,
+      "_pool_size": 5,
+      "_note": "intro"
+    },
+    {
+      "level_id": 2,
+      "display_name": "Tutorial 2",
+      "difficulty_tier": 1,
+      "schema_version": 1,
+      "color_count": 2,
+      "stack_depth": 3,
+      "color_stacks": [
+        [
+          1,
+          2,
+          2
+        ],
+        [
+          1,
+          2,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 3,
+      "is_tutorial": true,
+      "daily_challenge_eligible": false,
+      "par_moves": 7,
+      "added_version": "2026.06",
+      "_optimal_moves": 5,
+      "_difficulty_score": 17.0,
+      "_pool_size": 4,
+      "_note": "intro"
+    },
+    {
+      "level_id": 3,
+      "display_name": "Level 3",
+      "difficulty_tier": 1,
+      "schema_version": 1,
+      "color_count": 2,
+      "stack_depth": 4,
+      "color_stacks": [
+        [
+          1,
+          2,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          1,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 9,
+      "added_version": "2026.06",
+      "_optimal_moves": 7,
+      "_difficulty_score": 26.0,
+      "_pool_size": 20,
+      "_note": "intro+depth"
+    },
+    {
+      "level_id": 4,
+      "display_name": "Level 4",
+      "difficulty_tier": 1,
+      "schema_version": 1,
+      "color_count": 3,
+      "stack_depth": 3,
+      "color_stacks": [
+        [
+          1,
+          2,
+          1
+        ],
+        [
+          1,
+          3,
+          3
+        ],
+        [
+          3,
+          2,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 3,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 9,
+      "added_version": "2026.06",
+      "_optimal_moves": 7,
+      "_difficulty_score": 27.0,
+      "_pool_size": 52,
+      "_note": "first 3rd color"
+    },
+    {
+      "level_id": 5,
+      "display_name": "Level 5",
+      "difficulty_tier": 1,
+      "schema_version": 1,
+      "color_count": 3,
+      "stack_depth": 4,
+      "color_stacks": [
+        [
+          3,
+          3,
+          2,
+          1
+        ],
+        [
+          1,
+          2,
+          3,
+          1
+        ],
+        [
+          1,
+          2,
+          3,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 13,
+      "added_version": "2026.06",
+      "_optimal_moves": 10,
+      "_difficulty_score": 41.3,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 6,
+      "display_name": "Level 6",
+      "difficulty_tier": 1,
+      "schema_version": 1,
+      "color_count": 3,
+      "stack_depth": 4,
+      "color_stacks": [
+        [
+          1,
+          2,
+          2,
+          2
+        ],
+        [
+          2,
+          1,
+          3,
+          3
+        ],
+        [
+          1,
+          3,
+          1,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 14,
+      "added_version": "2026.06",
+      "_optimal_moves": 11,
+      "_difficulty_score": 42.0,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 7,
+      "display_name": "Level 7",
+      "difficulty_tier": 1,
+      "schema_version": 1,
+      "color_count": 3,
+      "stack_depth": 4,
+      "color_stacks": [
+        [
+          1,
+          3,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          1,
+          2,
+          3,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 14,
+      "added_version": "2026.06",
+      "_optimal_moves": 11,
+      "_difficulty_score": 43.0,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 8,
+      "display_name": "Level 8",
+      "difficulty_tier": 1,
+      "schema_version": 1,
+      "color_count": 4,
+      "stack_depth": 4,
+      "color_stacks": [
+        [
+          3,
+          1,
+          3,
+          3
+        ],
+        [
+          4,
+          1,
+          1,
+          2
+        ],
+        [
+          2,
+          4,
+          3,
+          4
+        ],
+        [
+          1,
+          2,
+          4,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 18,
+      "added_version": "2026.06",
+      "_optimal_moves": 14,
+      "_difficulty_score": 55.2,
+      "_pool_size": 70,
+      "_note": "first 4th color"
+    },
+    {
+      "level_id": 9,
+      "display_name": "Level 9",
+      "difficulty_tier": 1,
+      "schema_version": 1,
+      "color_count": 4,
+      "stack_depth": 4,
+      "color_stacks": [
+        [
+          2,
+          1,
+          3,
+          3
+        ],
+        [
+          2,
+          3,
+          1,
+          4
+        ],
+        [
+          4,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          4,
+          1,
+          4
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 18,
+      "added_version": "2026.06",
+      "_optimal_moves": 14,
+      "_difficulty_score": 56.0,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 10,
+      "display_name": "Level 10",
+      "difficulty_tier": 1,
+      "schema_version": 1,
+      "color_count": 3,
+      "stack_depth": 4,
+      "color_stacks": [
+        [
+          2,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          1,
+          2,
+          1
+        ],
+        [
+          3,
+          3,
+          1,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 13,
+      "added_version": "2026.06",
+      "_optimal_moves": 10,
+      "_difficulty_score": 37.0,
+      "_pool_size": 70,
+      "_note": "BREATHER"
+    },
+    {
+      "level_id": 11,
+      "display_name": "Level 11",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 4,
+      "stack_depth": 4,
+      "color_stacks": [
+        [
+          2,
+          2,
+          1,
+          2
+        ],
+        [
+          4,
+          3,
+          4,
+          1
+        ],
+        [
+          3,
+          1,
+          2,
+          4
+        ],
+        [
+          4,
+          3,
+          3,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 18,
+      "added_version": "2026.06",
+      "_optimal_moves": 14,
+      "_difficulty_score": 55.5,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 12,
+      "display_name": "Level 12",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 4,
+      "stack_depth": 4,
+      "color_stacks": [
+        [
+          2,
+          4,
+          3,
+          3
+        ],
+        [
+          2,
+          2,
+          1,
+          1
+        ],
+        [
+          4,
+          3,
+          1,
+          4
+        ],
+        [
+          1,
+          3,
+          4,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 18,
+      "added_version": "2026.06",
+      "_optimal_moves": 14,
+      "_difficulty_score": 55.5,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 13,
+      "display_name": "Level 13",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 4,
+      "stack_depth": 4,
+      "color_stacks": [
+        [
+          4,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          1,
+          4,
+          2
+        ],
+        [
+          3,
+          1,
+          3,
+          1
+        ],
+        [
+          3,
+          4,
+          4,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 19,
+      "added_version": "2026.06",
+      "_optimal_moves": 15,
+      "_difficulty_score": 56.5,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 14,
+      "display_name": "Level 14",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 4,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          1,
+          2,
+          1,
+          4,
+          1
+        ],
+        [
+          3,
+          3,
+          1,
+          3,
+          1
+        ],
+        [
+          2,
+          4,
+          4,
+          3,
+          2
+        ],
+        [
+          2,
+          4,
+          2,
+          4,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 24,
+      "added_version": "2026.06",
+      "_optimal_moves": 19,
+      "_difficulty_score": 70.8,
+      "_pool_size": 70,
+      "_note": "depth 5"
+    },
+    {
+      "level_id": 15,
+      "display_name": "Level 15",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 4,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          2,
+          1,
+          4,
+          1,
+          4
+        ],
+        [
+          3,
+          2,
+          2,
+          4,
+          3
+        ],
+        [
+          3,
+          4,
+          1,
+          3,
+          2
+        ],
+        [
+          2,
+          4,
+          3,
+          1,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 24,
+      "added_version": "2026.06",
+      "_optimal_moves": 19,
+      "_difficulty_score": 73.5,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 16,
+      "display_name": "Level 16",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 5,
+      "stack_depth": 4,
+      "color_stacks": [
+        [
+          5,
+          3,
+          5,
+          3
+        ],
+        [
+          2,
+          1,
+          5,
+          3
+        ],
+        [
+          4,
+          1,
+          5,
+          2
+        ],
+        [
+          2,
+          4,
+          1,
+          2
+        ],
+        [
+          4,
+          4,
+          3,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 21,
+      "added_version": "2026.06",
+      "_optimal_moves": 17,
+      "_difficulty_score": 68.2,
+      "_pool_size": 70,
+      "_note": "first 5th color"
+    },
+    {
+      "level_id": 17,
+      "display_name": "Level 17",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 5,
+      "stack_depth": 4,
+      "color_stacks": [
+        [
+          3,
+          1,
+          2,
+          5
+        ],
+        [
+          4,
+          1,
+          5,
+          5
+        ],
+        [
+          4,
+          3,
+          3,
+          5
+        ],
+        [
+          1,
+          4,
+          3,
+          2
+        ],
+        [
+          2,
+          1,
+          2,
+          4
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 23,
+      "added_version": "2026.06",
+      "_optimal_moves": 18,
+      "_difficulty_score": 71.2,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 18,
+      "display_name": "Level 18",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 5,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          1,
+          2,
+          2,
+          5,
+          3
+        ],
+        [
+          5,
+          2,
+          4,
+          1,
+          3
+        ],
+        [
+          1,
+          3,
+          4,
+          5,
+          3
+        ],
+        [
+          2,
+          1,
+          4,
+          3,
+          5
+        ],
+        [
+          4,
+          4,
+          1,
+          5,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 28,
+      "added_version": "2026.06",
+      "_optimal_moves": 23,
+      "_difficulty_score": 89.8,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 19,
+      "display_name": "Level 19",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 5,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          2,
+          1,
+          3,
+          5,
+          4
+        ],
+        [
+          3,
+          3,
+          2,
+          5,
+          1
+        ],
+        [
+          2,
+          1,
+          4,
+          3,
+          4
+        ],
+        [
+          2,
+          5,
+          3,
+          2,
+          1
+        ],
+        [
+          4,
+          1,
+          5,
+          4,
+          5
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 29,
+      "added_version": "2026.06",
+      "_optimal_moves": 24,
+      "_difficulty_score": 90.6,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 20,
+      "display_name": "Level 20",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 4,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          2,
+          2,
+          2,
+          3,
+          1
+        ],
+        [
+          4,
+          1,
+          3,
+          3,
+          2
+        ],
+        [
+          3,
+          1,
+          1,
+          4,
+          4
+        ],
+        [
+          4,
+          2,
+          3,
+          4,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 20,
+      "added_version": "2026.06",
+      "_optimal_moves": 16,
+      "_difficulty_score": 66.5,
+      "_pool_size": 70,
+      "_note": "BREATHER"
+    },
+    {
+      "level_id": 21,
+      "display_name": "Level 21",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 5,
+      "stack_depth": 4,
+      "color_stacks": [
+        [
+          1,
+          4,
+          5,
+          1
+        ],
+        [
+          2,
+          3,
+          4,
+          2
+        ],
+        [
+          3,
+          1,
+          3,
+          2
+        ],
+        [
+          1,
+          4,
+          5,
+          5
+        ],
+        [
+          5,
+          4,
+          2,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 23,
+      "added_version": "2026.06",
+      "_optimal_moves": 18,
+      "_difficulty_score": 70.6,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 22,
+      "display_name": "Level 22",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 5,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          1,
+          3,
+          5,
+          4,
+          2
+        ],
+        [
+          4,
+          1,
+          2,
+          4,
+          2
+        ],
+        [
+          2,
+          5,
+          3,
+          3,
+          1
+        ],
+        [
+          5,
+          2,
+          4,
+          3,
+          3
+        ],
+        [
+          4,
+          1,
+          5,
+          1,
+          5
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 29,
+      "added_version": "2026.06",
+      "_optimal_moves": 24,
+      "_difficulty_score": 90.4,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 23,
+      "display_name": "Level 23",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 5,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          3,
+          5,
+          4,
+          2,
+          3
+        ],
+        [
+          1,
+          5,
+          4,
+          4,
+          1
+        ],
+        [
+          1,
+          3,
+          3,
+          5,
+          2
+        ],
+        [
+          2,
+          2,
+          4,
+          5,
+          1
+        ],
+        [
+          1,
+          2,
+          3,
+          5,
+          4
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 29,
+      "added_version": "2026.06",
+      "_optimal_moves": 24,
+      "_difficulty_score": 90.6,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 24,
+      "display_name": "Level 24",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 5,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          5,
+          3,
+          4,
+          2,
+          5
+        ],
+        [
+          3,
+          3,
+          4,
+          1,
+          2
+        ],
+        [
+          4,
+          3,
+          1,
+          1,
+          5
+        ],
+        [
+          5,
+          2,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          5,
+          2,
+          4,
+          4
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 29,
+      "added_version": "2026.06",
+      "_optimal_moves": 24,
+      "_difficulty_score": 90.6,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 25,
+      "display_name": "Level 25",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 5,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          4,
+          3,
+          3,
+          1,
+          4
+        ],
+        [
+          4,
+          2,
+          5,
+          1,
+          1
+        ],
+        [
+          4,
+          5,
+          5,
+          3,
+          2
+        ],
+        [
+          2,
+          5,
+          4,
+          1,
+          3
+        ],
+        [
+          5,
+          2,
+          2,
+          3,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 29,
+      "added_version": "2026.06",
+      "_optimal_moves": 24,
+      "_difficulty_score": 91.0,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 26,
+      "display_name": "Level 26",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 4,
+      "color_stacks": [
+        [
+          3,
+          3,
+          5,
+          2
+        ],
+        [
+          2,
+          1,
+          6,
+          4
+        ],
+        [
+          4,
+          5,
+          2,
+          1
+        ],
+        [
+          1,
+          3,
+          4,
+          5
+        ],
+        [
+          5,
+          3,
+          6,
+          6
+        ],
+        [
+          4,
+          1,
+          2,
+          6
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 26,
+      "added_version": "2026.06",
+      "_optimal_moves": 21,
+      "_difficulty_score": 83.7,
+      "_pool_size": 70,
+      "_note": "first 6th color"
+    },
+    {
+      "level_id": 27,
+      "display_name": "Level 27",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 4,
+      "color_stacks": [
+        [
+          5,
+          3,
+          4,
+          2
+        ],
+        [
+          6,
+          3,
+          5,
+          5
+        ],
+        [
+          5,
+          2,
+          1,
+          2
+        ],
+        [
+          4,
+          3,
+          1,
+          4
+        ],
+        [
+          3,
+          2,
+          6,
+          1
+        ],
+        [
+          4,
+          1,
+          6,
+          6
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 27,
+      "added_version": "2026.06",
+      "_optimal_moves": 22,
+      "_difficulty_score": 85.0,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 28,
+      "display_name": "Level 28",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 5,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          2,
+          3,
+          4,
+          5,
+          4
+        ],
+        [
+          3,
+          5,
+          2,
+          3,
+          2
+        ],
+        [
+          4,
+          5,
+          4,
+          2,
+          1
+        ],
+        [
+          3,
+          1,
+          3,
+          1,
+          2
+        ],
+        [
+          5,
+          4,
+          1,
+          5,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 30,
+      "added_version": "2026.06",
+      "_optimal_moves": 25,
+      "_difficulty_score": 91.2,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 29,
+      "display_name": "Level 29",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          6,
+          4,
+          6,
+          3,
+          5
+        ],
+        [
+          3,
+          4,
+          3,
+          6,
+          2
+        ],
+        [
+          2,
+          1,
+          1,
+          2,
+          6
+        ],
+        [
+          1,
+          3,
+          6,
+          4,
+          2
+        ],
+        [
+          5,
+          5,
+          1,
+          4,
+          4
+        ],
+        [
+          5,
+          2,
+          1,
+          3,
+          5
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 35,
+      "added_version": "2026.06",
+      "_optimal_moves": 30,
+      "_difficulty_score": 108.2,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 30,
+      "display_name": "Level 30",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 5,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          4,
+          3,
+          3,
+          2,
+          2
+        ],
+        [
+          1,
+          5,
+          5,
+          1,
+          1
+        ],
+        [
+          4,
+          5,
+          3,
+          4,
+          4
+        ],
+        [
+          5,
+          4,
+          3,
+          5,
+          3
+        ],
+        [
+          2,
+          2,
+          1,
+          1,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 28,
+      "added_version": "2026.06",
+      "_optimal_moves": 23,
+      "_difficulty_score": 84.4,
+      "_pool_size": 70,
+      "_note": "BREATHER"
+    },
+    {
+      "level_id": 31,
+      "display_name": "Level 31",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          1,
+          3,
+          5,
+          5,
+          5
+        ],
+        [
+          6,
+          5,
+          6,
+          4,
+          1
+        ],
+        [
+          1,
+          2,
+          5,
+          2,
+          4
+        ],
+        [
+          1,
+          4,
+          4,
+          6,
+          2
+        ],
+        [
+          1,
+          2,
+          6,
+          6,
+          3
+        ],
+        [
+          3,
+          3,
+          2,
+          4,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 35,
+      "added_version": "2026.06",
+      "_optimal_moves": 30,
+      "_difficulty_score": 107.7,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 32,
+      "display_name": "Level 32",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          2,
+          4,
+          3,
+          5,
+          6
+        ],
+        [
+          4,
+          5,
+          1,
+          2,
+          1
+        ],
+        [
+          4,
+          2,
+          2,
+          3,
+          6
+        ],
+        [
+          1,
+          5,
+          5,
+          1,
+          1
+        ],
+        [
+          6,
+          3,
+          3,
+          4,
+          5
+        ],
+        [
+          4,
+          6,
+          6,
+          3,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 35,
+      "added_version": "2026.06",
+      "_optimal_moves": 30,
+      "_difficulty_score": 108.5,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 33,
+      "display_name": "Level 33",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 5,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          1,
+          3,
+          3,
+          5,
+          1
+        ],
+        [
+          1,
+          4,
+          3,
+          2,
+          4
+        ],
+        [
+          5,
+          2,
+          4,
+          5,
+          1
+        ],
+        [
+          3,
+          5,
+          5,
+          2,
+          2
+        ],
+        [
+          3,
+          4,
+          4,
+          2,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 30,
+      "added_version": "2026.06",
+      "_optimal_moves": 25,
+      "_difficulty_score": 91.8,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 34,
+      "display_name": "Level 34",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          4,
+          6,
+          3,
+          2,
+          5
+        ],
+        [
+          1,
+          4,
+          5,
+          4,
+          2
+        ],
+        [
+          4,
+          6,
+          1,
+          6,
+          4
+        ],
+        [
+          1,
+          5,
+          1,
+          6,
+          2
+        ],
+        [
+          2,
+          5,
+          3,
+          2,
+          3
+        ],
+        [
+          3,
+          6,
+          5,
+          3,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 35,
+      "added_version": "2026.06",
+      "_optimal_moves": 30,
+      "_difficulty_score": 108.5,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 35,
+      "display_name": "Level 35",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          6,
+          4,
+          2,
+          4,
+          4
+        ],
+        [
+          1,
+          6,
+          3,
+          4,
+          2
+        ],
+        [
+          2,
+          6,
+          5,
+          5,
+          5
+        ],
+        [
+          5,
+          6,
+          2,
+          1,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          1,
+          3
+        ],
+        [
+          4,
+          6,
+          5,
+          3,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 35,
+      "added_version": "2026.06",
+      "_optimal_moves": 30,
+      "_difficulty_score": 109.0,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 36,
+      "display_name": "Level 36",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          5,
+          1,
+          4,
+          2,
+          6
+        ],
+        [
+          4,
+          2,
+          5,
+          4,
+          3
+        ],
+        [
+          2,
+          6,
+          3,
+          1,
+          6
+        ],
+        [
+          1,
+          4,
+          2,
+          1,
+          3
+        ],
+        [
+          6,
+          2,
+          5,
+          6,
+          3
+        ],
+        [
+          5,
+          4,
+          5,
+          1,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 35,
+      "added_version": "2026.06",
+      "_optimal_moves": 30,
+      "_difficulty_score": 109.5,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 37,
+      "display_name": "Level 37",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          1,
+          2,
+          5,
+          5,
+          4
+        ],
+        [
+          5,
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          6,
+          3,
+          3,
+          2,
+          4
+        ],
+        [
+          3,
+          4,
+          2,
+          6,
+          1
+        ],
+        [
+          1,
+          2,
+          1,
+          2,
+          6
+        ],
+        [
+          4,
+          5,
+          5,
+          6,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 35,
+      "added_version": "2026.06",
+      "_optimal_moves": 30,
+      "_difficulty_score": 109.5,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 38,
+      "display_name": "Level 38",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          3,
+          1,
+          5,
+          5,
+          1
+        ],
+        [
+          4,
+          2,
+          1,
+          2,
+          4
+        ],
+        [
+          6,
+          2,
+          3,
+          3,
+          6
+        ],
+        [
+          1,
+          6,
+          4,
+          3,
+          5
+        ],
+        [
+          5,
+          4,
+          6,
+          5,
+          3
+        ],
+        [
+          1,
+          4,
+          6,
+          2,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 36,
+      "added_version": "2026.06",
+      "_optimal_moves": 31,
+      "_difficulty_score": 110.0,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 39,
+      "display_name": "Level 39",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          5,
+          4,
+          1,
+          5,
+          4
+        ],
+        [
+          6,
+          2,
+          6,
+          4,
+          6
+        ],
+        [
+          2,
+          1,
+          3,
+          3,
+          6
+        ],
+        [
+          3,
+          5,
+          5,
+          2,
+          4
+        ],
+        [
+          1,
+          2,
+          1,
+          5,
+          3
+        ],
+        [
+          4,
+          6,
+          2,
+          3,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 36,
+      "added_version": "2026.06",
+      "_optimal_moves": 31,
+      "_difficulty_score": 110.5,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 40,
+      "display_name": "Level 40",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 5,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          1,
+          1,
+          3,
+          5,
+          4
+        ],
+        [
+          2,
+          2,
+          1,
+          3,
+          5
+        ],
+        [
+          4,
+          2,
+          5,
+          4,
+          1
+        ],
+        [
+          2,
+          4,
+          5,
+          5,
+          3
+        ],
+        [
+          1,
+          3,
+          4,
+          3,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 27,
+      "added_version": "2026.06",
+      "_optimal_moves": 22,
+      "_difficulty_score": 86.2,
+      "_pool_size": 70,
+      "_note": "BREATHER"
+    },
+    {
+      "level_id": 41,
+      "display_name": "Level 41",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          4,
+          1,
+          6,
+          4,
+          5
+        ],
+        [
+          1,
+          5,
+          2,
+          1,
+          4
+        ],
+        [
+          1,
+          3,
+          5,
+          4,
+          2
+        ],
+        [
+          5,
+          4,
+          5,
+          3,
+          3
+        ],
+        [
+          6,
+          2,
+          6,
+          2,
+          1
+        ],
+        [
+          6,
+          2,
+          3,
+          3,
+          6
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 36,
+      "added_version": "2026.06",
+      "_optimal_moves": 31,
+      "_difficulty_score": 110.0,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 42,
+      "display_name": "Level 42",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          6,
+          2,
+          3,
+          2,
+          5
+        ],
+        [
+          3,
+          4,
+          6,
+          4,
+          1
+        ],
+        [
+          3,
+          5,
+          4,
+          4,
+          6
+        ],
+        [
+          1,
+          2,
+          3,
+          2,
+          6
+        ],
+        [
+          2,
+          6,
+          4,
+          1,
+          1
+        ],
+        [
+          5,
+          3,
+          1,
+          5,
+          5
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 36,
+      "added_version": "2026.06",
+      "_optimal_moves": 31,
+      "_difficulty_score": 110.5,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 43,
+      "display_name": "Level 43",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          4,
+          1,
+          6,
+          4,
+          5
+        ],
+        [
+          5,
+          6,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          6,
+          5,
+          2,
+          3
+        ],
+        [
+          6,
+          3,
+          2,
+          4,
+          2
+        ],
+        [
+          2,
+          4,
+          3,
+          1,
+          1
+        ],
+        [
+          6,
+          5,
+          5,
+          4,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 35,
+      "added_version": "2026.06",
+      "_optimal_moves": 30,
+      "_difficulty_score": 110.0,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 44,
+      "display_name": "Level 44",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          1,
+          4,
+          3,
+          2,
+          2
+        ],
+        [
+          2,
+          5,
+          2,
+          6,
+          3
+        ],
+        [
+          6,
+          3,
+          4,
+          6,
+          3
+        ],
+        [
+          6,
+          5,
+          1,
+          4,
+          5
+        ],
+        [
+          3,
+          6,
+          1,
+          4,
+          4
+        ],
+        [
+          5,
+          1,
+          5,
+          2,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 36,
+      "added_version": "2026.06",
+      "_optimal_moves": 31,
+      "_difficulty_score": 110.0,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 45,
+      "display_name": "Level 45",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          1,
+          5,
+          2,
+          2,
+          4
+        ],
+        [
+          6,
+          6,
+          2,
+          5,
+          3
+        ],
+        [
+          1,
+          4,
+          6,
+          5,
+          5
+        ],
+        [
+          6,
+          5,
+          3,
+          2,
+          4
+        ],
+        [
+          3,
+          1,
+          3,
+          4,
+          1
+        ],
+        [
+          2,
+          3,
+          1,
+          4,
+          6
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 36,
+      "added_version": "2026.06",
+      "_optimal_moves": 31,
+      "_difficulty_score": 111.2,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 46,
+      "display_name": "Level 46",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          6,
+          4,
+          1,
+          5,
+          1
+        ],
+        [
+          3,
+          4,
+          6,
+          1,
+          3
+        ],
+        [
+          2,
+          3,
+          3,
+          5,
+          2
+        ],
+        [
+          5,
+          6,
+          4,
+          6,
+          5
+        ],
+        [
+          4,
+          2,
+          3,
+          4,
+          6
+        ],
+        [
+          1,
+          5,
+          2,
+          1,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 36,
+      "added_version": "2026.06",
+      "_optimal_moves": 31,
+      "_difficulty_score": 109.5,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 47,
+      "display_name": "Level 47",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          2,
+          1,
+          6,
+          1,
+          5
+        ],
+        [
+          4,
+          2,
+          3,
+          1,
+          5
+        ],
+        [
+          6,
+          4,
+          3,
+          1,
+          6
+        ],
+        [
+          5,
+          4,
+          4,
+          6,
+          2
+        ],
+        [
+          5,
+          3,
+          6,
+          2,
+          5
+        ],
+        [
+          1,
+          3,
+          3,
+          2,
+          4
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 36,
+      "added_version": "2026.06",
+      "_optimal_moves": 31,
+      "_difficulty_score": 111.5,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 48,
+      "display_name": "Level 48",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          1,
+          5,
+          3,
+          1,
+          3
+        ],
+        [
+          1,
+          6,
+          2,
+          3,
+          4
+        ],
+        [
+          6,
+          5,
+          4,
+          5,
+          2
+        ],
+        [
+          5,
+          6,
+          4,
+          3,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          2,
+          2
+        ],
+        [
+          4,
+          1,
+          5,
+          2,
+          6
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 35,
+      "added_version": "2026.06",
+      "_optimal_moves": 30,
+      "_difficulty_score": 110.0,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 49,
+      "display_name": "Level 49",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          2,
+          4,
+          5,
+          6,
+          2
+        ],
+        [
+          3,
+          5,
+          2,
+          3,
+          6
+        ],
+        [
+          6,
+          5,
+          4,
+          1,
+          2
+        ],
+        [
+          2,
+          6,
+          6,
+          1,
+          4
+        ],
+        [
+          3,
+          5,
+          5,
+          1,
+          1
+        ],
+        [
+          4,
+          1,
+          3,
+          3,
+          4
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 37,
+      "added_version": "2026.06",
+      "_optimal_moves": 32,
+      "_difficulty_score": 112.5,
+      "_pool_size": 70,
+      "_note": ""
+    },
+    {
+      "level_id": 50,
+      "display_name": "Level 50",
+      "difficulty_tier": 2,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 5,
+      "color_stacks": [
+        [
+          3,
+          1,
+          6,
+          1,
+          1
+        ],
+        [
+          2,
+          6,
+          5,
+          4,
+          4
+        ],
+        [
+          2,
+          6,
+          2,
+          4,
+          4
+        ],
+        [
+          5,
+          4,
+          3,
+          5,
+          5
+        ],
+        [
+          2,
+          1,
+          6,
+          5,
+          3
+        ],
+        [
+          2,
+          6,
+          3,
+          1,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 37,
+      "added_version": "2026.06",
+      "_optimal_moves": 32,
+      "_difficulty_score": 112.0,
+      "_pool_size": 70,
+      "_note": "CAPSTONE"
+    }
+  ]
+}
