@@ -171,8 +171,10 @@ namespace BoltSort.GameStateManager
             Instance = this;
             DontDestroyOnLoad(gameObject);
 
-            // Wire LDS reference. LevelDataSystem is at SEO −95; GSM is at SEO −50.
-            // Execution order guarantees LDS.Instance is non-null when GSM.Awake() runs.
+            // Wire LDS reference. No Script Execution Order is configured for these systems —
+            // GameBootstrap.CreateSystems() instantiates LevelDataSystem before GameStateManager
+            // (AddComponent runs Awake synchronously), which is what guarantees LDS.Instance is
+            // non-null here. If that creation order ever changes, this breaks silently.
             _levelDataSystem = LevelDataSystem.Instance;
 
             // SER-01/02/03: production board-snapshot store (Story 008). Test fixtures override

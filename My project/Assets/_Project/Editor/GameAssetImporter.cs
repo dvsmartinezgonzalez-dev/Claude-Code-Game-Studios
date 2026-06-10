@@ -6,9 +6,13 @@ namespace BoltSort.Editor
 {
     /// <summary>
     /// One-shot menu command that configures TextureImporter settings and
-    /// SpriteMetaData slices for every PNG in Assets/game_assets/.
+    /// SpriteMetaData slices for game_assets PNGs and the button sheets.
     /// Run via BoltSort ▶ Import Game Assets after placing PNGs in the project.
     /// Pixel rects use Unity's bottom-left origin (y = imageH − screenY_bottom).
+    ///
+    /// Button sheets live under Assets/Resources/Sprites/Buttons/ (not game_assets/)
+    /// so their sliced sub-sprites ship in device builds — GameAssets loads them via
+    /// Resources.LoadAll, which only sees assets inside a Resources folder.
     /// </summary>
     public static class GameAssetImporter
     {
@@ -50,8 +54,10 @@ namespace BoltSort.Editor
             // 1376×768  bg = checkerboard (painted, not transparent)
             // Row 1 (screen y 73–353, h=280): PLAY wide button + red settings circle
             // Row 2 (screen y 432–705, h=273): blue pause | orange retry | yellow settings | teal sound
+            // Lives in Resources/ so GameAssets.LoadFromSheet can read its sliced
+            // sub-sprites via Resources.LoadAll on device builds.
             const int H = 768;
-            ImportSheet("Assets/game_assets/buttons/ui_buttons_set1.png", new List<SpriteMetaData>
+            ImportSheet("Assets/Resources/Sprites/Buttons/ui_buttons_set1.png", new List<SpriteMetaData>
             {
                 Spr("btn_play",            58, H-353,  652, 280),
                 Spr("btn_settings",      1037, H-353,  272, 280),
@@ -67,8 +73,9 @@ namespace BoltSort.Editor
             // 1376×768
             // Row 1 (screen y 66–291, h=225): yellow home | blue back | green continue | red close
             // Row 2 (screen y 425–668, h=243): red close_alt | purple settings_sq | cyan sound_on | grey sound_off
+            // Lives in Resources/ — see ImportButtonsSet1 note.
             const int H = 768;
-            ImportSheet("Assets/game_assets/buttons/ui_buttons_set2.png", new List<SpriteMetaData>
+            ImportSheet("Assets/Resources/Sprites/Buttons/ui_buttons_set2.png", new List<SpriteMetaData>
             {
                 Spr("btn_home",            72, H-291, 223, 225),
                 Spr("btn_back",           400, H-291, 221, 225),
@@ -276,7 +283,7 @@ namespace BoltSort.Editor
 
         static void AutoImportIfNeeded()
         {
-            const string probeAsset = "Assets/game_assets/buttons/ui_buttons_set1.png";
+            const string probeAsset = "Assets/Resources/Sprites/Buttons/ui_buttons_set1.png";
             var all = AssetDatabase.LoadAllAssetsAtPath(probeAsset);
             foreach (var obj in all)
                 if (obj is Sprite s && s.name == "btn_play") return;

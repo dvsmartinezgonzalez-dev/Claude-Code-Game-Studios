@@ -157,8 +157,12 @@ namespace BoltSort.Gameplay
             var viewportGO = new GameObject("Viewport");
             viewportGO.transform.SetParent(scrollGO.transform, false);
             var vpImg = viewportGO.AddComponent<Image>();
-            vpImg.color = new Color(0f, 0f, 0f, 0f);
-            viewportGO.AddComponent<Mask>().showMaskGraphic = false;
+            vpImg.color = new Color(0f, 0f, 0f, 0f); // invisible; only provides scroll raycast area
+            // RectMask2D clips by rectangle and does NOT depend on the graphic's alpha.
+            // A plain Mask here writes its stencil from the graphic's alpha-clip, so the
+            // transparent (alpha 0) viewport image produced an empty stencil that clipped
+            // away every cell — full-size and clickable, but rendering nothing.
+            viewportGO.AddComponent<RectMask2D>();
             Stretch(viewportGO.GetComponent<RectTransform>());
             scrollRect.viewport = viewportGO.GetComponent<RectTransform>();
 

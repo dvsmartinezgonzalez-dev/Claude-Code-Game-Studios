@@ -27,6 +27,10 @@ namespace BoltSort.Visual
         public static Sprite TileLevelLocked   => LoadRes("Sprites/level_locked");
         public static Sprite TileLevelUnlocked => LoadRes("Sprites/level_unlocked");
 
+        // Victory screen action buttons (assets_admin/Victory → Resources/Sprites/)
+        public static Sprite VictoryRetry => LoadRes("Sprites/retry");
+        public static Sprite VictoryNext  => LoadRes("Sprites/next_button");
+
         // ── Main menu art (assets_admin/Main_menu → Resources/Sprites/Menu/) ──
         public static Sprite MenuSettings   => LoadRes("Sprites/Menu/settings");
         public static Sprite MenuNoAds      => LoadRes("Sprites/Menu/no_ads");

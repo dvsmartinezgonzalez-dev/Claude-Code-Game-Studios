@@ -1,0 +1,23 @@
+[Licensing::Module] Trying to connect to existing licensing client channel...
+Built from '6000.4/staging' branch; Version is '6000.4.1f1 (8535861f39e1) revision 8729990'; Using compiler version '194234433'; Build Type 'Release'
+OS: 'Windows 11  (10.0.26200) Professional' Language: 'es' Physical Memory: 16236 MB
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-dvsma" at "2026-05-27T10:11:03.4884206Z"
+BatchMode: 1, IsHumanControllingUs: 0, StartBugReporterOnCrash: 0, Is64bit: 1
+System  architecture: x64
+Process architecture: x64
+Date: 2026-05-27T10:11:03Z
+
+COMMAND LINE ARGUMENTS:
+C:\Program Files\Unity\Hub\Editor\6000.4.1f1\Editor\Unity.exe
+-batchmode
+-nographics
+-projectPath
+C:/Users/dvsma/Desktop/boltsort/My project
+-executeMethod
+BoltSort.Editor.GameAssetImporter.ImportAll
+-logFile
+C:/Users/dvsma/Desktop/boltsort/unity_import_log.txt
+-quit
+Successfully changed project path to: C:/Users/dvsma/Desktop/boltsort/My project
+C:/Users/dvsma/Desktop/boltsort/My project
+Exiting without the bug reporter. Application will terminate with return code 1

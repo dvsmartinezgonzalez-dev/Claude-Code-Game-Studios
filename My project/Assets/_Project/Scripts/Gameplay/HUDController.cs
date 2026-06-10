@@ -490,24 +490,25 @@ namespace BoltSort.Gameplay
             _winCardRT.anchoredPosition = Vector2.zero;
             _winCardRT.sizeDelta        = new Vector2(520f, 680f);
 
-            // WIN-03: apply VictoryBg sprite; dark fallback color from MakePanel remains if null
-            var winCardImg = winCard.GetComponent<Image>();
-            GameAssets.Apply(winCardImg, GameAssets.VictoryBg, preserveAspect: false);
+            // Win card background — solid panel color only (no sprite); the
+            // dark fallback color from MakePanel stays so it never covers the
+            // trophy/stars/buttons with a giant background image.
 
-            // Trophy image at top of win card
+            // Trophy — large, centered on the card (and thus the screen), and
+            // first sibling of winCard so it renders BEHIND the stars/text/buttons.
             var trophyGO = new GameObject("Trophy");
             trophyGO.transform.SetParent(winCard.transform, false);
             _trophyImg = trophyGO.AddComponent<Image>();
             GameAssets.Apply(_trophyImg, GameAssets.Trophy, preserveAspect: true);
             if (GameAssets.Trophy == null) _trophyImg.color = new Color(0f, 0f, 0f, 0f);
             var trt = trophyGO.GetComponent<RectTransform>();
-            trt.anchorMin = trt.anchorMax = new Vector2(0.5f, 1f);
-            trt.pivot     = new Vector2(0.5f, 1f);
-            trt.anchoredPosition = new Vector2(0f, 30f); // floats above card top
-            trt.sizeDelta        = new Vector2(180f, 180f);
+            trt.anchorMin = trt.anchorMax = new Vector2(0.5f, 0.5f);
+            trt.pivot     = new Vector2(0.5f, 0.5f);
+            trt.anchoredPosition = new Vector2(0f, 50f);
+            trt.sizeDelta        = new Vector2(280f, 280f);
             _trophyImg.raycastTarget = false;
 
-            // 3 star icons near the top of the win card
+            // 3 star icons in the top strip of the card, above the trophy (no overlap)
             _winStarImages = new Image[3];
             for (int i = 0; i < 3; i++)
             {
@@ -520,10 +521,9 @@ namespace BoltSort.Gameplay
                 var stRT = starGO.GetComponent<RectTransform>();
                 stRT.anchorMin = stRT.anchorMax = new Vector2(0.5f, 1f);
                 stRT.pivot     = new Vector2(0.5f, 1f);
-                float starW = 110f;
+                float starW = 100f;
                 float offsetX = (i - 1) * 120f;
-                float offsetY = i == 1 ? -28f : -50f; // center star higher
-                stRT.anchoredPosition = new Vector2(offsetX, offsetY);
+                stRT.anchoredPosition = new Vector2(offsetX, -10f);
                 stRT.sizeDelta        = new Vector2(starW, starW);
                 _winStarImages[i]     = starImg;
             }
@@ -550,10 +550,10 @@ namespace BoltSort.Gameplay
             wcRect.anchorMin = new Vector2(0f, 0.34f); wcRect.anchorMax = new Vector2(1f, 0.44f);
             wcRect.offsetMin = wcRect.offsetMax = Vector2.zero;
 
-            // Replay button (left) — btn_retry sprite; "↩" fallback label (WIN-06)
+            // Replay button (left) — retry.png sprite; "↩" fallback label (WIN-06)
             var replayBtn = MakeIconButton(winCard, "ReplayButton", "↩", font, 28,
-                                           GameAssets.BtnRetry, _onReplay ?? _onReset);
-            if (GameAssets.BtnRetry == null)
+                                           GameAssets.VictoryRetry, _onReplay ?? _onReset);
+            if (GameAssets.VictoryRetry == null)
                 replayBtn.GetComponent<Image>().color = new Color(0.22f, 0.22f, 0.36f, 1f);
             var rpRect = replayBtn.GetComponent<RectTransform>();
             rpRect.anchorMin = rpRect.anchorMax = new Vector2(0.5f, 0f);
@@ -561,10 +561,10 @@ namespace BoltSort.Gameplay
             rpRect.anchoredPosition = new Vector2(-130f, 30f);
             rpRect.sizeDelta        = new Vector2(110f, 110f);
 
-            // Next Level button (center) — btn_continue sprite
+            // Next Level button (center) — next_button.png sprite
             var nextBtn = MakeIconButton(winCard, "NextLevelButton", "NEXT", font, 34,
-                                         GameAssets.BtnContinue, _onNextLevel);
-            if (GameAssets.BtnContinue == null)
+                                         GameAssets.VictoryNext, _onNextLevel);
+            if (GameAssets.VictoryNext == null)
                 nextBtn.GetComponent<Image>().color = BoltSortTheme.HUDAccent;
             var nbRect = nextBtn.GetComponent<RectTransform>();
             nbRect.anchorMin = nbRect.anchorMax = new Vector2(0.5f, 0f);
@@ -572,10 +572,10 @@ namespace BoltSort.Gameplay
             nbRect.anchoredPosition = new Vector2(0f, 30f);
             nbRect.sizeDelta        = new Vector2(110f, 110f);
 
-            // Home button (right) — btn_home sprite (WIN-02)
+            // Home button (right) — home_button.png sprite (WIN-02)
             var homeBtn = MakeIconButton(winCard, "HomeButton", "HOME", font, 28,
-                                         GameAssets.BtnHome, _onMenu);
-            if (GameAssets.BtnHome == null)
+                                         GameAssets.BtnHomeAction, _onMenu);
+            if (GameAssets.BtnHomeAction == null)
                 homeBtn.GetComponent<Image>().color = new Color(0.22f, 0.36f, 0.22f, 1f);
             var hbRect = homeBtn.GetComponent<RectTransform>();
             hbRect.anchorMin = hbRect.anchorMax = new Vector2(0.5f, 0f);

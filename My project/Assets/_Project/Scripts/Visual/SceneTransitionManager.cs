@@ -49,6 +49,11 @@ namespace BoltSort.Visual
             overlayGO.transform.SetParent(canvasGO.transform, false);
             _overlay       = overlayGO.AddComponent<Image>();
             _overlay.color = new Color(0f, 0f, 0f, 0f);
+            // CRITICAL: this overlay lives on a sortingOrder 999 DontDestroyOnLoad
+            // canvas above every other UI. With raycastTarget on it would silently
+            // swallow ALL touches/clicks in every scene (dead buttons everywhere).
+            // It is purely a visual fade — it must never intercept input.
+            _overlay.raycastTarget = false;
 
             var rt        = overlayGO.GetComponent<RectTransform>();
             rt.anchorMin  = Vector2.zero;

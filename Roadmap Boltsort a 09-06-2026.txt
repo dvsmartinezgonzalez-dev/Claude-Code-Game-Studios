@@ -1,0 +1,118 @@
+Roadmap Boltsort a 09-06-2026
+
+FASE A — Corrección de bugs UX críticos
+A1. Pantalla de victoria
+
+Corregir:
+
+WIN-01 → estrellas reales (no siempre 3)
+WIN-02 → botón HOME
+WIN-04 → mostrar monedas ganadas
+WIN-06 → fallback del botón replay
+
+Impacto: ALTÍSIMO
+
+A2. Selector de niveles
+
+Corregir:
+
+LS-01 → Settings accesible
+LS-02 → feedback niveles bloqueados
+LS-03 → evitar niveles inexistentes
+
+Impacto: ALTÍSIMO
+
+A3. Ajustes
+
+Corregir:
+
+SET-01 → Rate Game funcional
+
+Impacto: ALTO
+
+FASE B — UX móvil crítica
+B1. Pausa real
+
+Actualmente:
+
+abres settings
+el tablero sigue funcionando
+
+Debe:
+
+congelar input
+bloquear movimientos
+reanudar al cerrar
+
+GP-01
+
+B2. Android Back
+
+GP-02
+
+Muy importante.
+
+B3. Safe Areas
+
+Main Menu
+Level Select
+
+MM-04
+LS-04
+
+FASE C — Menús y navegación
+
+Corregir:
+
+MM-01 PLAY button
+MM-03 mostrar nivel actual
+GP-06 Gameplay → Level Select
+navegación completa
+FASE D — Tienda y economía
+
+Aquí decidiremos:
+
+Opción 1
+
+Implementar monedas reales.
+
+Opción 2
+
+Ocultar tienda temporalmente.
+
+Todavía no lo decidiría.
+
+FASE E — Gran Pulido Sci-Fi
+
+Aquí empieza la parte divertida:
+
+fondos
+partículas
+animaciones
+transiciones
+botones premium
+efecto de las urnas
+glow
+profundidad
+feedback visual
+FASE F — Playtesting móvil
+
+Android real:
+
+Samsung
+Pixel
+Xiaomi
+
+Comprobar:
+
+FPS
+UX
+dificultad
+retención
+bugs
+FASE G — Release Candidate
+APK
+AAB
+Google Play Assets
+Privacy Policy
+Store Listing
