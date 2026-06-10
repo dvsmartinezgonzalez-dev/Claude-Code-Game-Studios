@@ -15,7 +15,6 @@ namespace BoltSort.Gameplay
     public class BoardView : MonoBehaviour
     {
         // ── Layout constants ──────────────────────────────────────────────────────
-        private float _colStep;
         private float _colWidth;
         private float _boltHeight;
         private float _boltStep;
@@ -39,7 +38,8 @@ namespace BoltSort.Gameplay
         private Transform[]      _columnTransforms;
         private SpriteRenderer[] _columnBgRenderers;
         private SpriteRenderer[] _columnGlowRenderers;
-        private Vector3[]        _columnSlot0World; // world-space origin of slot 0 per column
+        private Vector3[]        _columnSlot0World;   // world-space origin of slot 0 per column
+        private Vector3[]        _columnTargetLocal;  // settled local position per column (multi-row layout)
 
         // ── Selection animation state ─────────────────────────────────────────────
         private float        _selYOffset   = 0f;
@@ -678,48 +678,47 @@ namespace BoltSort.Gameplay
             float totalH   = camHalfH * 2f;
             float hudH     = totalH * 0.10f;
             float buttonH  = totalH * 0.20f;
-            float boardH   = totalH * 0.70f;
 
-            float boardTop    = camHalfH - hudH;
-            float boardBot    = -camHalfH + buttonH;
-            float boardCenter = (boardTop + boardBot) * 0.5f;
+            float boardTop = camHalfH - hudH;
+            float boardBot = -camHalfH + buttonH;
 
-            float usableW = camHalfW * 2f - 0.40f;
-            _colStep    = usableW / totalCols;
-            _colWidth   = _colStep * 0.82f;
+            // Responsive multi-row layout — positions/sizes only, no game rules.
+            BoardLayout layout = GameplayBoardLayout.Compute(
+                _colorCount, _tempSlotCount, _stackDepth, _tempSlotDepth,
+                camHalfW, boardTop, boardBot);
 
-            int   maxDepth = Mathf.Max(_stackDepth, _tempSlotDepth);
-            _boltStep      = boardH / (maxDepth + 0.5f);
-            _boltHeight    = _boltStep * 0.78f;
-            _boardCenterY  = boardCenter - (maxDepth - 1) * _boltStep * 0.5f;
+            _colWidth     = layout.ColWidth;
+            _boltStep     = layout.BoltStep;
+            _boltHeight   = layout.BoltHeight;
+            _boardCenterY = layout.BoardCenterY;
 
-            float startX       = -(totalCols - 1) * 0.5f * _colStep;
-            int   boltLayer    = LayerMask.NameToLayer("BoltStacks");
+            int boltLayer = LayerMask.NameToLayer("BoltStacks");
             if (boltLayer < 0) boltLayer = 0;
 
-            _boltRenderers           = new SpriteRenderer[totalCols][];
-            _shineRenderers          = new SpriteRenderer[totalCols][];
-            _columnTransforms        = new Transform[totalCols];
-            _columnBgRenderers       = new SpriteRenderer[totalCols];
-            _columnGlowRenderers     = new SpriteRenderer[totalCols];
-            _columnSlot0World        = new Vector3[totalCols];
+            _boltRenderers       = new SpriteRenderer[totalCols][];
+            _shineRenderers      = new SpriteRenderer[totalCols][];
+            _columnTransforms    = new Transform[totalCols];
+            _columnBgRenderers   = new SpriteRenderer[totalCols];
+            _columnGlowRenderers = new SpriteRenderer[totalCols];
+            _columnSlot0World    = new Vector3[totalCols];
+            _columnTargetLocal   = new Vector3[totalCols];
 
             for (int col = 0; col < totalCols; col++)
             {
-                bool  isTemp     = col >= _colorCount;
-                int   depth      = isTemp ? _tempSlotDepth : _stackDepth;
-                float colX       = startX + col * _colStep;
-                float colH       = depth * _boltStep;
-                float colCtrLoc  = (depth - 1) * 0.5f * _boltStep;
+                bool    isTemp    = col >= _colorCount;
+                int     depth     = isTemp ? _tempSlotDepth : _stackDepth;
+                Vector3 colLocal  = layout.Columns[col]; // (x, slot0-Y, 0)
+                float   colH      = depth * _boltStep;
+                float   colCtrLoc = (depth - 1) * 0.5f * _boltStep;
 
                 var colGO = new GameObject($"Column_{col}");
                 colGO.transform.SetParent(transform, false);
-                colGO.transform.localPosition = new Vector3(colX, _boardCenterY, 0f);
+                colGO.transform.localPosition = colLocal;
                 colGO.layer = boltLayer;
 
                 _columnTransforms[col]  = colGO.transform;
-                _columnSlot0World[col]  = transform.position +
-                                          new Vector3(colX, _boardCenterY, 0f);
+                _columnTargetLocal[col] = colLocal;
+                _columnSlot0World[col]  = transform.position + colLocal;
 
                 // Ambient glow beneath column (very subtle, column color at 10% alpha)
                 var glowGO = new GameObject("ColumnGlow");
@@ -857,9 +856,7 @@ namespace BoltSort.Gameplay
             if (_columnTransforms[col] == null) yield break;
             Transform colTr    = _columnTransforms[col];
             Vector3   startPos = colTr.localPosition;
-            float     colX     = -((_colorCount + _tempSlotCount - 1) * 0.5f * _colStep)
-                                 + col * _colStep;
-            Vector3   target   = new Vector3(colX, _boardCenterY, 0f);
+            Vector3   target   = _columnTargetLocal[col];
             float     dur      = 0.30f, elapsed = 0f;
 
             while (elapsed < dur)
