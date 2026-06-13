@@ -13,13 +13,13 @@ using AudioMgr = BoltSort.Audio.AudioManager;
 namespace BoltSort.Gameplay
 {
     /// <summary>
-    /// Procedurally builds the Level Select screen. 3-column scrollable grid of 30 levels.
+    /// Procedurally builds the Level Select screen. 3-column scrollable grid of all levels.
     /// Reads unlock/completion state from SaveSystem. Includes entrance animation, a
     /// scale pulse on the next level to play, and a lock-shake on the next locked level.
     /// </summary>
     public class LevelSelectController : MonoBehaviour
     {
-        private const int MaxLevels = 30;
+        private const int MaxLevels = 50;
         private const int Columns   = 3;
 
         private int _currentLevelId = 1;

@@ -25,7 +25,7 @@ namespace BoltSort.Gameplay
 
         private int _currentLevelId = 1;
         private bool _levelComplete;
-        private const int MaxLevelId = 30;
+        private const int MaxLevelId = 50;
         private const string NextLevelKey = "bs.next_level";
 
         private void Awake()
