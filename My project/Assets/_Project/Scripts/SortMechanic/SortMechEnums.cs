@@ -85,5 +85,12 @@ namespace BoltSort.SortMechanic
         /// Evaluated before color check — full stacks are illegal regardless of color.
         /// </summary>
         DestinationFull = 2,
+
+        /// <summary>
+        /// Destination tube is frozen (remaining freeze turns &gt; 0) — deposits are rejected
+        /// while frozen, though removals stay legal. Phase-2 mechanic (schema_version 2).
+        /// Evaluated before the empty/full/color checks. See phase-2 TDD §1.3.
+        /// </summary>
+        DestinationFrozen = 3,
     }
 }

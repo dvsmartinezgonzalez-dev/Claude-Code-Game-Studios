@@ -44,6 +44,20 @@ namespace BoltSort.GameStateManager
         /// <summary>Number of distinct bolt colors in the current level.</summary>
         int ColorCount { get; }
 
+        /// <summary>
+        /// Per-column capacity for the given flat index (color stacks then temp slots).
+        /// Honors per-tube <c>tube_capacities</c> (asymmetric / large tubes, schema_version 2);
+        /// falls back to <see cref="StackDepth"/>/<see cref="TempSlotDepth"/> for uniform levels.
+        /// </summary>
+        int GetColumnCapacity(int flatIndex);
+
+        /// <summary>
+        /// True if the column at <paramref name="flatIndex"/> is currently frozen
+        /// (remaining freeze turns &gt; 0). Frozen tubes reject deposits but allow removals.
+        /// Always false for classic levels (no frozen tubes). Phase-2 mechanic (schema_version 2).
+        /// </summary>
+        bool IsTubeFrozen(int flatIndex);
+
         /// <summary>Total number of committed moves since <c>LoadLevel</c> was called.</summary>
         int MoveCount { get; }
 

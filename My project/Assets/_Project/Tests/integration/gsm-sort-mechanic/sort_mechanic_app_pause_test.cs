@@ -204,6 +204,11 @@ namespace BoltSort.Tests.Integration.GsmSortMechanic
             public int StackDepth    { get; set; } = 2;
             public int TempSlotDepth { get; set; } = 2;
             public int TempSlotCount { get; set; } = 0;
+
+            // Phase-2 IGameStateManager members (uniform fallback; never frozen).
+            public int GetColumnCapacity(int flatIndex) => flatIndex < ColorCount ? StackDepth : TempSlotDepth;
+            public bool IsTubeFrozen(int flatIndex) => false;
+
             public int MoveCount     { get; set; } = 0;
             public long CurrentSequenceId { get; set; } = 0;
             public GSMLifecycleState LifecycleState { get; } = GSMLifecycleState.Active;

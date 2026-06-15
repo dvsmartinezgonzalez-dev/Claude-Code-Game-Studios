@@ -359,7 +359,7 @@ namespace BoltSort.SortMechanic
                 if (col == null) continue;
                 foreach (int colorId in col)
                 {
-                    if (colorId < 1 || colorId > colorCount)
+                    if (!IsValidColorToken(colorId, colorCount))
                     {
                         BlockInput(SortMechLoadFailReason.CorruptedBoardState,
                             $"Assertion 3 failed: color_id {colorId} outside domain {{1..{colorCount}}}.");
@@ -375,7 +375,7 @@ namespace BoltSort.SortMechanic
                 if (slot == null) continue;
                 foreach (int colorId in slot)
                 {
-                    if (colorId < 1 || colorId > colorCount)
+                    if (!IsValidColorToken(colorId, colorCount))
                     {
                         BlockInput(SortMechLoadFailReason.CorruptedBoardState,
                             $"Assertion 3 failed: color_id {colorId} in temp slot outside domain {{1..{colorCount}}}.");
@@ -505,7 +505,6 @@ namespace BoltSort.SortMechanic
             int colorCount    = _gsm.ColorCount;
             int tempSlotCount = _gsm.TempSlotCount;
             int stackDepth    = _gsm.StackDepth;
-            int tempSlotDepth = _gsm.TempSlotDepth;
 
             if (stacks == null || stacks.Length < colorCount || stackDepth <= 0)
                 return false;
@@ -515,20 +514,56 @@ namespace BoltSort.SortMechanic
             {
                 IReadOnlyList<int> stack = stacks[i];
                 if (stack == null || stack.Count == 0) continue; // empty column — ok
-                int capacity = i < colorCount ? stackDepth : tempSlotDepth;
+                int capacity = _gsm.GetColumnCapacity(i);         // per-tube (asymmetric-aware)
                 if (stack.Count != capacity) return false;        // partial fill — not won
                 if (!AllSameColor(stack))   return false;         // mixed colors — not won
             }
             return true;
         }
 
-        /// <summary>Returns true if all elements in <paramref name="stack"/> are equal.</summary>
+        /// <summary>
+        /// Returns true if every non-wildcard bolt in <paramref name="stack"/> shares one color.
+        /// Wildcard bolts (color id 0) are neutral; mystery bolts (negative) compare by abs.
+        /// A single wildcard, or an all-wildcard column, passes. Phase-2 mechanics (schema_version 2);
+        /// for classic levels this reduces to "all elements equal".
+        /// </summary>
         private static bool AllSameColor(IReadOnlyList<int> stack)
         {
-            int first = stack[0];
-            for (int i = 1; i < stack.Count; i++)
-                if (stack[i] != first) return false;
+            int baseColor = 0; // 0 = not yet set (wildcard cells are skipped)
+            for (int i = 0; i < stack.Count; i++)
+            {
+                int c = stack[i];
+                if (c == 0) continue;            // wildcard — matches anything
+                if (c < 0) c = -c;               // mystery hides abs(color)
+                if (baseColor == 0) baseColor = c;
+                else if (c != baseColor) return false;
+            }
             return true;
+        }
+
+        // ── Mechanic color helpers (Phase-2, schema_version 2) ────────────────────
+
+        /// <summary>
+        /// Placement match: legal if either side is the multicolor wildcard (0), otherwise
+        /// colors must be equal (compared by abs so mystery bolts behave as their hidden color).
+        /// </summary>
+        private static bool ColorsMatch(int a, int b)
+        {
+            if (a == 0 || b == 0) return true;   // wildcard matches any color
+            if (a < 0) a = -a;
+            if (b < 0) b = -b;
+            return a == b;
+        }
+
+        /// <summary>
+        /// True if <paramref name="raw"/> is a valid board token: the wildcard (0), or a normal
+        /// (positive) or mystery (negative) color whose abs is within {1..colorCount}.
+        /// </summary>
+        private static bool IsValidColorToken(int raw, int colorCount)
+        {
+            if (raw == 0) return true;           // multicolor wildcard
+            int c = raw < 0 ? -raw : raw;        // mystery hides abs(raw)
+            return c >= 1 && c <= colorCount;
         }
 
         /// <summary>
@@ -563,10 +598,8 @@ namespace BoltSort.SortMechanic
         {
             IReadOnlyList<int>[] stacks   = _gsm.StackContents;
             int colorCount                 = _gsm.ColorCount;
-            int stackDepth                 = _gsm.StackDepth;
             IReadOnlyList<int>[] tempSlots = _gsm.TempSlotContents;
             int tempSlotCount              = _gsm.TempSlotCount;
-            int tempSlotDepth              = _gsm.TempSlotDepth;
             int totalColumns               = colorCount + tempSlotCount;
 
             for (int i = 0; i < totalColumns; i++)
@@ -579,8 +612,9 @@ namespace BoltSort.SortMechanic
                 for (int j = 0; j < totalColumns; j++)
                 {
                     if (j == i) continue;
+                    if (_gsm.IsTubeFrozen(j)) continue; // frozen tubes accept no deposits
                     IReadOnlyList<int> destCol = GetColumnByFlatIndex(j, stacks, colorCount, tempSlots);
-                    int destCap = j < colorCount ? stackDepth : tempSlotDepth;
+                    int destCap = _gsm.GetColumnCapacity(j); // per-tube (asymmetric-aware)
                     var (legal, _) = IsLegalMove(heldColor, destCol, destCap);
                     if (legal) return true; // at least one legal move exists
                 }
@@ -807,8 +841,16 @@ namespace BoltSort.SortMechanic
             int colorCount                 = _gsm.ColorCount;
             IReadOnlyList<int>[] tempSlots = _gsm.TempSlotContents;
 
+            // Frozen tube (Phase-2): deposits are rejected while frozen (removals already
+            // happened on the source). Evaluated before the empty/full/color checks.
+            if (_gsm.IsTubeFrozen(flatStackIndex))
+            {
+                EnterInvalidMove(flatStackIndex, MoveRejectedReason.DestinationFrozen);
+                return;
+            }
+
             IReadOnlyList<int> destColumn = GetColumnByFlatIndex(flatStackIndex, stacks, colorCount, tempSlots);
-            int cap = flatStackIndex < colorCount ? _gsm.StackDepth : _gsm.TempSlotDepth;
+            int cap = _gsm.GetColumnCapacity(flatStackIndex); // per-tube (asymmetric-aware)
 
             var (legal, reason) = IsLegalMove(_heldColorId, destColumn, cap);
             if (legal)
@@ -835,8 +877,8 @@ namespace BoltSort.SortMechanic
             if (destination.Count >= cap)
                 return (false, MoveRejectedReason.DestinationFull); // full
 
-            if (destination[destination.Count - 1] == heldColor)
-                return (true, default);                             // color match, not full
+            if (ColorsMatch(destination[destination.Count - 1], heldColor))
+                return (true, default);                             // color/wildcard match, not full
 
             return (false, MoveRejectedReason.ColorMismatch);       // mismatch
         }

@@ -14,7 +14,9 @@ namespace BoltSort.LevelData
     public static class LevelRecordValidator
     {
         // Known schema versions. Unknown value → VERSION_MISMATCH (not VALIDATION_FAILED).
-        private static readonly HashSet<int> KnownSchemaVersions = new HashSet<int> { 1 };
+        // v2 adds Phase-2 mechanics: mystery (negative color id), multicolor wildcard (0),
+        // frozen tubes, and asymmetric tube_capacities.
+        private static readonly HashSet<int> KnownSchemaVersions = new HashSet<int> { 1, 2 };
 
         // "YYYY.MM" — 4-digit year, dot, exactly 2-digit zero-padded month.
         private static readonly Regex AddedVersionFormat =
@@ -82,13 +84,23 @@ namespace BoltSort.LevelData
                 return false;
             }
 
-            // 7. Bolt count Check 1: null guard then total bolt count invariant
+            // 7. Bolt count Check 1: null guard (shared by v1 and v2)
             if (record.ColorStacks == null)
             {
                 error = new LdsValidationError(LdsErrorCode.ValidationFailed, "color_stacks");
                 return false;
             }
 
+            // 8. Bolt-count / color-domain invariants — branch on schema version.
+            return record.SchemaVersion >= 2
+                ? ValidateColorStacksV2(record, out error)
+                : ValidateColorStacksV1(record, out error);
+        }
+
+        /// <summary>v1 (classic): total = colorCount×stackDepth; colors in [1,colorCount]; each
+        /// color appears exactly stackDepth times.</summary>
+        private static bool ValidateColorStacksV1(LevelRecord record, out LdsValidationError error)
+        {
             int total = 0;
             foreach (var stack in record.ColorStacks)
                 total += stack.Length;
@@ -98,7 +110,6 @@ namespace BoltSort.LevelData
                 return false;
             }
 
-            // 8. Bolt count Check 2: valid color ID range [1, ColorCount] + per-color frequency
             var colorCounts = new int[record.ColorCount + 1]; // index 0 unused
             foreach (var stack in record.ColorStacks)
             {
@@ -119,6 +130,60 @@ namespace BoltSort.LevelData
                     error = new LdsValidationError(LdsErrorCode.ValidationFailed, "color_stacks");
                     return false;
                 }
+            }
+
+            error = default;
+            return true;
+        }
+
+        /// <summary>
+        /// v2 (Phase-2): every token is the wildcard (0) or a normal/mystery color whose abs is
+        /// in [1,colorCount]; at most one wildcard; total bolts equal the sum of color-stack
+        /// capacities (uniform stack_depth or per-tube tube_capacities). Per-color frequency is
+        /// not enforced here — the offline solver is the authoritative solvability gate.
+        /// </summary>
+        private static bool ValidateColorStacksV2(LevelRecord record, out LdsValidationError error)
+        {
+            int colorCount = record.ColorCount;
+            int totalCols  = colorCount + record.TempSlotCount;
+            bool hasTubeCaps = record.TubeCapacities != null && record.TubeCapacities.Length == totalCols;
+
+            int capacitySum = 0;
+            for (int i = 0; i < colorCount; i++)
+                capacitySum += hasTubeCaps ? record.TubeCapacities[i] : record.StackDepth;
+
+            int total = 0;
+            int wildcardCount = 0;
+            foreach (var stack in record.ColorStacks)
+            {
+                if (stack == null)
+                {
+                    error = new LdsValidationError(LdsErrorCode.ValidationFailed, "color_stacks");
+                    return false;
+                }
+                total += stack.Length;
+                foreach (var token in stack)
+                {
+                    if (token == 0) { wildcardCount++; continue; }      // multicolor wildcard
+                    int c = token < 0 ? -token : token;                 // mystery hides abs
+                    if (c < 1 || c > colorCount)
+                    {
+                        error = new LdsValidationError(LdsErrorCode.ValidationFailed, "color_stacks");
+                        return false;
+                    }
+                }
+            }
+
+            if (wildcardCount > 1)  // authoring rule: max 1 multicolor ball per level
+            {
+                error = new LdsValidationError(LdsErrorCode.ValidationFailed, "color_stacks");
+                return false;
+            }
+
+            if (total != capacitySum)
+            {
+                error = new LdsValidationError(LdsErrorCode.ValidationFailed, "color_stacks");
+                return false;
             }
 
             error = default;

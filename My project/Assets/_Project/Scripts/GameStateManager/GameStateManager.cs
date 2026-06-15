@@ -66,6 +66,18 @@ namespace BoltSort.GameStateManager
         private int  _tempSlotCount;
         private int  _colorCount;
 
+        // ── Phase-2 mechanics (schema_version 2; null/zero ⇒ classic level) ───────
+
+        /// <summary>Per-column capacity (flat order). Null ⇒ uniform <see cref="_stackDepth"/>/<see cref="_tempSlotDepth"/>.</summary>
+        private int[] _columnCapacities;
+
+        /// <summary>
+        /// Initial freeze turns per flat column (0 = never frozen). Remaining freeze is derived as
+        /// <c>max(0, _freezeInit[i] - _moveCount)</c> — a pure function of move count, so it is
+        /// automatically restored by undo (which decrements move count) and needs no per-move mutation.
+        /// </summary>
+        private int[] _freezeInit;
+
         // ── Watchdog Timer (TR-GSM-004, WDG-01–WDG-03) ───────────────────────────
 
         private Coroutine _watchdogCoroutine;
@@ -103,6 +115,36 @@ namespace BoltSort.GameStateManager
 
         /// <inheritdoc/>
         public int ColorCount    => _colorCount;
+
+        /// <inheritdoc/>
+        public int GetColumnCapacity(int flatIndex)
+        {
+            if (_columnCapacities != null && flatIndex >= 0 && flatIndex < _columnCapacities.Length)
+                return _columnCapacities[flatIndex];
+            return flatIndex < _colorCount ? _stackDepth : _tempSlotDepth; // uniform fallback
+        }
+
+        /// <inheritdoc/>
+        public bool IsTubeFrozen(int flatIndex) => GetFreezeRemaining(flatIndex) > 0;
+
+        /// <summary>
+        /// Remaining freeze turns for a column: <c>max(0, freezeInit - moveCount)</c>.
+        /// Decrements implicitly on every committed move and is restored by undo.
+        /// </summary>
+        public int GetFreezeRemaining(int flatIndex)
+        {
+            if (_freezeInit == null || flatIndex < 0 || flatIndex >= _freezeInit.Length) return 0;
+            int rem = _freezeInit[flatIndex] - _moveCount;
+            return rem > 0 ? rem : 0;
+        }
+
+        /// <summary>
+        /// Fired when a mystery ball (stored as a negative color id) becomes a column top and is
+        /// permanently revealed: the stored value flips to its positive color. Phase-2 (schema_version 2).
+        /// Parameters: <c>(flatIndex, revealedColor)</c>. BoardView subscribes to play the reveal animation.
+        /// Concrete-only (not on <see cref="IGameStateManager"/>) — visual systems use the concrete GSM.
+        /// </summary>
+        public event Action<int, int> OnMysteryRevealed;
 
         /// <inheritdoc/>
         public int MoveCount { get; private set; }
@@ -280,6 +322,9 @@ namespace BoltSort.GameStateManager
             StackContents    = _stackContents;
             TempSlotContents = _tempSlotBacking;
 
+            // Phase-2: per-column capacities, freeze counters, and load-time mystery reveal.
+            InitMechanicState(record);
+
             _currentSequenceId = 0;
             _moveCount         = 0;
             _undoStack.Clear();
@@ -332,6 +377,9 @@ namespace BoltSort.GameStateManager
             // Revert: remove top bolt from destination, append back to source
             _stackContents[entry.To].RemoveAt(_stackContents[entry.To].Count - 1);
             _stackContents[entry.From].Add(entry.ColorId);
+
+            // Phase-2: undoing onto/over a column can expose a covered mystery top → reveal it.
+            RevealMysteryIfExposed(entry.To);
 
             // Increment — monotonic; never decrement (UND-06: stale-signal safety for AnimationSystem)
             _currentSequenceId++;
@@ -386,6 +434,9 @@ namespace BoltSort.GameStateManager
 
             // Step 1: Remove top bolt from source
             _stackContents[src].RemoveAt(_stackContents[src].Count - 1);
+
+            // Phase-2: removing the source top may expose a covered mystery ball → reveal it.
+            RevealMysteryIfExposed(src);
 
             // Step 2: Append bolt to destination
             _stackContents[dst].Add(colorId);
@@ -504,6 +555,8 @@ namespace BoltSort.GameStateManager
             _tempSlotBacking = null;
             StackContents    = null;
             TempSlotContents = null;
+            _columnCapacities = null;
+            _freezeInit       = null;
 
             _undoStack.Clear();
             _pendingUndo          = false;
@@ -588,6 +641,8 @@ namespace BoltSort.GameStateManager
                 TempSlotDepth     = _tempSlotDepth,
                 TempSlotCount     = _tempSlotCount,
                 ColorCount        = _colorCount,
+                TubeCapacities    = _columnCapacities == null ? null : (int[])_columnCapacities.Clone(),
+                FreezeInit        = _freezeInit == null ? null : (int[])_freezeInit.Clone(),
                 MoveCount         = _moveCount,
                 SequenceId        = _currentSequenceId,
                 LevelId           = _currentLevelId,
@@ -610,6 +665,8 @@ namespace BoltSort.GameStateManager
             _moveCount         = snapshot.MoveCount;
             _currentSequenceId = snapshot.SequenceId;
             _currentLevelId    = snapshot.LevelId;
+            _columnCapacities  = snapshot.TubeCapacities == null ? null : (int[])snapshot.TubeCapacities.Clone();
+            _freezeInit        = snapshot.FreezeInit == null ? null : (int[])snapshot.FreezeInit.Clone();
 
             // Reconstruct flat-namespace array: [color stacks... | temp slots...]
             _stackContents = new List<int>[snapshot.ColorCount + snapshot.TempSlotCount];
@@ -646,6 +703,12 @@ namespace BoltSort.GameStateManager
         /// </summary>
         private bool RunInvariantChecks(LevelRecord record, int levelId)
         {
+            // Phase-2 (schema_version 2) levels use generalized invariants (asymmetric
+            // capacities, mystery negatives, wildcard 0). Offline solving remains the
+            // authoritative solvability gate; this is structural defence-in-depth.
+            if (record.SchemaVersion >= 2)
+                return RunInvariantChecksV2(record, levelId);
+
             // Check 1: total bolt count
             int total = 0;
             foreach (var stack in record.ColorStacks)
@@ -677,6 +740,58 @@ namespace BoltSort.GameStateManager
                     EmitSessionLoadFailed(GsmSessionLoadFailReason.InvariantViolation, levelId);
                     return false;
                 }
+            }
+
+            return true;
+        }
+
+        /// <summary>
+        /// Generalized invariant checks for schema_version 2 levels.
+        /// Check 1: every token is valid — wildcard (0) or a normal/mystery color whose abs is in
+        ///          {1..colorCount}. Check 2: the color stacks start full — total bolts equals the
+        ///          sum of the color-stack capacities (uniform or per-tube via tube_capacities).
+        /// Per-color frequency is intentionally NOT enforced here (asymmetric/wildcard make it
+        /// non-trivial); the offline solver guarantees solvability before a level ships.
+        /// </summary>
+        private bool RunInvariantChecksV2(LevelRecord record, int levelId)
+        {
+            int colorCount = record.ColorCount;
+            int totalCols  = colorCount + record.TempSlotCount;
+
+            // Per-column capacities (tube_capacities override, else uniform depths).
+            int colorStackCapacitySum = 0;
+            for (int i = 0; i < colorCount; i++)
+            {
+                int cap = (record.TubeCapacities != null && record.TubeCapacities.Length == totalCols)
+                    ? record.TubeCapacities[i]
+                    : record.StackDepth;
+                colorStackCapacitySum += cap;
+            }
+
+            int total = 0;
+            foreach (var stack in record.ColorStacks)
+            {
+                if (stack == null)
+                {
+                    EmitSessionLoadFailed(GsmSessionLoadFailReason.InvariantViolation, levelId);
+                    return false;
+                }
+                total += stack.Length;
+                foreach (int token in stack)
+                {
+                    int c = token < 0 ? -token : token;      // mystery hides abs; wildcard is 0
+                    if (token != 0 && (c < 1 || c > colorCount))
+                    {
+                        EmitSessionLoadFailed(GsmSessionLoadFailReason.InvariantViolation, levelId);
+                        return false;
+                    }
+                }
+            }
+
+            if (total != colorStackCapacitySum)
+            {
+                EmitSessionLoadFailed(GsmSessionLoadFailReason.InvariantViolation, levelId);
+                return false;
             }
 
             return true;
@@ -771,6 +886,65 @@ namespace BoltSort.GameStateManager
         {
             MoveCount         = _moveCount;
             CurrentSequenceId = _currentSequenceId;
+        }
+
+        // ── Phase-2 mechanic state ────────────────────────────────────────────────
+
+        /// <summary>
+        /// Builds per-column capacity and freeze state from the record, and performs the
+        /// load-time mystery reveal (any column already showing a mystery top is revealed so
+        /// the player never starts with a selectable negative). Classic levels leave the
+        /// capacity/freeze arrays null (uniform fallback, never frozen).
+        /// </summary>
+        private void InitMechanicState(LevelRecord record)
+        {
+            int totalCols = record.ColorCount + record.TempSlotCount;
+
+            if (record.TubeCapacities != null && record.TubeCapacities.Length == totalCols)
+            {
+                _columnCapacities = new int[totalCols];
+                Array.Copy(record.TubeCapacities, _columnCapacities, totalCols);
+            }
+            else
+            {
+                _columnCapacities = null; // uniform fallback via GetColumnCapacity
+            }
+
+            if (record.FrozenTubes != null && record.FrozenTubes.Length > 0)
+            {
+                _freezeInit = new int[totalCols];
+                foreach (var ft in record.FrozenTubes)
+                    if (ft != null && ft.TubeIndex >= 0 && ft.TubeIndex < totalCols)
+                        _freezeInit[ft.TubeIndex] = ft.Turns;
+            }
+            else
+            {
+                _freezeInit = null;
+            }
+
+            // Load-time reveal happens before OnLevelLoaded, so BoardView reads the revealed
+            // color directly (no animation for a board that starts with an exposed mystery).
+            for (int i = 0; i < _stackContents.Length; i++)
+                RevealMysteryIfExposed(i);
+        }
+
+        /// <summary>
+        /// If the top of the given column is a mystery ball (negative color id), permanently
+        /// reveals it by flipping the stored value to its positive color and firing
+        /// <see cref="OnMysteryRevealed"/>. No-op for empty columns or non-mystery tops.
+        /// </summary>
+        private void RevealMysteryIfExposed(int flatIndex)
+        {
+            if (_stackContents == null || flatIndex < 0 || flatIndex >= _stackContents.Length) return;
+            var col = _stackContents[flatIndex];
+            if (col == null || col.Count == 0) return;
+            int top = col[col.Count - 1];
+            if (top < 0)
+            {
+                int revealed = -top;
+                col[col.Count - 1] = revealed;
+                OnMysteryRevealed?.Invoke(flatIndex, revealed);
+            }
         }
 
         // ── Test Seams (internal — never call from production code) ──────────────

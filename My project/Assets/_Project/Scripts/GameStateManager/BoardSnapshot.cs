@@ -25,6 +25,17 @@ namespace BoltSort.GameStateManager
         /// <summary>Number of distinct bolt colors.</summary>
         public int ColorCount           { get; set; }
 
+        /// <summary>
+        /// Phase-2: per-column capacity (flat order). Null ⇒ uniform <see cref="StackDepth"/>/<see cref="TempSlotDepth"/>.
+        /// </summary>
+        public int[] TubeCapacities     { get; set; }
+
+        /// <summary>
+        /// Phase-2: initial freeze turns per flat column (0 = none). Null ⇒ no frozen tubes.
+        /// Remaining freeze is derived from this and <see cref="MoveCount"/> on restore.
+        /// </summary>
+        public int[] FreezeInit         { get; set; }
+
         /// <summary>Total committed moves since level load.</summary>
         public int MoveCount            { get; set; }
 
