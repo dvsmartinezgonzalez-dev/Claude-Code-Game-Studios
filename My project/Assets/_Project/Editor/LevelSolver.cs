@@ -37,7 +37,18 @@ namespace BoltSort.Editor
             public string FailReason  { get; internal set; }
         }
 
+        /// <summary>Reserved color id for the multicolor wildcard ball (matches any color).</summary>
+        public const int Wildcard = 0;
+
         /// <summary>Runs BFS on the given level. Returns immediately on first win found.</summary>
+        /// <remarks>
+        /// Phase-2 mechanic support (schema_version 2), mirroring tools/levels/boltsort_levels.py:
+        ///   * MYSTERY ball — negative color id, normalised to abs() (solver has full info).
+        ///   * MULTICOLOR ball — color id 0 (<see cref="Wildcard"/>), matches any color.
+        ///   * FROZEN tube — per-column freeze counter; deposits banned while >0; ticks each move;
+        ///     folded into the canonical key so it never wrongly merges states.
+        ///   * ASYMMETRIC / large capacity — per-column caps from <c>tube_capacities</c>.
+        /// </remarks>
         public static SolverResult Solve(LevelRecord level, int stateLimit = DefaultStateLimit)
         {
             int colorCount  = level.ColorCount;
@@ -46,15 +57,36 @@ namespace BoltSort.Editor
             int tempDepth   = level.TempSlotDepth;
             int totalCols   = colorCount + tempCount;
 
-            // Per-column capacities (color stacks first, then temp slots).
+            // Per-column capacities: explicit tube_capacities override, else uniform depths.
             var caps = new int[totalCols];
-            for (int i = 0; i < totalCols; i++)
-                caps[i] = i < colorCount ? stackDepth : tempDepth;
+            if (level.TubeCapacities != null && level.TubeCapacities.Length == totalCols)
+            {
+                Array.Copy(level.TubeCapacities, caps, totalCols);
+            }
+            else
+            {
+                for (int i = 0; i < totalCols; i++)
+                    caps[i] = i < colorCount ? stackDepth : tempDepth;
+            }
+
+            // Initial freeze counters per column (0 = not frozen).
+            var frozen0 = new int[totalCols];
+            if (level.FrozenTubes != null)
+                foreach (var ft in level.FrozenTubes)
+                    if (ft != null && ft.TubeIndex >= 0 && ft.TubeIndex < totalCols)
+                        frozen0[ft.TubeIndex] = ft.Turns;
 
             // Initial state — index 0 = bottom, last = top (matches GSM convention).
+            // Mystery (negative) normalised to abs(); wildcard 0 kept verbatim.
             var initial = new int[totalCols][];
             for (int i = 0; i < colorCount; i++)
-                initial[i] = (int[])level.ColorStacks[i].Clone();
+            {
+                var src = level.ColorStacks[i];
+                var col = new int[src.Length];
+                for (int j = 0; j < src.Length; j++)
+                    col[j] = src[j] == Wildcard ? Wildcard : Math.Abs(src[j]);
+                initial[i] = col;
+            }
             for (int i = colorCount; i < totalCols; i++)
                 initial[i] = Array.Empty<int>();
 
@@ -62,14 +94,14 @@ namespace BoltSort.Editor
                 return new SolverResult { IsSolvable = true, MinMoves = 0 };
 
             var visited = new HashSet<string>();
-            var queue   = new Queue<(int[][] state, int moves)>();
-            visited.Add(Canonical(initial, caps, totalCols));
-            queue.Enqueue((initial, 0));
+            var queue   = new Queue<(int[][] state, int[] frozen, int moves)>();
+            visited.Add(Canonical(initial, caps, frozen0, totalCols));
+            queue.Enqueue((initial, frozen0, 0));
 
             int explored = 0;
             while (queue.Count > 0)
             {
-                var (state, moves) = queue.Dequeue();
+                var (state, frozen, moves) = queue.Dequeue();
                 explored++;
                 if (explored > stateLimit)
                     return new SolverResult { IsSolvable = false, MinMoves = -1, FailReason = "timeout" };
@@ -78,8 +110,8 @@ namespace BoltSort.Editor
                 {
                     int srcLen = state[src].Length;
                     if (srcLen == 0) continue;
-                    // Prune: never disturb a finished color tube (full + single color).
-                    if (src < colorCount && srcLen == caps[src] && IsMono(state[src]))
+                    // Prune: never disturb a finished color tube (full + single color incl. wildcard).
+                    if (src < colorCount && srcLen == caps[src] && IsCompleteColumn(state[src]))
                         continue;
 
                     int held = state[src][srcLen - 1];
@@ -88,25 +120,28 @@ namespace BoltSort.Editor
                     for (int dst = 0; dst < totalCols; dst++)
                     {
                         if (dst == src) continue;
+                        if (frozen[dst] > 0) continue;       // frozen tube: deposits banned
                         int cap = caps[dst];
                         if (state[dst].Length == 0)
                         {
                             // interchangeable empty destinations of equal capacity → one candidate
                             if (!usedEmptyCaps.Add(cap)) continue;
                         }
-                        else if (state[dst].Length >= cap || state[dst][state[dst].Length - 1] != held)
+                        else if (state[dst].Length >= cap ||
+                                 !Match(state[dst][state[dst].Length - 1], held))
                         {
                             continue;
                         }
 
                         var next = CopyApply(state, totalCols, src, dst, held);
+                        var nextFrozen = TickFreeze(frozen, totalCols);
 
                         if (IsWon(next, caps, totalCols))
                             return new SolverResult { IsSolvable = true, MinMoves = moves + 1 };
 
-                        string key = Canonical(next, caps, totalCols);
+                        string key = Canonical(next, caps, nextFrozen, totalCols);
                         if (visited.Add(key))
-                            queue.Enqueue((next, moves + 1));
+                            queue.Enqueue((next, nextFrozen, moves + 1));
                     }
                 }
             }
@@ -116,10 +151,20 @@ namespace BoltSort.Editor
 
         // ── Private helpers ───────────────────────────────────────────────────────
 
-        private static bool IsMono(int[] col)
+        /// <summary>Placement match: either ball is a wildcard, or colors are equal.</summary>
+        private static bool Match(int top, int held)
+            => top == Wildcard || held == Wildcard || top == held;
+
+        /// <summary>True if every non-wildcard ball shares one color (wildcards are neutral).</summary>
+        private static bool IsCompleteColumn(int[] col)
         {
-            for (int j = 1; j < col.Length; j++)
-                if (col[j] != col[0]) return false;
+            int baseColor = Wildcard;
+            for (int j = 0; j < col.Length; j++)
+            {
+                if (col[j] == Wildcard) continue;
+                if (baseColor == Wildcard) baseColor = col[j];
+                else if (col[j] != baseColor) return false;
+            }
             return true;
         }
 
@@ -130,11 +175,17 @@ namespace BoltSort.Editor
                 int[] col = state[i];
                 if (col.Length == 0) continue;
                 if (col.Length != caps[i]) return false;
-                int first = col[0];
-                for (int j = 1; j < col.Length; j++)
-                    if (col[j] != first) return false;
+                if (!IsCompleteColumn(col)) return false;
             }
             return true;
+        }
+
+        private static int[] TickFreeze(int[] frozen, int totalCols)
+        {
+            var next = new int[totalCols];
+            for (int i = 0; i < totalCols; i++)
+                next[i] = frozen[i] > 0 ? frozen[i] - 1 : 0;
+            return next;
         }
 
         private static int[][] CopyApply(int[][] state, int totalCols, int src, int dst, int held)
@@ -154,17 +205,18 @@ namespace BoltSort.Editor
         }
 
         /// <summary>
-        /// Symmetry-reduced key: each column is rendered as "cap:contents", and the
-        /// per-column strings are sorted so interchangeable tubes (equal capacity)
-        /// produce an identical key regardless of their slot index.
+        /// Symmetry-reduced key: each column is rendered as "cap.frozen:contents", and the
+        /// per-column strings are sorted so interchangeable tubes (equal capacity AND equal
+        /// remaining freeze) produce an identical key regardless of their slot index. Once all
+        /// tubes thaw the freeze component is uniformly 0 and the key collapses to the v1 form.
         /// </summary>
-        private static string Canonical(int[][] state, int[] caps, int totalCols)
+        private static string Canonical(int[][] state, int[] caps, int[] frozen, int totalCols)
         {
             var parts = new string[totalCols];
             for (int i = 0; i < totalCols; i++)
             {
                 var sb = new StringBuilder(8);
-                sb.Append(caps[i]).Append(':');
+                sb.Append(caps[i]).Append('.').Append(frozen[i]).Append(':');
                 for (int j = 0; j < state[i].Length; j++)
                 {
                     if (j > 0) sb.Append(',');

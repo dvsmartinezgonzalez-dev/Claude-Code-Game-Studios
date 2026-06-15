@@ -29,28 +29,56 @@ namespace BoltSort.Editor
         /// </summary>
         public static string CanonicalSignature(LevelRecord level)
         {
+            const int Wildcard = 0;
             int n = level.ColorCount;
-            var filled = new List<int[]>();
-            foreach (var stack in level.ColorStacks)
-                if (stack != null && stack.Length > 0)
-                    filled.Add(stack);
+            int totalCols = n + level.TempSlotCount;
 
+            // Per-column capacities (tube_capacities override, else uniform depths).
+            var caps = new int[totalCols];
+            if (level.TubeCapacities != null && level.TubeCapacities.Length == totalCols)
+                Array.Copy(level.TubeCapacities, caps, totalCols);
+            else
+                for (int i = 0; i < totalCols; i++)
+                    caps[i] = i < n ? level.StackDepth : level.TempSlotDepth;
+
+            // Per-column freeze turns (tied to tube index).
+            var frozen = new int[totalCols];
+            if (level.FrozenTubes != null)
+                foreach (var ft in level.FrozenTubes)
+                    if (ft != null && ft.TubeIndex >= 0 && ft.TubeIndex < totalCols)
+                        frozen[ft.TubeIndex] = ft.Turns;
+
+            // Filled color-stack tubes carry (cap, frozen, contents); temp slots start empty
+            // and contribute only via the sorted cap/freeze envelope below.
+            var filledIdx = new List<int>();
+            for (int i = 0; i < n; i++)
+                if (level.ColorStacks[i] != null && level.ColorStacks[i].Length > 0)
+                    filledIdx.Add(i);
+
+            var sortedCaps = (int[])caps.Clone();   Array.Sort(sortedCaps);
+            var sortedFrz  = (int[])frozen.Clone();  Array.Sort(sortedFrz);
             string shapePrefix =
-                $"{level.StackDepth}.{level.TempSlotCount}.{level.TempSlotDepth}.{n}";
+                $"{level.StackDepth}.{level.TempSlotCount}.{level.TempSlotDepth}.{n}" +
+                "|c" + string.Join(",", sortedCaps) + "|f" + string.Join(",", sortedFrz);
 
             string best = null;
             foreach (var perm in Permutations(n))
             {
                 // perm[oldColor-1] = newColor
-                var tubeStrings = new string[filled.Count];
-                for (int t = 0; t < filled.Count; t++)
+                var tubeStrings = new string[filledIdx.Count];
+                for (int t = 0; t < filledIdx.Count; t++)
                 {
-                    var col = filled[t];
-                    var sb = new StringBuilder(col.Length * 2);
+                    int idx = filledIdx[t];
+                    var col = level.ColorStacks[idx];
+                    var sb = new StringBuilder(col.Length * 3);
+                    sb.Append(caps[idx]).Append('.').Append(frozen[idx]).Append(':');
                     for (int j = 0; j < col.Length; j++)
                     {
                         if (j > 0) sb.Append(',');
-                        sb.Append(perm[col[j] - 1]);
+                        int x = col[j];
+                        if (x == Wildcard) sb.Append('W');
+                        else if (x < 0)    sb.Append('M').Append(perm[(-x) - 1]); // mystery keeps flag
+                        else               sb.Append(perm[x - 1]);
                     }
                     tubeStrings[t] = sb.ToString();
                 }

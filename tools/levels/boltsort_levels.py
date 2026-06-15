@@ -59,33 +59,69 @@ class LevelShape:
         return self.color_count * self.stack_depth
 
 
+WILDCARD = 0  # reserved color id: multicolor ball — matches any color (Phase-2, schema v2)
+
+
 class Board:
-    """A concrete board state: ordered columns + their capacities."""
+    """A concrete board state: ordered columns + their capacities.
 
-    __slots__ = ("cols", "caps", "n_color")
+    Phase-2 mechanics (schema_version 2) the solver understands:
+      * MYSTERY ball — stored in color_stacks as a NEGATIVE color id (-3 hides 3).
+        The solver has full information, so mystery ids are normalised to abs() at
+        load; reveal is a player-only event and never branches the search.
+      * MULTICOLOR ball — color id 0 (``WILDCARD``); matches any color for both
+        placement and the win condition. Max 1 per level (authoring rule).
+      * FROZEN tube — a per-column remaining-freeze counter. While >0 the tube
+        rejects deposits (removals allowed). Decrements on EVERY applied move.
+      * ASYMMETRIC / large capacity — per-column ``caps`` (from ``tube_capacities``).
+    """
 
-    def __init__(self, cols: Sequence[Column], caps: Sequence[int], n_color: int):
+    __slots__ = ("cols", "caps", "n_color", "frozen")
+
+    def __init__(self, cols: Sequence[Column], caps: Sequence[int], n_color: int,
+                 frozen: Optional[Sequence[int]] = None):
         self.cols: Tuple[Column, ...] = tuple(cols)
         self.caps: Tuple[int, ...] = tuple(caps)
         self.n_color = n_color
+        # remaining freeze turns per column; 0 = not frozen. Tied to tube index.
+        self.frozen: Tuple[int, ...] = (
+            tuple(frozen) if frozen is not None else tuple(0 for _ in self.cols))
 
     # ── construction ────────────────────────────────────────────────────────
     @staticmethod
-    def from_record(rec: dict) -> "Board":
-        """Build the initial board from a levels.json record."""
+    def _caps_from_record(rec: dict) -> List[int]:
         n = rec["color_count"]
-        sd = rec["stack_depth"]
         tc = rec["temp_slot_count"]
+        tcap = rec.get("tube_capacities")
+        if tcap:  # asymmetric / explicit per-tube capacities (flat order)
+            return list(tcap)
+        sd = rec["stack_depth"]
         td = rec["temp_slot_depth"]
-        cols: List[Column] = [tuple(s) for s in rec["color_stacks"]]
-        caps: List[int] = [sd] * n
+        return [sd] * n + [td] * tc
+
+    @staticmethod
+    def _frozen_from_record(rec: dict, total_cols: int) -> List[int]:
+        frozen = [0] * total_cols
+        for ft in rec.get("frozen_tubes") or []:
+            idx = ft["tube_index"]
+            frozen[idx] = ft.get("turns", ft.get("freeze_turns", 0))
+        return frozen
+
+    @staticmethod
+    def from_record(rec: dict) -> "Board":
+        """Build the initial board from a levels.json record (v1 or v2)."""
+        n = rec["color_count"]
+        tc = rec["temp_slot_count"]
+        # normalise mystery (negative -> abs); wildcard 0 is kept as-is.
+        cols: List[Column] = [tuple(abs(c) for c in s) for s in rec["color_stacks"]]
         cols += [tuple() for _ in range(tc)]
-        caps += [td] * tc
-        return Board(cols, caps, n)
+        caps = Board._caps_from_record(rec)
+        frozen = Board._frozen_from_record(rec, len(cols))
+        return Board(cols, caps, n, frozen)
 
     @staticmethod
     def from_shape(shape: LevelShape, color_stacks: Sequence[Sequence[int]]) -> "Board":
-        cols: List[Column] = [tuple(s) for s in color_stacks]
+        cols: List[Column] = [tuple(abs(c) for c in s) for s in color_stacks]
         caps: List[int] = [shape.stack_depth] * shape.color_count
         cols += [tuple() for _ in range(shape.temp_slot_count)]
         caps += [shape.temp_slot_depth] * shape.temp_slot_count
@@ -93,16 +129,15 @@ class Board:
 
     # ── rules ───────────────────────────────────────────────────────────────
     def is_won(self) -> bool:
-        """Mirror SortMechanic.IsWon: every column empty or full-to-cap & monochrome."""
+        """Mirror SortMechanic.IsWon: every column empty or full-to-cap and
+        single-color, where a wildcard (0) counts as matching any color."""
         for col, cap in zip(self.cols, self.caps):
             if not col:
                 continue
             if len(col) != cap:
                 return False
-            first = col[0]
-            for c in col:
-                if c != first:
-                    return False
+            if not _complete_colors(col):
+                return False
         return True
 
     def legal_moves(self):
@@ -112,22 +147,25 @@ class Board:
           * skip empty sources and completed (full+mono) color sources
           * collapse interchangeable empty destinations of equal capacity to one
           * never move onto the column the bolt came from
+        Mechanic rules: wildcard matches anything; a FROZEN destination (frozen>0)
+        rejects deposits (it can still be a source).
         """
-        cols, caps = self.cols, self.caps
+        cols, caps, frozen = self.cols, self.caps, self.frozen
         n = len(cols)
         for i in range(n):
             src = cols[i]
             if not src:
                 continue
             # skip a source that is already a finished, full single-color column
-            if len(src) == caps[i] and _mono(src):
+            if len(src) == caps[i] and _complete_colors(src):
                 continue
             bolt = src[-1]
-            # don't lift a lone bolt from an otherwise-empty column onto another empty
-            src_all_same = _mono(src)
+            src_all_same = _complete_colors(src)
             seen_empty_cap: set = set()
             for j in range(n):
                 if j == i:
+                    continue
+                if frozen[j] > 0:      # frozen tube: deposits banned
                     continue
                 dst = cols[j]
                 if not dst:
@@ -135,15 +173,14 @@ class Board:
                     if caps[j] in seen_empty_cap:
                         continue
                     seen_empty_cap.add(caps[j])
-                    # pointless: relocating a mono column wholesale into another empty
+                    # a single lone bolt hopping empty->empty is never progress
                     if src_all_same and len(src) == 1:
-                        # a single lone bolt hopping empty->empty is never progress
                         continue
                     yield (i, j)
                 else:
                     if len(dst) >= caps[j]:
                         continue
-                    if dst[-1] == bolt:
+                    if _match(dst[-1], bolt):
                         yield (i, j)
 
     def apply(self, src: int, dst: int) -> "Board":
@@ -151,25 +188,51 @@ class Board:
         bolt = cols[src][-1]
         cols[src] = cols[src][:-1]
         cols[dst] = cols[dst] + (bolt,)
-        return Board(cols, self.caps, self.n_color)
+        # every applied move ticks the global freeze countdown by 1
+        new_frozen = tuple(f - 1 if f > 0 else 0 for f in self.frozen)
+        return Board(cols, self.caps, self.n_color, new_frozen)
 
     # ── hashing / canonical state for the closed set ─────────────────────────
     def state_key(self) -> Tuple:
-        """Symmetry-reduced key: columns sorted within equal-capacity buckets."""
-        return tuple(sorted((cap, col) for cap, col in zip(self.caps, self.cols)))
+        """Symmetry-reduced key: columns sorted within equal-(capacity, freeze)
+        buckets. Freeze is folded in so two tubes are only interchangeable when
+        their remaining freeze also matches; once everything thaws the freeze
+        component is all-zero and the key collapses to the v1 form."""
+        return tuple(sorted(
+            (cap, f, col) for cap, f, col in zip(self.caps, self.frozen, self.cols)))
 
 
 def _mono(col: Column) -> bool:
     return all(c == col[0] for c in col) if col else True
 
 
+def _match(top: int, bolt: int) -> bool:
+    """Placement match: either ball is a wildcard, or colors are equal."""
+    return top == WILDCARD or bolt == WILDCARD or top == bolt
+
+
+def _complete_colors(col: Column) -> bool:
+    """True if every non-wildcard ball in the column shares one color
+    (a single wildcard, or all-wildcard, also passes)."""
+    base = WILDCARD
+    for c in col:
+        if c == WILDCARD:
+            continue
+        if base == WILDCARD:
+            base = c
+        elif c != base:
+            return False
+    return True
+
+
 # ── admissible heuristic ─────────────────────────────────────────────────────
 def _heuristic(board: Board) -> int:
     """Admissible lower bound on remaining moves.
 
-    Every bolt sitting above the bottom-most contiguous same-color run of its
-    column is on top of a different color and must move at least once. Summing
-    those across all columns never overcounts, so it is a valid A* heuristic.
+    Every bolt above the bottom-most contiguous same-color run of its column is
+    on top of a different color and must move at least once. A wildcard is
+    treated as extending the run (it never forces a move), keeping h a valid
+    lower bound. Frozen tubes only add constraints, so h stays admissible.
     """
     h = 0
     for col in board.cols:
@@ -177,7 +240,9 @@ def _heuristic(board: Board) -> int:
             continue
         bottom = col[0]
         run = 1
-        while run < len(col) and col[run] == bottom:
+        while run < len(col) and (col[run] == bottom or col[run] == WILDCARD or bottom == WILDCARD):
+            if bottom == WILDCARD and col[run] != WILDCARD:
+                bottom = col[run]
             run += 1
         h += len(col) - run
     return h
@@ -263,22 +328,36 @@ def canonical_signature(rec_or_board) -> Tuple:
     """
     if isinstance(rec_or_board, Board):
         n = rec_or_board.n_color
-        filled = [c for c in rec_or_board.cols if c]
-        sd = max((len(c) for c, cap in zip(rec_or_board.cols, rec_or_board.caps)
-                  if cap == max(rec_or_board.caps)), default=0)
-        # shape is not fully recoverable from a Board; callers prefer the record form
-        shape_key = (n,)
+        tubes = [(cap, fz, col) for cap, fz, col in
+                 zip(rec_or_board.caps, rec_or_board.frozen, rec_or_board.cols) if col]
+        shape_key = (tuple(sorted(rec_or_board.caps)), tuple(sorted(rec_or_board.frozen)))
     else:
         rec = rec_or_board
         n = rec["color_count"]
-        filled = [tuple(s) for s in rec["color_stacks"]]
-        shape_key = (rec["stack_depth"], rec["temp_slot_count"], rec["temp_slot_depth"])
+        caps = Board._caps_from_record(rec)
+        frozen = Board._frozen_from_record(rec, len(caps))
+        tubes = []
+        for idx, stack in enumerate(rec["color_stacks"]):
+            if stack:
+                tubes.append((caps[idx], frozen[idx], tuple(stack)))
+        shape_key = (rec["stack_depth"], rec["temp_slot_count"], rec["temp_slot_depth"],
+                     tuple(sorted(caps)), tuple(sorted(frozen)))
+
+    def cell(x: int, mapping: dict):
+        # uniform (kind, color) tuples so cells stay mutually comparable when sorted.
+        # kind 0 = normal, 1 = wildcard (fixed), 2 = mystery (keeps a distinguishing flag).
+        if x == WILDCARD:
+            return (1, 0)
+        if x < 0:
+            return (2, mapping[abs(x)])
+        return (0, mapping[x])
 
     best: Optional[Tuple] = None
     base = list(range(1, n + 1))
     for perm in itertools.permutations(base):
         mapping = {base[i]: perm[i] for i in range(n)}
-        relabeled = tuple(sorted(tuple(mapping[x] for x in t) for t in filled))
+        relabeled = tuple(sorted(
+            (cap, fz, tuple(cell(x, mapping) for x in col)) for cap, fz, col in tubes))
         key = (shape_key, n, relabeled)
         if best is None or key < best:
             best = key
@@ -292,7 +371,10 @@ def _color_dispersion(rec: dict) -> float:
     tubes_per_color = {c: set() for c in range(1, n + 1)}
     for idx, stack in enumerate(rec["color_stacks"]):
         for c in stack:
-            tubes_per_color[c].add(idx)
+            cc = abs(c)
+            if cc == WILDCARD:  # wildcard belongs to no single color
+                continue
+            tubes_per_color[cc].add(idx)
     return sum(len(v) for v in tubes_per_color.values()) / max(1, n)
 
 
@@ -301,12 +383,15 @@ def _buried_depth(rec: dict) -> float:
     weighted by how deep the column is. Captures 'colors buried under others'."""
     total = 0.0
     cells = 0
-    for stack in rec["color_stacks"]:
-        if not stack:
+    for raw in rec["color_stacks"]:
+        if not raw:
             continue
+        stack = [abs(c) for c in raw]  # mystery -> abs; wildcard stays 0
         bottom = stack[0]
         run = 1
-        while run < len(stack) and stack[run] == bottom:
+        while run < len(stack) and (stack[run] == bottom or stack[run] == WILDCARD or bottom == WILDCARD):
+            if bottom == WILDCARD and stack[run] != WILDCARD:
+                bottom = stack[run]
             run += 1
         # each out-of-place bolt contributes its distance from the bottom run top
         for depth_from_bottom in range(run, len(stack)):
@@ -339,6 +424,13 @@ def difficulty_score(rec: dict, optimal_moves: Optional[int]) -> float:
     dispersion = _color_dispersion(rec)          # 1..color_count
     buried = _buried_depth(rec)                   # 0..(sd-1)
 
+    # Phase-2 mechanic load (schema v2). Mystery/frozen raise difficulty;
+    # the multicolor wildcard is a relief valve and lowers it.
+    mystery_count = sum(1 for s in rec["color_stacks"] for c in s if c < 0)
+    wildcard_count = sum(1 for s in rec["color_stacks"] for c in s if c == WILDCARD)
+    frozen_count = len(rec.get("frozen_tubes") or [])
+    asymmetric = 1 if rec.get("tube_capacities") else 0
+
     score = (
         2.0 * moves
         + 6.0 * (n - 2)
@@ -347,6 +439,10 @@ def difficulty_score(rec: dict, optimal_moves: Optional[int]) -> float:
         + 5.0 * restriction
         + 3.0 * (dispersion - 1.0)
         + 2.0 * buried
+        + 12.0 * frozen_count
+        + 8.0 * mystery_count
+        - 16.0 * wildcard_count
+        + 4.0 * asymmetric
     )
     return round(score, 1)
 

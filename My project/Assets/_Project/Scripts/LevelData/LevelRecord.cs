@@ -89,6 +89,38 @@ namespace BoltSort.LevelData
         [JsonProperty("par_moves")]
         public int ParMoves { get; private set; }
 
+        // ── Phase-2 mechanics (schema_version 2 only; null/false ⇒ classic level) ──
+
+        /// <summary>
+        /// Optional per-column capacity override (flat order: color stacks then temp slots).
+        /// When present, overrides <see cref="StackDepth"/>/<see cref="TempSlotDepth"/> per tube
+        /// (asymmetric / large-capacity tubes). Null ⇒ uniform depths. See ADR-0014, phase-2 TDD §1.4/§1.6.
+        /// </summary>
+        [JsonProperty("tube_capacities")]
+        public int[] TubeCapacities { get; private set; }
+
+        /// <summary>
+        /// Optional frozen-tube descriptors. Each entry locks a tube against deposits for
+        /// <c>turns</c> committed moves (removals stay legal). Null/empty ⇒ no frozen tubes.
+        /// Authoring rule: max 1 per level. See phase-2 TDD §1.3.
+        /// </summary>
+        [JsonProperty("frozen_tubes")]
+        public FrozenTube[] FrozenTubes { get; private set; }
+
+        /// <summary>
+        /// Authoring/tooling flag: true if any ball in <see cref="ColorStacks"/> is a mystery ball
+        /// (encoded as a negative color id, hidden color = abs). Derivable; kept for fast UI/dedup checks.
+        /// </summary>
+        [JsonProperty("mystery_balls")]
+        public bool MysteryBalls { get; private set; }
+
+        /// <summary>
+        /// Authoring/tooling flag: true if the level contains the single multicolor wildcard ball
+        /// (encoded as color id 0). Derivable; kept for fast UI/dedup checks. Max 1 per level.
+        /// </summary>
+        [JsonProperty("has_multicolor")]
+        public bool HasMulticolor { get; private set; }
+
         /// <summary>
         /// Post-deserialization callback. Sets DisplayName to "Level {LevelId}" when the
         /// JSON field is absent or null. Empty string is intentionally not defaulted.
@@ -100,5 +132,22 @@ namespace BoltSort.LevelData
             if (DisplayName == null)
                 DisplayName = $"Level {LevelId}";
         }
+    }
+
+    /// <summary>
+    /// One frozen-tube descriptor inside a <see cref="LevelRecord"/> (schema_version 2).
+    /// Deposits into <see cref="TubeIndex"/> are rejected until <see cref="Turns"/> committed
+    /// moves have elapsed; the counter is visible to the player from move 0. See phase-2 TDD §1.3.
+    /// </summary>
+    [JsonObject(MemberSerialization.OptIn)]
+    public sealed class FrozenTube
+    {
+        /// <summary>Flat column index (color stacks first, then temp slots).</summary>
+        [JsonProperty("tube_index")]
+        public int TubeIndex { get; private set; }
+
+        /// <summary>Number of committed moves the tube stays deposit-locked.</summary>
+        [JsonProperty("turns")]
+        public int Turns { get; private set; }
     }
 }
