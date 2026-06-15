@@ -29,6 +29,7 @@ namespace BoltSort.Editor
             ImportTubeContainers();
             ImportLevelButtonsGrid();
             ImportBallsAndTubes();
+            ImportConfettiSheet();
 
             // Single-sprite images — name differs from filename → use named single entry
             ImportNamed("Assets/game_assets/level_selector/level_unlocked_1.png",
@@ -243,6 +244,54 @@ namespace BoltSort.Editor
             ImportCropped(tubesDir + "Tube_selected_XXL.png",            11,  41, 563, 2558, TubePivot);
         }
 
+        static void ImportConfettiSheet()
+        {
+            // 1080×1920 — scattered confetti pieces (top ~45% of image), transparent bg.
+            // 34 individual pieces detected via connected-component analysis; each is
+            // sliced as its own sub-sprite so the Victory rain can pick random real
+            // confetti shapes instead of procedural colored squares.
+            // Lives in Resources/Sprites/Victory/ so GameAssets.ConfettiPieces can read
+            // the sub-sprites via Resources.LoadAll on device builds.
+            const int H = 1920;
+            ImportSheet("Assets/Resources/Sprites/Victory/confetti_sheet.png", new List<SpriteMetaData>
+            {
+                Spr("confetti_0", 306, H-82, 33, 48),
+                Spr("confetti_1", 628, H-122, 64, 48),
+                Spr("confetti_2", 118, H-154, 53, 79),
+                Spr("confetti_3", 853, H-115, 22, 17),
+                Spr("confetti_4", 813, H-353, 50, 56),
+                Spr("confetti_5", 441, H-322, 15, 17),
+                Spr("confetti_6", 246, H-339, 27, 32),
+                Spr("confetti_7", 439, H-380, 30, 34),
+                Spr("confetti_8", 477, H-382, 17, 31),
+                Spr("confetti_9", 85, H-405, 40, 45),
+                Spr("confetti_10", 367, H-397, 30, 34),
+                Spr("confetti_11", 718, H-471, 94, 96),
+                Spr("confetti_12", 622, H-506, 64, 81),
+                Spr("confetti_13", 816, H-484, 27, 29),
+                Spr("confetti_14", 90, H-524, 53, 62),
+                Spr("confetti_15", 176, H-507, 18, 28),
+                Spr("confetti_16", 729, H-509, 24, 24),
+                Spr("confetti_17", 287, H-502, 19, 16),
+                Spr("confetti_18", 324, H-520, 20, 18),
+                Spr("confetti_19", 763, H-526, 19, 13),
+                Spr("confetti_20", 282, H-540, 26, 21),
+                Spr("confetti_21", 894, H-587, 63, 37),
+                Spr("confetti_22", 330, H-608, 45, 55),
+                Spr("confetti_23", 140, H-619, 44, 56),
+                Spr("confetti_24", 804, H-627, 24, 25),
+                Spr("confetti_25", 220, H-661, 44, 52),
+                Spr("confetti_26", 93, H-659, 18, 21),
+                Spr("confetti_27", 999, H-675, 27, 26),
+                Spr("confetti_28", 141, H-706, 51, 50),
+                Spr("confetti_29", 604, H-720, 18, 14),
+                Spr("confetti_30", 727, H-758, 20, 17),
+                Spr("confetti_31", 808, H-785, 15, 18),
+                Spr("confetti_32", 518, H-854, 33, 45),
+                Spr("confetti_33", 678, H-852, 39, 36),
+            });
+        }
+
         // ── Helpers ───────────────────────────────────────────────────────────────
 
         static readonly Vector2 BallPivot = new Vector2(0.5f, 0.5f);
@@ -362,7 +411,7 @@ namespace BoltSort.Editor
             // tube sprites still carry their default (center) pivot. The tube check is
             // essential: buttons may already be sliced from an earlier run, which would
             // otherwise make us skip importing the newer ball/tube art entirely.
-            if (ButtonsSliced() && TubesBottomPivot()) return;
+            if (ButtonsSliced() && TubesBottomPivot() && ConfettiSliced()) return;
 
             Debug.Log("[GameAssets] Game assets not fully configured — auto-importing...");
             GameAssetImporter.ImportAll();
@@ -374,6 +423,16 @@ namespace BoltSort.Editor
             if (AssetImporter.GetAtPath(probeAsset) == null) return true; // PNG absent → nothing to do
             foreach (var obj in AssetDatabase.LoadAllAssetsAtPath(probeAsset))
                 if (obj is Sprite s && s.name == "btn_play") return true;
+            return false;
+        }
+
+        // True when the confetti sheet has been sliced into its sub-sprites.
+        static bool ConfettiSliced()
+        {
+            const string probeAsset = "Assets/Resources/Sprites/Victory/confetti_sheet.png";
+            if (AssetImporter.GetAtPath(probeAsset) == null) return true; // PNG absent → nothing to do
+            foreach (var obj in AssetDatabase.LoadAllAssetsAtPath(probeAsset))
+                if (obj is Sprite s && s.name == "confetti_0") return true;
             return false;
         }
 

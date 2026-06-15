@@ -166,6 +166,28 @@ namespace BoltSort.Visual
             return spr;
         }
 
+        // ── Confetti — sliced sub-sprites of confetti_sheet in Resources/Sprites/Victory/ ──
+        private const string SheetConfetti = "Sprites/Victory/confetti_sheet";
+        private static Sprite[] _confettiPieces;
+
+        /// <summary>All confetti piece sprites sliced from confetti_sheet.png, loaded once
+        /// via Resources.LoadAll (works in Editor and device builds). Empty array if the
+        /// sheet is missing or not yet sliced.</summary>
+        public static Sprite[] ConfettiPieces
+        {
+            get
+            {
+                if (_confettiPieces != null) return _confettiPieces;
+                _confettiPieces = Resources.LoadAll<Sprite>(SheetConfetti) ?? System.Array.Empty<Sprite>();
+#if UNITY_EDITOR
+                if (_confettiPieces.Length == 0)
+                    Debug.LogWarning($"[GameAssets] Resources.LoadAll<Sprite>(\"{SheetConfetti}\") returned none. " +
+                                     "Run BoltSort > Import Game Assets to slice the confetti sheet.");
+#endif
+                return _confettiPieces;
+            }
+        }
+
         /// <summary>
         /// Loads a named sub-sprite from a Multiple-mode sliced sheet via Resources.LoadAll —
         /// works in Editor AND device builds (unlike AssetDatabase sub-asset lookups).

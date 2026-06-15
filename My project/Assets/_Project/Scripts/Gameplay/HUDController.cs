@@ -46,6 +46,7 @@ namespace BoltSort.Gameplay
         private float[]     _confettiSpeeds;
         private float[]     _confettiRotSpeeds;
         private float[]     _confettiBaseAlphas;
+        private Sprite[]    _confettiSprites;
         private Coroutine   _confettiLoop;
         private Image       _trophyImg;
         private RectTransform _trophyRT;
@@ -216,16 +217,30 @@ namespace BoltSort.Gameplay
             var img = _confettiImages[i];
             if (rt == null || img == null) return;
 
-            float scale = UnityEngine.Random.Range(0.4f, 1.0f);
+            // Pick a random real confetti shape from the sliced sheet. Size the piece to
+            // the sprite's native aspect, normalized so its longest side is ~26 logical px,
+            // then apply the random scale below. Keep the image tint white so the sprite's
+            // own colors show through (no procedural recoloring).
+            var sprites = _confettiSprites;
+            if (sprites != null && sprites.Length > 0)
+            {
+                var spr = sprites[UnityEngine.Random.Range(0, sprites.Length)];
+                img.sprite = spr;
+                var nat = spr.rect.size;
+                float longest = Mathf.Max(nat.x, nat.y, 1f);
+                float k = 26f / longest;
+                rt.sizeDelta = new Vector2(nat.x * k, nat.y * k);
+            }
+
+            float scale = UnityEngine.Random.Range(0.5f, 1.2f);
             rt.localScale    = new Vector3(scale, scale, 1f);
             rt.localRotation = Quaternion.Euler(0f, 0f, UnityEngine.Random.Range(0f, 360f));
 
-            _confettiSpeeds[i]     = UnityEngine.Random.Range(180f, 480f) * Mathf.Lerp(0.6f, 1.2f, scale);
+            _confettiSpeeds[i]     = UnityEngine.Random.Range(150f, 320f);
             _confettiRotSpeeds[i]  = UnityEngine.Random.Range(-220f, 220f);
-            _confettiBaseAlphas[i] = UnityEngine.Random.Range(0.7f, 1f);
+            _confettiBaseAlphas[i] = UnityEngine.Random.Range(0.85f, 1f);
 
-            var color = BoltSortTheme.BoltColors[UnityEngine.Random.Range(0, BoltSortTheme.BoltColors.Length)];
-            img.color = new Color(color.r, color.g, color.b, 0f);
+            img.color = new Color(1f, 1f, 1f, 0f);
 
             float posY = spreadAcrossScreen
                 ? UnityEngine.Random.Range(ConfettiBottomDespawnY, ConfettiTopSpawnY)
@@ -627,16 +642,17 @@ namespace BoltSort.Gameplay
             winRect.anchorMin = Vector2.zero; winRect.anchorMax = Vector2.one;
             winRect.offsetMin = winRect.offsetMax = Vector2.zero;
 
-            // Confetti rain — many small individually-falling pieces. Each piece is
-            // a plain tinted Image (random size/aspect, color from the bolt palette)
-            // that falls, spins and fades at its own randomized rate, and recycles
-            // back above the top once it fades out at the bottom — a continuous,
-            // pooled rain with no per-piece allocation after setup.
+            // Confetti rain — many small individually-falling pieces. Each piece is an
+            // Image showing a random real confetti shape sliced from confetti_sheet.png
+            // (white tint so the sprite's own colors show) that falls, spins and fades at
+            // its own randomized rate, and recycles back above the top once it fades out at
+            // the bottom — a continuous, pooled rain with no per-piece allocation after setup.
             _confettiPieces     = new RectTransform[ConfettiPieceCount];
             _confettiImages     = new Image[ConfettiPieceCount];
             _confettiSpeeds     = new float[ConfettiPieceCount];
             _confettiRotSpeeds  = new float[ConfettiPieceCount];
             _confettiBaseAlphas = new float[ConfettiPieceCount];
+            _confettiSprites    = GameAssets.ConfettiPieces;
 
             var confettiContainer = MakePanel(_winOverlay, "ConfettiContainer", new Color(0f, 0f, 0f, 0f));
             confettiContainer.GetComponent<Image>().raycastTarget = false;
@@ -652,8 +668,6 @@ namespace BoltSort.Gameplay
                 pieceImg.raycastTarget = false;
                 var pieceRt = pieceGO.GetComponent<RectTransform>();
                 pieceRt.anchorMin = pieceRt.anchorMax = pieceRt.pivot = new Vector2(0.5f, 0.5f);
-                float w = UnityEngine.Random.Range(10f, 22f);
-                pieceRt.sizeDelta = new Vector2(w, w * UnityEngine.Random.Range(0.5f, 1.6f));
 
                 _confettiPieces[i] = pieceRt;
                 _confettiImages[i] = pieceImg;
