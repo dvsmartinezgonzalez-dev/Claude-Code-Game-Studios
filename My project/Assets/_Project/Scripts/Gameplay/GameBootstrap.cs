@@ -24,7 +24,6 @@ namespace BoltSort.Gameplay
         private HUDController                              _hud;
 
         private int _currentLevelId = 1;
-        private bool _levelComplete;
         private const int MaxLevelId = 50;
         private const string NextLevelKey = "bs.next_level";
 
@@ -88,6 +87,11 @@ namespace BoltSort.Gameplay
                 onReplay:   ResetLevel,
                 onLevels:   OnLevelsClicked);
 
+            // Phase-2 mechanic tutorial trigger stubs — must subscribe to OnLevelLoaded
+            // before LoadLevel so a level that introduces a mechanic shows its prompt.
+            var tutGO = new GameObject("TutorialController");
+            tutGO.AddComponent<TutorialController>().Initialize(_gsm, _sortMechanic, GameAssets.MenuFont);
+
             _gsm.ExitLevel();
             _gsm.LoadLevel(_currentLevelId);
             AudioMgr.Instance?.PlayMusic();
@@ -97,7 +101,6 @@ namespace BoltSort.Gameplay
 
         public void ResetLevel()
         {
-            _levelComplete = false;
             _gsm.ExitLevel();
             _gsm.LoadLevel(_currentLevelId);
         }
@@ -109,7 +112,6 @@ namespace BoltSort.Gameplay
                 _hud?.ShowMoreLevelsSoon();
                 return;
             }
-            _levelComplete = false;
             _currentLevelId++;
             _gsm.ExitLevel();
             _gsm.LoadLevel(_currentLevelId);
@@ -158,8 +160,6 @@ namespace BoltSort.Gameplay
 
         private async void HandleLevelComplete(int levelId, int moves, int par, long seqId)
         {
-            _levelComplete = true;
-
             int stars       = moves <= par ? 3 : moves <= (int)(par * 1.5f) ? 2 : 1;
             int coinsEarned = stars * 10;
 
