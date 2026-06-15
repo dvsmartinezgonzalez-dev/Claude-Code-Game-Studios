@@ -13,17 +13,37 @@ using AudioMgr = BoltSort.Audio.AudioManager;
 namespace BoltSort.Gameplay
 {
     /// <summary>
-    /// Procedurally builds the Level Select screen. 3-column scrollable grid of all levels.
-    /// Reads unlock/completion state from SaveSystem. Includes entrance animation, a
-    /// scale pulse on the next level to play, and a lock-shake on the next locked level.
+    /// Paged Level Select screen. A 5×10 grid (50 levels per page) with
+    /// ‹‹ Prev | Page X of Y | Next ›› navigation, a "Go to level" jump box, and
+    /// per-cell completion stars + mechanic indicator icons. Scales to thousands of
+    /// levels: only the current page's 50 cells are built, and the page is persisted
+    /// in PlayerPrefs ("bs.ls_page") so the player returns to where they were.
+    /// Number display abbreviates large ids (1.2K, 25K) — see <see cref="FormatLevelNumber"/>.
+    /// Phase-2 (TDD §5; supersedes the old single-scroll 3-column build).
     /// </summary>
     public class LevelSelectController : MonoBehaviour
     {
-        private const int MaxLevels = 50;
-        private const int Columns   = 3;
+        private const int    Columns       = 5;
+        private const int    Rows          = 10;
+        private const int    LevelsPerPage = Columns * Rows; // 50
+        private const string PagePrefKey   = "bs.ls_page";
 
         private int _currentLevelId = 1;
+        private int _totalLevels    = 1;
+        private int _pageCount       = 1;
+        private int _currentPage     = 0; // 0-based
+
         private SettingsPanel _settingsPanel;
+        private SaveSystem.ISaveSystem _ss;
+        private Font _font;
+
+        // Chrome refs (built once; grid is rebuilt per page)
+        private RectTransform _contentRt;
+        private float         _cellSize;
+        private Text          _pageLabel;
+        private Button        _prevBtn;
+        private Button        _nextBtn;
+        private InputField    _gotoInput;
 
         private readonly List<RectTransform> _entranceCells = new List<RectTransform>();
 
@@ -47,7 +67,6 @@ namespace BoltSort.Gameplay
 
         private void Update()
         {
-            // GP-02: Android back button
             if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
             {
                 if (_settingsPanel != null && _settingsPanel.IsOpen)
@@ -57,242 +76,280 @@ namespace BoltSort.Gameplay
             }
         }
 
+        // ── UI construction (static chrome; grid filled by BuildPage) ─────────────
+
         private void BuildUI(SaveSystem.ISaveSystem ss)
         {
+            _ss             = ss;
             _currentLevelId = ss != null ? ss.GetCurrentLevelId() : 1;
-            int totalLevels = GetAvailableLevelCount();
+            _totalLevels    = Mathf.Max(1, GetAvailableLevelCount());
+            _pageCount      = Mathf.Max(1, (_totalLevels + LevelsPerPage - 1) / LevelsPerPage);
 
-            Font font = GameAssets.MenuFont; // Gummy display font (falls back to built-in)
+            // Restore the saved page, defaulting to the page holding the current level.
+            int defaultPage = (_currentLevelId - 1) / LevelsPerPage;
+            _currentPage = Mathf.Clamp(PlayerPrefs.GetInt(PagePrefKey, defaultPage), 0, _pageCount - 1);
 
-            // Root Canvas
+            _font = GameAssets.MenuFont;
+
             var canvasGO = new GameObject("Canvas");
             var canvas   = canvasGO.AddComponent<Canvas>();
             canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 10;
-
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(720f, 1280f);
             scaler.matchWidthOrHeight  = 1f;
             canvasGO.AddComponent<GraphicRaycaster>();
 
-            // Background — game_background sprite if available, else solid color
-            var bg    = MakePanel(canvasGO, "Background", BoltSortTheme.BackgroundDeep);
+            var bg = MakePanel(canvasGO, "Background", BoltSortTheme.BackgroundDeep);
             GameAssets.Apply(bg.GetComponent<Image>(), GameAssets.GameBackground);
             Stretch(bg.GetComponent<RectTransform>());
 
-            // LS-04: safe area — wrap header and scroll view so they stay within the
-            // device's safe bounds (notch / Dynamic Island / rounded corners) on all sides.
             var safeAreaGO = new GameObject("SafeArea", typeof(RectTransform));
             safeAreaGO.transform.SetParent(canvasGO.transform, false);
             ApplySafeArea(safeAreaGO.GetComponent<RectTransform>());
 
-            // Header bar
+            // Header bar (title + back + settings)
             var header = MakePanel(safeAreaGO, "Header", BoltSortTheme.HUDBackground);
             var hr = header.GetComponent<RectTransform>();
             hr.anchorMin = new Vector2(0f, 1f); hr.anchorMax = new Vector2(1f, 1f);
             hr.pivot = new Vector2(0.5f, 1f);
             hr.offsetMin = new Vector2(0f, -100f); hr.offsetMax = Vector2.zero;
 
-            var titleText = MakeLabel(header, "Title", "LEVELS", font,
-                                      52, TextAnchor.MiddleCenter, bold: true, shadow: true);
+            var titleText = MakeLabel(header, "Title", "LEVELS", _font, 52,
+                                      TextAnchor.MiddleCenter, bold: true, shadow: true);
             titleText.color = BoltSortTheme.HUDText;
             Stretch(titleText.GetComponent<RectTransform>());
 
-            // Left header slot → "back to main menu" → back_button.png (logical match)
-            var backBtn = MakeAnimatedButton(header, "BackButton", "", font, 36,
-                                             OnBackClicked);
+            var backBtn = MakeAnimatedButton(header, "BackButton", "", _font, 36, OnBackClicked);
             var backImg = backBtn.GetComponent<Image>();
-            if (GameAssets.NavBack != null)
-                GameAssets.Apply(backImg, GameAssets.NavBack, preserveAspect: true);
-            else
-                backImg.color = new Color(0.12f, 0.12f, 0.22f, 0.9f);
+            if (GameAssets.NavBack != null) GameAssets.Apply(backImg, GameAssets.NavBack, true);
+            else backImg.color = new Color(0.12f, 0.12f, 0.22f, 0.9f);
             var bbr = backBtn.GetComponent<RectTransform>();
             bbr.anchorMin = new Vector2(0f, 0f); bbr.anchorMax = new Vector2(0f, 1f);
-            bbr.pivot     = new Vector2(0f, 0.5f);
+            bbr.pivot = new Vector2(0f, 0.5f);
             bbr.offsetMin = new Vector2(8f, 8f); bbr.offsetMax = new Vector2(100f, -8f);
 
-            // Right header slot → opens settings panel → settings_button.png (logical match)
-            var settingsBtn = MakeAnimatedButton(header, "SettingsButton", "", font, 36,
+            var settingsBtn = MakeAnimatedButton(header, "SettingsButton", "", _font, 36,
                                                  () => _settingsPanel?.Toggle());
             var settingsImg = settingsBtn.GetComponent<Image>();
-            if (GameAssets.NavSettings != null)
-                GameAssets.Apply(settingsImg, GameAssets.NavSettings, preserveAspect: true);
-            else
-                settingsImg.color = new Color(0.12f, 0.12f, 0.22f, 0.9f);
+            if (GameAssets.NavSettings != null) GameAssets.Apply(settingsImg, GameAssets.NavSettings, true);
+            else settingsImg.color = new Color(0.12f, 0.12f, 0.22f, 0.9f);
             var sbr = settingsBtn.GetComponent<RectTransform>();
             sbr.anchorMin = new Vector2(1f, 0f); sbr.anchorMax = new Vector2(1f, 1f);
-            sbr.pivot     = new Vector2(1f, 0.5f);
+            sbr.pivot = new Vector2(1f, 0.5f);
             sbr.offsetMin = new Vector2(-100f, 8f); sbr.offsetMax = new Vector2(-8f, -8f);
 
-            // Scroll area
+            // Scroll area between header (top 100) and nav bar (bottom 150).
             var scrollGO  = new GameObject("ScrollView");
             scrollGO.transform.SetParent(safeAreaGO.transform, false);
             var scrollRect = scrollGO.AddComponent<ScrollRect>();
-            scrollRect.horizontal        = false;
-            scrollRect.vertical          = true;
-            scrollRect.scrollSensitivity = 30f;
-            scrollRect.decelerationRate  = 0.135f; // momentum scroll feel
-            scrollRect.elasticity        = 0.1f;
-
+            scrollRect.horizontal = false; scrollRect.vertical = true;
+            scrollRect.scrollSensitivity = 30f; scrollRect.decelerationRate = 0.135f;
+            scrollRect.elasticity = 0.1f;
             var scrollRt = scrollGO.GetComponent<RectTransform>();
             scrollRt.anchorMin = Vector2.zero; scrollRt.anchorMax = Vector2.one;
-            scrollRt.offsetMin = new Vector2(0f, 0f); scrollRt.offsetMax = new Vector2(0f, -100f);
+            scrollRt.offsetMin = new Vector2(0f, 150f); scrollRt.offsetMax = new Vector2(0f, -100f);
 
-            // Viewport
             var viewportGO = new GameObject("Viewport");
             viewportGO.transform.SetParent(scrollGO.transform, false);
             var vpImg = viewportGO.AddComponent<Image>();
-            vpImg.color = new Color(0f, 0f, 0f, 0f); // invisible; only provides scroll raycast area
-            // RectMask2D clips by rectangle and does NOT depend on the graphic's alpha.
-            // A plain Mask here writes its stencil from the graphic's alpha-clip, so the
-            // transparent (alpha 0) viewport image produced an empty stencil that clipped
-            // away every cell — full-size and clickable, but rendering nothing.
+            vpImg.color = new Color(0f, 0f, 0f, 0f);
             viewportGO.AddComponent<RectMask2D>();
             Stretch(viewportGO.GetComponent<RectTransform>());
             scrollRect.viewport = viewportGO.GetComponent<RectTransform>();
 
-            // Content — organised automatically by a GridLayoutGroup; a
-            // ContentSizeFitter drives the scrollable height to fit all rows.
-            // Cell size is derived from the actual canvas width so 3 columns +
-            // padding + spacing always fit without clipping on any aspect ratio.
-            const float cellGap  = 12f;
-            const float padX     = 24f;
-            const float padTop   = 20f;
+            const float cellGap = 12f, padX = 24f, padTop = 20f;
             float canvasWidth = 1280f * Screen.width / Mathf.Max(1f, Screen.height);
-            float cellSize    = (canvasWidth - padX * 2f - cellGap * (Columns - 1)) / Columns;
+            _cellSize = (canvasWidth - padX * 2f - cellGap * (Columns - 1)) / Columns;
 
             var contentGO = new GameObject("Content", typeof(RectTransform));
             contentGO.transform.SetParent(viewportGO.transform, false);
-            var contentRt = contentGO.GetComponent<RectTransform>();
-            contentRt.anchorMin = new Vector2(0f, 1f); contentRt.anchorMax = new Vector2(1f, 1f);
-            contentRt.pivot     = new Vector2(0.5f, 1f);
-            contentRt.offsetMin = contentRt.offsetMax = Vector2.zero;
-            scrollRect.content  = contentRt;
+            _contentRt = contentGO.GetComponent<RectTransform>();
+            _contentRt.anchorMin = new Vector2(0f, 1f); _contentRt.anchorMax = new Vector2(1f, 1f);
+            _contentRt.pivot = new Vector2(0.5f, 1f);
+            _contentRt.offsetMin = _contentRt.offsetMax = Vector2.zero;
+            scrollRect.content = _contentRt;
 
             var grid = contentGO.AddComponent<GridLayoutGroup>();
-            grid.cellSize        = new Vector2(cellSize, cellSize);
+            grid.cellSize        = new Vector2(_cellSize, _cellSize);
             grid.spacing         = new Vector2(cellGap, cellGap);
             grid.padding         = new RectOffset((int)padX, (int)padX, (int)padTop, (int)padTop);
             grid.constraint      = GridLayoutGroup.Constraint.FixedColumnCount;
             grid.constraintCount = Columns;
             grid.childAlignment  = TextAnchor.UpperCenter;
-
             var fitter = contentGO.AddComponent<ContentSizeFitter>();
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
+            BuildNavBar(safeAreaGO);
+
+            // Settings panel
+            var spHost = new GameObject("SettingsPanelHost");
+            spHost.transform.SetParent(canvasGO.transform, false);
+            _settingsPanel = spHost.AddComponent<SettingsPanel>();
+            _settingsPanel.Initialize(_font, canvasGO.transform);
+
+            BuildPage(_currentPage);
+        }
+
+        // ── Bottom navigation bar: ‹‹ Prev | Page X of Y | Next ›› + Go-to ────────
+
+        private void BuildNavBar(GameObject parent)
+        {
+            var nav = MakePanel(parent, "NavBar", BoltSortTheme.HUDBackground);
+            var nr = nav.GetComponent<RectTransform>();
+            nr.anchorMin = new Vector2(0f, 0f); nr.anchorMax = new Vector2(1f, 0f);
+            nr.pivot = new Vector2(0.5f, 0f);
+            nr.offsetMin = new Vector2(8f, 8f); nr.offsetMax = new Vector2(-8f, 150f);
+
+            // Prev
+            _prevBtn = MakeTextButton(nav, "Prev", "‹‹", () => GoToPage(_currentPage - 1));
+            var pr = _prevBtn.GetComponent<RectTransform>();
+            pr.anchorMin = new Vector2(0f, 0.5f); pr.anchorMax = new Vector2(0f, 0.5f);
+            pr.pivot = new Vector2(0f, 0.5f); pr.sizeDelta = new Vector2(120f, 80f);
+            pr.anchoredPosition = new Vector2(8f, 35f);
+
+            // Page label
+            _pageLabel = MakeLabel(nav, "PageLabel", "", _font, 30, TextAnchor.MiddleCenter, true, true);
+            _pageLabel.color = BoltSortTheme.HUDText;
+            var plr = _pageLabel.GetComponent<RectTransform>();
+            plr.anchorMin = new Vector2(0.5f, 0.5f); plr.anchorMax = new Vector2(0.5f, 0.5f);
+            plr.pivot = new Vector2(0.5f, 0.5f); plr.sizeDelta = new Vector2(240f, 80f);
+            plr.anchoredPosition = new Vector2(0f, 35f);
+
+            // Next
+            _nextBtn = MakeTextButton(nav, "Next", "››", () => GoToPage(_currentPage + 1));
+            var ntr = _nextBtn.GetComponent<RectTransform>();
+            ntr.anchorMin = new Vector2(1f, 0.5f); ntr.anchorMax = new Vector2(1f, 0.5f);
+            ntr.pivot = new Vector2(1f, 0.5f); ntr.sizeDelta = new Vector2(120f, 80f);
+            ntr.anchoredPosition = new Vector2(-8f, 35f);
+
+            // Go-to input + GO button (bottom row of the nav bar)
+            _gotoInput = MakeIntInput(nav, "GotoInput", "Go to…");
+            var gir = _gotoInput.GetComponent<RectTransform>();
+            gir.anchorMin = new Vector2(0.5f, 0f); gir.anchorMax = new Vector2(0.5f, 0f);
+            gir.pivot = new Vector2(1f, 0f); gir.sizeDelta = new Vector2(200f, 56f);
+            gir.anchoredPosition = new Vector2(60f, 6f);
+
+            var goBtn = MakeTextButton(nav, "Go", "GO", OnGotoSubmit);
+            var gbr = goBtn.GetComponent<RectTransform>();
+            gbr.anchorMin = new Vector2(0.5f, 0f); gbr.anchorMax = new Vector2(0.5f, 0f);
+            gbr.pivot = new Vector2(0f, 0f); gbr.sizeDelta = new Vector2(96f, 56f);
+            gbr.anchoredPosition = new Vector2(72f, 6f);
+        }
+
+        private void OnGotoSubmit()
+        {
+            AudioMgr.Instance?.PlaySFX("button_tap");
+            if (_gotoInput == null) return;
+            if (!int.TryParse(_gotoInput.text, out int target)) return;
+            target = Mathf.Clamp(target, 1, _totalLevels);
+            int page = (target - 1) / LevelsPerPage;
+            GoToPage(page, highlightLevel: target);
+        }
+
+        private void GoToPage(int page, int highlightLevel = -1)
+        {
+            page = Mathf.Clamp(page, 0, _pageCount - 1);
+            _currentPage = page;
+            PlayerPrefs.SetInt(PagePrefKey, page);
+            PlayerPrefs.Save();
+            AudioMgr.Instance?.PlaySFX("button_tap");
+            BuildPage(page, highlightLevel);
+        }
+
+        // ── Page grid build (50 cells max for the page) ───────────────────────────
+
+        private void BuildPage(int page, int highlightLevel = -1)
+        {
+            if (_contentRt == null) return;
+            foreach (Transform child in _contentRt) Destroy(child.gameObject);
             _entranceCells.Clear();
-            RectTransform nextLevelCell  = null;
-            RectTransform adjacentLockRt = null;
 
-            for (int i = 0; i < totalLevels; i++)
+            int firstLevel = page * LevelsPerPage + 1;
+            int lastLevel  = Mathf.Min(_totalLevels, firstLevel + LevelsPerPage - 1);
+
+            RectTransform nextLevelCell = null, adjacentLockRt = null, highlightRt = null;
+
+            for (int levelId = firstLevel; levelId <= lastLevel; levelId++)
             {
-                int levelId = i + 1;
-
-                // Visual state is driven by COMPLETION, not unlock:
-                //  completed     → full-color tile, no lock
-                //  not completed → darkened tile (×0.4) + lock overlay
-                // Interactivity is driven by UNLOCK: an unlocked-but-incomplete
-                // level still shows the lock yet remains tappable.
-                bool isCompleted = ss != null && ss.GetCompletionRecord(levelId) != null;
+                bool isCompleted = _ss != null && _ss.GetCompletionRecord(levelId) != null;
                 bool isCurrent   = levelId == _currentLevelId;
                 bool isUnlocked  = levelId <= _currentLevelId;
 
-                // Cell — level_background.png. Always visible (sprite or fallback color).
                 var cell = new GameObject($"Level_{levelId}");
-                cell.transform.SetParent(contentGO.transform, false);
+                cell.transform.SetParent(_contentRt, false);
                 var cellImg = cell.AddComponent<Image>();
                 Sprite tileSprite = GameAssets.LevelBackground;
                 if (tileSprite != null)
                 {
-                    cellImg.sprite         = tileSprite;
-                    cellImg.type           = Image.Type.Simple;
-                    cellImg.preserveAspect = false;
-                    cellImg.color = isCompleted ? Color.white
-                                                : new Color(0.4f, 0.4f, 0.4f, 1f); // darken incomplete
+                    cellImg.sprite = tileSprite; cellImg.type = Image.Type.Simple; cellImg.preserveAspect = false;
+                    cellImg.color = isCompleted ? Color.white : new Color(0.4f, 0.4f, 0.4f, 1f);
                 }
                 else
                 {
-                    // Fallback — solid color if sprite not yet imported
-                    cellImg.color = isCompleted
-                        ? BoltSortTheme.HexColor("1A4A22")
-                        : new Color(0.20f, 0.20f, 0.24f, 1f);
+                    cellImg.color = isCompleted ? BoltSortTheme.HexColor("1A4A22")
+                                                : new Color(0.20f, 0.20f, 0.24f, 1f);
                 }
-
-                // Position & size are driven by the GridLayoutGroup; we keep the
-                // RectTransform reference only for scale/shake animations.
                 var cr = cell.GetComponent<RectTransform>();
 
-                // Level number label — ALWAYS shown, GummyPop, centered, ~80% of the cell.
-                var numLabel = MakeLabel(cell, "Num", levelId.ToString(),
-                                         font, 36, TextAnchor.MiddleCenter,
-                                         bold: true, shadow: true);
-                numLabel.color = isCompleted ? BoltSortTheme.WinGold
-                                             : new Color(1f, 1f, 1f, 0.95f);
+                // Level number — explicit per-magnitude font sizing + abbreviation (TDD §5).
+                var (label, ratio) = FormatLevelNumber(levelId);
+                var numLabel = MakeLabel(cell, "Num", label, _font,
+                                         Mathf.RoundToInt(_cellSize * ratio),
+                                         TextAnchor.MiddleCenter, bold: true, shadow: true);
+                numLabel.color = isCompleted ? BoltSortTheme.WinGold : new Color(1f, 1f, 1f, 0.95f);
                 numLabel.raycastTarget = false;
-                numLabel.resizeTextForBestFit = true;
-                numLabel.resizeTextMinSize    = 24;
-                numLabel.resizeTextMaxSize    = 72;
                 var nlr = numLabel.GetComponent<RectTransform>();
-                nlr.anchorMin = new Vector2(0.1f, 0.1f); nlr.anchorMax = new Vector2(0.9f, 0.9f);
+                nlr.anchorMin = new Vector2(0.08f, 0.18f); nlr.anchorMax = new Vector2(0.92f, 0.92f);
                 nlr.offsetMin = nlr.offsetMax = Vector2.zero;
 
-                // Lock overlay for not-yet-completed levels — centered, ~60% of the
-                // cell, drawn after the number so it can sit on top of it.
+                // Lock overlay for incomplete levels
                 RectTransform lockRt = null;
                 if (!isCompleted)
                 {
-                    var lockGO  = new GameObject("LockIcon");
+                    var lockGO = new GameObject("LockIcon");
                     lockGO.transform.SetParent(cell.transform, false);
                     var lockImg = lockGO.AddComponent<Image>();
                     Sprite lockSpr = GameAssets.LevelLock;
                     if (lockSpr != null)
                     {
-                        lockImg.sprite         = lockSpr;
-                        lockImg.color          = isUnlocked ? new Color(1f, 1f, 1f, 0.85f) : Color.white;
+                        lockImg.sprite = lockSpr;
+                        lockImg.color = isUnlocked ? new Color(1f, 1f, 1f, 0.85f) : Color.white;
                         lockImg.preserveAspect = true;
                     }
-                    else
-                        lockImg.color = new Color(0f, 0f, 0f, 0f);
+                    else lockImg.color = new Color(0f, 0f, 0f, 0f);
                     lockRt = lockGO.GetComponent<RectTransform>();
                     lockRt.anchorMin = lockRt.anchorMax = new Vector2(0.5f, 0.5f);
-                    lockRt.pivot     = new Vector2(0.5f, 0.5f);
+                    lockRt.pivot = new Vector2(0.5f, 0.5f);
                     lockRt.anchoredPosition = Vector2.zero;
-                    float lockSize = cellSize * 0.6f * 1.25f;
+                    float lockSize = _cellSize * 0.6f * 1.25f;
                     lockRt.sizeDelta = new Vector2(lockSize, lockSize);
                     lockImg.raycastTarget = false;
                 }
 
-                // Track the cell to pulse (next level to play) and the next locked
-                // cell whose lock should shake — only one of each, never all cells.
-                if (isCurrent && !isCompleted)
-                    nextLevelCell = cr;
-                if (isCurrent && !isCompleted && lockRt != null)
-                    adjacentLockRt = lockRt;
+                if (isCurrent && !isCompleted) { nextLevelCell = cr; if (lockRt != null) adjacentLockRt = lockRt; }
+                if (levelId == highlightLevel) highlightRt = cr;
 
-                // Stars row — real Image sprites for completed levels
                 if (isCompleted)
                 {
-                    int earnedStars = ss!.GetCompletionRecord(levelId)!.Value.best_stars;
-                    AddStarRow(cell, earnedStars, cellSize);
+                    int earnedStars = _ss!.GetCompletionRecord(levelId)!.Value.best_stars;
+                    AddStarRow(cell, earnedStars, _cellSize);
                 }
 
-                // Interactivity: unlocked → load level; locked → invalid SFX + shake.
+                AddMechanicIcons(cell, levelId, _cellSize);
+
                 int captured = levelId;
                 var btn = cell.AddComponent<Button>();
-                var cs  = btn.colors;
-                cs.normalColor      = Color.white;
+                var cs = btn.colors;
+                cs.normalColor = Color.white;
                 cs.highlightedColor = isUnlocked ? new Color(0.92f, 0.92f, 0.92f, 1f) : Color.white;
-                cs.pressedColor     = isUnlocked ? new Color(0.75f, 0.75f, 0.75f, 1f) : Color.white;
+                cs.pressedColor = isUnlocked ? new Color(0.75f, 0.75f, 0.75f, 1f) : Color.white;
                 btn.colors = cs;
                 if (isUnlocked)
                 {
                     btn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
-                    btn.onClick.AddListener(() =>
-                    {
-                        StartCoroutine(TapBounce(cr));
-                        LoadLevel(captured);
-                    });
+                    btn.onClick.AddListener(() => { StartCoroutine(TapBounce(cr)); LoadLevel(captured); });
                 }
                 else
                 {
@@ -306,26 +363,86 @@ namespace BoltSort.Gameplay
                 _entranceCells.Add(cr);
             }
 
-            // Continuous pulse on the next level to play (after the entrance settles)
-            if (nextLevelCell != null)
-            {
-                int idx = _entranceCells.IndexOf(nextLevelCell);
-                StartCoroutine(PulseNextLevel(nextLevelCell, idx));
-            }
+            // Page label + nav button interactability
+            if (_pageLabel != null) _pageLabel.text = $"Page {_currentPage + 1} of {_pageCount}";
+            if (_prevBtn != null) _prevBtn.interactable = _currentPage > 0;
+            if (_nextBtn != null) _nextBtn.interactable = _currentPage < _pageCount - 1;
 
-            // Periodic shake on the next locked level's lock icon
+            if (nextLevelCell != null)
+                StartCoroutine(PulseNextLevel(nextLevelCell, _entranceCells.IndexOf(nextLevelCell)));
             if (adjacentLockRt != null)
                 StartCoroutine(ShakeLockLoop(adjacentLockRt));
+            if (highlightRt != null)
+                StartCoroutine(TapBounce(highlightRt));
 
-            // Settings panel
-            var spHost = new GameObject("SettingsPanelHost");
-            spHost.transform.SetParent(canvasGO.transform, false);
-            _settingsPanel = spHost.AddComponent<SettingsPanel>();
-            _settingsPanel.Initialize(font, canvasGO.transform);
-
-            // Stagger entrance animation
             StartCoroutine(EntranceAnimation());
         }
+
+        /// <summary>
+        /// Adds small mechanic indicator icons (top-left) so the player knows what a level
+        /// contains before entering: mystery ball, multicolor ball, frozen tube. Reads the
+        /// tooling flags off the LevelRecord; classic levels show none.
+        /// </summary>
+        private void AddMechanicIcons(GameObject cell, int levelId, float cellSize)
+        {
+            var lds = LevelData.LevelDataSystem.Instance;
+            if (lds == null || !lds.IsReady) return;
+
+            bool mystery = false, multicolor = false, frozen = false;
+            try
+            {
+                var rec = lds.GetLevel(levelId);
+                mystery    = rec.MysteryBalls;
+                multicolor = rec.HasMulticolor;
+                frozen     = rec.FrozenTubes != null && rec.FrozenTubes.Length > 0;
+            }
+            catch (LevelData.LevelDataException) { return; }
+
+            float size = cellSize * 0.22f;
+            int idx = 0;
+            void AddIcon(Sprite spr, Color fallback)
+            {
+                var go = new GameObject("Mech");
+                go.transform.SetParent(cell.transform, false);
+                var img = go.AddComponent<Image>();
+                if (spr != null) { img.sprite = spr; img.preserveAspect = true; img.color = Color.white; }
+                else img.color = fallback;
+                img.raycastTarget = false;
+                var rt = go.GetComponent<RectTransform>();
+                rt.anchorMin = rt.anchorMax = new Vector2(0f, 1f);
+                rt.pivot = new Vector2(0f, 1f);
+                rt.sizeDelta = new Vector2(size, size);
+                rt.anchoredPosition = new Vector2(4f + idx * (size + 2f), -4f);
+                idx++;
+            }
+
+            if (mystery)    AddIcon(GameAssets.BallMystery,    new Color(0.4f, 0.3f, 0.6f, 0.9f));
+            if (multicolor) AddIcon(GameAssets.BallMulticolor,  new Color(0.9f, 0.6f, 0.2f, 0.9f));
+            if (frozen)     AddIcon(null,                       new Color(0.5f, 0.72f, 1f, 0.95f));
+        }
+
+        // ── Level number formatting (TDD §5) ──────────────────────────────────────
+
+        /// <summary>
+        /// Returns the display string and a font-size ratio (fraction of the cell size) for a
+        /// level number: 1–9 largest, 10–99, 100–999, then K-abbreviation (1.2K for 1000–9999,
+        /// integer K at 10000+).
+        /// </summary>
+        private static (string label, float ratio) FormatLevelNumber(int n)
+        {
+            if (n < 10)   return (n.ToString(), 0.55f);
+            if (n < 100)  return (n.ToString(), 0.42f);
+            if (n < 1000) return (n.ToString(), 0.34f);
+            if (n < 10000)
+            {
+                string s = (n / 1000f).ToString("0.0");
+                if (s.EndsWith(".0")) s = s.Substring(0, s.Length - 2);
+                return (s + "K", 0.30f);
+            }
+            return (Mathf.RoundToInt(n / 1000f) + "K", 0.26f);
+        }
+
+        // ── Animations (unchanged from the single-scroll build) ───────────────────
 
         private IEnumerator TapBounce(RectTransform rt)
         {
@@ -338,14 +455,8 @@ namespace BoltSort.Gameplay
 
         private IEnumerator EntranceAnimation()
         {
-            // Sort cells from center outward (simple: just stagger in order)
-            foreach (var rt in _entranceCells)
-            {
-                if (rt == null) continue;
-                rt.localScale = Vector3.zero;
-            }
-            yield return null; // wait one frame for layout
-
+            foreach (var rt in _entranceCells) { if (rt != null) rt.localScale = Vector3.zero; }
+            yield return null;
             foreach (var rt in _entranceCells)
             {
                 if (rt == null) continue;
@@ -371,10 +482,9 @@ namespace BoltSort.Gameplay
         private static void AddStarRow(GameObject cell, int earned, float cellSize)
         {
             const int total = 3;
-            float starSize  = cellSize * 0.22f;
-            float totalW    = total * starSize + (total - 1) * 2f;
-            float startX    = -totalW * 0.5f + starSize * 0.5f;
-
+            float starSize = cellSize * 0.22f;
+            float totalW   = total * starSize + (total - 1) * 2f;
+            float startX   = -totalW * 0.5f + starSize * 0.5f;
             Sprite starSprite = GameAssets.StarLarge;
 
             for (int i = 0; i < total; i++)
@@ -384,28 +494,18 @@ namespace BoltSort.Gameplay
                 var starImg = starGO.AddComponent<Image>();
                 if (starSprite != null)
                 {
-                    starImg.sprite         = starSprite;
-                    starImg.preserveAspect = true;
-                    starImg.color = i < earned
-                        ? Color.white                          // filled star
-                        : new Color(1f, 1f, 1f, 0.22f);       // dim unfilled star
+                    starImg.sprite = starSprite; starImg.preserveAspect = true;
+                    starImg.color = i < earned ? Color.white : new Color(1f, 1f, 1f, 0.22f);
                 }
-                else
-                {
-                    // Fallback text star
-                    starImg.color = new Color(0f, 0f, 0f, 0f);
-                }
+                else starImg.color = new Color(0f, 0f, 0f, 0f);
                 var rt = starGO.GetComponent<RectTransform>();
-                rt.anchorMin        = new Vector2(0.5f, 0f);
-                rt.anchorMax        = new Vector2(0.5f, 0f);
-                rt.pivot            = new Vector2(0.5f, 0f);
+                rt.anchorMin = new Vector2(0.5f, 0f); rt.anchorMax = new Vector2(0.5f, 0f);
+                rt.pivot = new Vector2(0.5f, 0f);
                 rt.anchoredPosition = new Vector2(startX + i * (starSize + 2f), 4f);
-                rt.sizeDelta        = new Vector2(starSize, starSize);
+                rt.sizeDelta = new Vector2(starSize, starSize);
             }
         }
 
-        // LS-05: continuous gentle scale pulse for the next level to play.
-        // 1.0 -> 1.08 -> 1.0 over 1.2s, eased via cosine (smooth in/out), looping.
         private IEnumerator PulseNextLevel(RectTransform rt, int entranceIndex)
         {
             yield return new WaitForSeconds(0.03f * entranceIndex + 0.25f);
@@ -419,14 +519,11 @@ namespace BoltSort.Gameplay
             }
         }
 
-        // LS-06: periodic wiggle on a locked level's lock icon, with a randomized
-        // delay between shakes so adjacent locks don't shake in sync.
         private IEnumerator ShakeLockLoop(RectTransform lockRt)
         {
             float[] angles = { 12f, -12f, 8f, -8f, 0f };
             const float totalDur = 0.5f;
             float segDur = totalDur / angles.Length;
-
             while (lockRt != null)
             {
                 yield return new WaitForSeconds(UnityEngine.Random.Range(2f, 4f));
@@ -447,7 +544,6 @@ namespace BoltSort.Gameplay
             }
         }
 
-        // LS-02: horizontal shake for locked cell taps
         private IEnumerator ShakeLocked(RectTransform rt)
         {
             if (rt == null) yield break;
@@ -455,10 +551,7 @@ namespace BoltSort.Gameplay
             float px = 8f;
             (float dx, float dur)[] frames =
             {
-                ( px,      0.04f),
-                (-px,      0.04f),
-                ( px * 0.5f, 0.04f),
-                ( 0f,      0.03f),
+                ( px, 0.04f), (-px, 0.04f), ( px * 0.5f, 0.04f), ( 0f, 0.03f),
             };
             foreach (var (dx, dur) in frames)
             {
@@ -467,29 +560,27 @@ namespace BoltSort.Gameplay
                 {
                     if (rt == null) yield break;
                     elapsed += Time.deltaTime;
-                    rt.anchoredPosition = new Vector2(
-                        Mathf.Lerp(startX, targetX, elapsed / dur), orig.y);
+                    rt.anchoredPosition = new Vector2(Mathf.Lerp(startX, targetX, elapsed / dur), orig.y);
                     yield return null;
                 }
             }
             if (rt != null) rt.anchoredPosition = orig;
         }
 
-        // LS-03: derive level count from loaded data; never exceed MaxLevels
+        // ── Data / navigation helpers ─────────────────────────────────────────────
+
+        /// <summary>Total available levels — real catalogue count (no longer capped at 50).</summary>
         private static int GetAvailableLevelCount()
         {
-            var lds = LevelData.LevelDataSystem.Instance;
-            if (lds != null && lds.IsReady)
-                return lds.GetRange(1, MaxLevels).Length;
             try
             {
                 var asset = Resources.Load<TextAsset>("levels");
-                if (asset == null) return MaxLevels;
+                if (asset == null) return 1;
                 var root = JObject.Parse(asset.text);
                 var arr  = (root["levels"] ?? root["Levels"]) as JArray;
-                return arr != null ? Mathf.Clamp(arr.Count, 1, MaxLevels) : MaxLevels;
+                return arr != null ? Mathf.Max(1, arr.Count) : 1;
             }
-            catch { return MaxLevels; }
+            catch { return 1; }
         }
 
         private static void LoadLevel(int levelId)
@@ -521,7 +612,6 @@ namespace BoltSort.Gameplay
             {
                 var es = new GameObject("EventSystem");
                 es.AddComponent<EventSystem>();
-                // Defensive: module self-assigns default UI actions in OnEnable too.
                 es.AddComponent<InputSystemUIInputModule>().AssignDefaultActions();
             }
         }
@@ -532,7 +622,7 @@ namespace BoltSort.Gameplay
                 Camera.main.backgroundColor = BoltSortTheme.BackgroundDeep;
         }
 
-        // ── UI helpers ────────────────────────────────────────────────────────────
+        // ── UI element factories ──────────────────────────────────────────────────
 
         private static GameObject MakePanel(GameObject parent, string name, Color color)
         {
@@ -554,7 +644,7 @@ namespace BoltSort.Gameplay
             if (shadow)
             {
                 var sh = go.AddComponent<Shadow>();
-                sh.effectColor    = new Color(0f, 0f, 0f, 0.8f);
+                sh.effectColor = new Color(0f, 0f, 0f, 0.8f);
                 sh.effectDistance = new Vector2(2f, -2f);
             }
             return t;
@@ -563,7 +653,7 @@ namespace BoltSort.Gameplay
         private GameObject MakeAnimatedButton(GameObject parent, string name, string label,
                                               Font font, int size, Action onClick)
         {
-            var go  = new GameObject(name);
+            var go = new GameObject(name);
             go.transform.SetParent(parent.transform, false);
             go.AddComponent<Image>();
             var btn = go.AddComponent<Button>();
@@ -575,7 +665,6 @@ namespace BoltSort.Gameplay
                     rt, new Vector3(0.92f, 0.92f, 1f), 0.06f, TweenUtility.EaseInQuad));
                 onClick?.Invoke();
             });
-
             var lgo = new GameObject("Label");
             lgo.transform.SetParent(go.transform, false);
             var t = lgo.AddComponent<Text>();
@@ -588,14 +677,62 @@ namespace BoltSort.Gameplay
             return go;
         }
 
+        /// <summary>A simple framed text button used by the nav bar.</summary>
+        private Button MakeTextButton(GameObject parent, string name, string label, Action onClick)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent.transform, false);
+            var img = go.AddComponent<Image>();
+            img.color = new Color(0.16f, 0.16f, 0.28f, 0.95f);
+            var btn = go.AddComponent<Button>();
+            btn.onClick.AddListener(() =>
+            {
+                var rt = go.GetComponent<RectTransform>();
+                if (rt != null) StartCoroutine(TweenUtility.LerpRectScale(
+                    rt, new Vector3(0.92f, 0.92f, 1f), 0.06f, TweenUtility.EaseInQuad));
+                onClick?.Invoke();
+            });
+            var t = MakeLabel(go, "Label", label, _font, 34, TextAnchor.MiddleCenter, true, true);
+            Stretch(t.GetComponent<RectTransform>());
+            return btn;
+        }
+
+        /// <summary>An integer-only InputField with placeholder, for the "Go to level" box.</summary>
+        private InputField MakeIntInput(GameObject parent, string name, string placeholder)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent.transform, false);
+            var bg = go.AddComponent<Image>();
+            bg.color = new Color(1f, 1f, 1f, 0.92f);
+            var input = go.AddComponent<InputField>();
+            input.contentType = InputField.ContentType.IntegerNumber;
+
+            var phGO = new GameObject("Placeholder");
+            phGO.transform.SetParent(go.transform, false);
+            var ph = phGO.AddComponent<Text>();
+            ph.text = placeholder; ph.font = _font; ph.fontSize = 26;
+            ph.fontStyle = FontStyle.Italic; ph.alignment = TextAnchor.MiddleCenter;
+            ph.color = new Color(0.3f, 0.3f, 0.3f, 0.8f); ph.supportRichText = false;
+            Stretch(ph.GetComponent<RectTransform>());
+
+            var txtGO = new GameObject("Text");
+            txtGO.transform.SetParent(go.transform, false);
+            var txt = txtGO.AddComponent<Text>();
+            txt.font = _font; txt.fontSize = 28; txt.alignment = TextAnchor.MiddleCenter;
+            txt.color = new Color(0.05f, 0.05f, 0.1f, 1f); txt.supportRichText = false;
+            Stretch(txt.GetComponent<RectTransform>());
+
+            input.textComponent = txt;
+            input.placeholder   = ph;
+            return input;
+        }
+
         private static void Stretch(RectTransform rt)
         {
             rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
             rt.offsetMin = rt.offsetMax = Vector2.zero;
         }
 
-        // LS-04: constrain a full-screen RectTransform to the device safe area
-        // (notch / Dynamic Island / rounded corners) on every side.
         private static void ApplySafeArea(RectTransform rt)
         {
             Rect safeArea = Screen.safeArea;
