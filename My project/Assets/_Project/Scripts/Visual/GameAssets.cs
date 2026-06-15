@@ -17,6 +17,7 @@ namespace BoltSort.Visual
 
         public static Sprite Trophy          => LoadRes("Sprites/Trofeo");
         public static Sprite Confetti        => LoadRes("Sprites/Confetti");
+        public static Sprite ConfettiSheet   => LoadRes("Sprites/Victory/confetti_sheet");
         public static Sprite LockIcon        => LoadRes("Sprites/Candado");
         public static Sprite BtnLevels       => LoadRes("Sprites/Levels");
         public static Sprite Superestrella   => LoadRes("Sprites/Superestrella");

@@ -127,7 +127,7 @@ namespace BoltSort.Gameplay
         {
             int selected = PlayerPrefs.GetInt(SelectedSkinKey, 0);
             const int cols = 2;
-            const float cellW = 220f, cellH = 80f, padX = 20f, gapX = 12f, gapY = 12f;
+            const float cellW = 220f, cellH = 80f, gapX = 12f, gapY = 12f;
             float startY = -130f;
 
             for (int i = 0; i < Skins.Count; i++)

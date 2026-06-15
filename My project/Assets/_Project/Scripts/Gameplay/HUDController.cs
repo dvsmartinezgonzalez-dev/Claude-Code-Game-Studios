@@ -41,9 +41,19 @@ namespace BoltSort.Gameplay
         private Text        _winCoinsText;     // WIN-04
         private int         _winStarCount = 3; // WIN-01: set by GameBootstrap before HUD handler fires
         private int         _winCoins     = 0; // WIN-04
-        private Image       _confettiImg;
+        private Image[]     _confettiLayers;
+        private RectTransform[] _confettiRects;
+        private Coroutine   _confettiLoop;
         private Image       _trophyImg;
+        private RectTransform _trophyRT;
+        private RectTransform _winTitleRT;
+        private RectTransform[] _winButtonRects;
+        private Coroutine   _winIdleAnim;
         private SettingsPanel _settingsPanel;
+
+        // Per-layer alpha/speed for the looping confetti rain (back→front).
+        private static readonly float[] ConfettiAlphas = { 0.85f, 0.55f, 0.40f };
+        private static readonly float[] ConfettiSpeeds = { 55f, 90f, 130f };
 
         // ── Move counter animation ────────────────────────────────────────────────
         private int       _lastMoveCount = -1;
@@ -81,7 +91,11 @@ namespace BoltSort.Gameplay
                 _lastMoveCount = 0;
                 RefreshDeadlock();
                 if (_winOverlay != null) _winOverlay.SetActive(false);
-                if (_confettiImg != null) { var c = _confettiImg.color; c.a = 0f; _confettiImg.color = c; }
+                if (_confettiLayers != null)
+                    foreach (var ci in _confettiLayers)
+                        if (ci != null) { var c = ci.color; c.a = 0f; ci.color = c; }
+                if (_confettiLoop != null) { StopCoroutine(_confettiLoop); _confettiLoop = null; }
+                if (_winIdleAnim != null) { StopCoroutine(_winIdleAnim); _winIdleAnim = null; }
             };
             gsm.OnLevelLoaded += _onLevelLoadedHandler;
 
@@ -129,21 +143,6 @@ namespace BoltSort.Gameplay
                 StartCoroutine(FadeTextColor(_movesText, BoltSortTheme.HUDAccent, Color.white, 0.20f));
         }
 
-        private static IEnumerator FadeImageIn(Image img, float dur)
-        {
-            float elapsed = 0f;
-            while (elapsed < dur)
-            {
-                if (img == null) yield break;
-                elapsed += Time.deltaTime;
-                var c = img.color;
-                c.a = Mathf.Clamp01(elapsed / dur);
-                img.color = c;
-                yield return null;
-            }
-            if (img != null) { var c = img.color; c.a = 1f; img.color = c; }
-        }
-
         private IEnumerator FadeTextColor(Text t, Color from, Color to, float dur)
         {
             float elapsed = 0f;
@@ -155,6 +154,86 @@ namespace BoltSort.Gameplay
                 yield return null;
             }
             if (t != null) t.color = to;
+        }
+
+        private static void AddOutline(Text t, Color color, float distance)
+        {
+            var ol = t.gameObject.AddComponent<Outline>();
+            ol.effectColor    = color;
+            ol.effectDistance = new Vector2(distance, -distance);
+        }
+
+        /// <summary>Continuously scrolls each confetti layer downward, wrapping
+        /// seamlessly once it has fallen its own height. Layer 2 also drifts
+        /// with a slow rotational sway for visual variety.</summary>
+        private IEnumerator ConfettiLoop()
+        {
+            while (_winOverlay != null && _winOverlay.activeSelf)
+            {
+                for (int i = 0; i < _confettiRects.Length; i++)
+                {
+                    var rt = _confettiRects[i];
+                    if (rt == null) continue;
+                    var pos = rt.anchoredPosition;
+                    pos.y -= ConfettiSpeeds[i] * Time.deltaTime;
+                    if (pos.y <= -rt.sizeDelta.y) pos.y += rt.sizeDelta.y;
+                    rt.anchoredPosition = pos;
+
+                    if (i == 2)
+                        rt.localRotation = Quaternion.Euler(0f, 0f, Mathf.Sin(Time.time * 0.6f) * 4f);
+                }
+                yield return null;
+            }
+        }
+
+        private IEnumerator FadeConfettiLayer(Image img, float targetAlpha, float delay, float dur)
+        {
+            if (delay > 0f) yield return new WaitForSeconds(delay);
+            float elapsed = 0f;
+            while (elapsed < dur)
+            {
+                if (img == null) yield break;
+                elapsed += Time.deltaTime;
+                var c = img.color;
+                c.a = Mathf.Lerp(0f, targetAlpha, elapsed / dur);
+                img.color = c;
+                yield return null;
+            }
+            if (img != null) { var c = img.color; c.a = targetAlpha; img.color = c; }
+        }
+
+        /// <summary>Slow continuous scale breathing for the win title while the overlay is shown.</summary>
+        private IEnumerator IdlePulse(RectTransform rt, float minScale, float maxScale, float period)
+        {
+            while (_winOverlay != null && _winOverlay.activeSelf && rt != null)
+            {
+                float t = (Mathf.Sin(Time.time * (2f * Mathf.PI / period)) + 1f) * 0.5f;
+                float s = Mathf.Lerp(minScale, maxScale, t);
+                rt.localScale = new Vector3(s, s, 1f);
+                yield return null;
+            }
+        }
+
+        /// <summary>Subtle continuous brightness shimmer for an earned star.</summary>
+        private IEnumerator StarTwinkle(Image star)
+        {
+            yield return new WaitForSeconds(UnityEngine.Random.Range(0f, 0.5f));
+            while (_winOverlay != null && _winOverlay.activeSelf && star != null)
+            {
+                float t = (Mathf.Sin(Time.time * 2.2f) + 1f) * 0.5f;
+                var c = star.color;
+                c.a = Mathf.Lerp(0.75f, 1f, t);
+                star.color = c;
+                yield return null;
+            }
+        }
+
+        private IEnumerator ButtonEntrance(RectTransform rt, float delay)
+        {
+            if (rt == null) yield break;
+            if (delay > 0f) yield return new WaitForSeconds(delay);
+            yield return StartCoroutine(TweenUtility.LerpRectScale(
+                rt, Vector3.one, 0.22f, TweenUtility.EaseOutBack));
         }
 
         /// <summary>Brief white flash at win moment. D.2-C.</summary>
@@ -192,25 +271,46 @@ namespace BoltSort.Gameplay
         {
             _winOverlay.SetActive(true);
 
+            // Reset entrance state for trophy/title/buttons — the card itself is
+            // still off-screen (slides in below) so this causes no visible pop.
+            if (_trophyRT != null) _trophyRT.localScale = new Vector3(0.4f, 0.4f, 1f);
+            if (_winTitleRT != null) _winTitleRT.localScale = Vector3.zero;
+            if (_winButtonRects != null)
+                foreach (var brt in _winButtonRects)
+                    if (brt != null) brt.localScale = Vector3.zero;
+
             // D.2-C: brief white flash before card arrives
             StartCoroutine(WinFlash());
-            yield return new WaitForSeconds(0.06f);
 
-            // Confetti burst — fade in + scale pop
-            if (_confettiImg != null)
+            // Continuous looping confetti rain — 3 parallax layers fade in with a
+            // slight stagger so the rain builds up rather than popping in at once.
+            if (_confettiLayers != null)
             {
-                _confettiImg.color = new Color(1f, 1f, 1f, 0f);
-                var crt = _confettiImg.GetComponent<RectTransform>();
-                if (crt != null) crt.localScale = new Vector3(0.6f, 0.6f, 1f);
-                StartCoroutine(FadeImageIn(_confettiImg, 0.35f));
-                if (crt != null) StartCoroutine(TweenUtility.LerpRectScale(
-                    crt, Vector3.one, 0.35f, TweenUtility.EaseOutBack));
+                if (_confettiLoop != null) StopCoroutine(_confettiLoop);
+                _confettiLoop = StartCoroutine(ConfettiLoop());
+                for (int i = 0; i < _confettiLayers.Length; i++)
+                {
+                    var img = _confettiLayers[i];
+                    if (img == null) continue;
+                    var c = img.color; c.a = 0f; img.color = c;
+                    StartCoroutine(FadeConfettiLayer(img, ConfettiAlphas[i], 0.08f * i, 0.4f));
+                }
             }
+
+            yield return new WaitForSeconds(0.06f);
 
             // Dim all stars first
             if (_winStarImages != null)
                 foreach (var si in _winStarImages)
                     if (si != null) si.color = new Color(1f, 1f, 1f, 0.18f);
+
+            // Trophy punch-scale entrance
+            if (_trophyRT != null)
+                StartCoroutine(TweenUtility.LerpRectScale(_trophyRT, Vector3.one, 0.40f, TweenUtility.EaseOutBack));
+
+            // Title pop-in
+            if (_winTitleRT != null)
+                StartCoroutine(TweenUtility.LerpRectScale(_winTitleRT, Vector3.one, 0.30f, TweenUtility.EaseOutBack));
 
             // Slide card in from bottom
             if (_winCardRT != null)
@@ -230,6 +330,15 @@ namespace BoltSort.Gameplay
                 _winCardRT.anchoredPosition = shownPos;
             }
 
+            // Title idle pulse begins once the card has settled
+            if (_winTitleRT != null)
+                _winIdleAnim = StartCoroutine(IdlePulse(_winTitleRT, 1f, 1.05f, 1.6f));
+
+            // Button entrance: staggered scale-in
+            if (_winButtonRects != null)
+                for (int i = 0; i < _winButtonRects.Length; i++)
+                    StartCoroutine(ButtonEntrance(_winButtonRects[i], 0.05f * i));
+
             // Count up moves text
             if (_winMovesText != null)
             {
@@ -244,24 +353,45 @@ namespace BoltSort.Gameplay
                 _winMovesText.text = $"Moves: {moves}";
             }
 
-            // Show coins earned (WIN-04)
-            if (_winCoinsText != null)
-                _winCoinsText.text = _winCoins > 0 ? $"+{_winCoins} coins" : "";
+            // Coin count-up + bounce (WIN-04)
+            if (_winCoinsText != null && _winCoins > 0)
+            {
+                float dur = 0.35f, elapsed = 0f;
+                while (elapsed < dur)
+                {
+                    elapsed += Time.deltaTime;
+                    int displayed = Mathf.RoundToInt(Mathf.Lerp(0f, _winCoins, elapsed / dur));
+                    _winCoinsText.text = $"+{displayed} coins";
+                    yield return null;
+                }
+                _winCoinsText.text = $"+{_winCoins} coins";
 
-            // Light up only earned stars (WIN-01); leave unearned stars at dim alpha
+                var coinRT = _winCoinsText.GetComponent<RectTransform>();
+                yield return StartCoroutine(TweenUtility.LerpRectScale(
+                    coinRT, new Vector3(1.18f, 1.18f, 1f), 0.10f, TweenUtility.EaseOutBack));
+                yield return StartCoroutine(TweenUtility.LerpRectScale(
+                    coinRT, Vector3.one, 0.12f, TweenUtility.EaseInOutQuad));
+            }
+            else if (_winCoinsText != null)
+            {
+                _winCoinsText.text = "";
+            }
+
+            // Light up only earned stars (WIN-01) and twinkle them; leave unearned stars dim
             if (_winStarImages != null)
             {
                 for (int i = 0; i < _winStarImages.Length; i++)
                 {
                     var si = _winStarImages[i];
                     if (si == null) continue;
-                    yield return new WaitForSeconds(0.22f);
+                    yield return new WaitForSeconds(0.18f);
                     if (i < _winStarCount)
                     {
                         si.color = Color.white;
                         var rt = si.GetComponent<RectTransform>();
                         if (rt != null) StartCoroutine(TweenUtility.LerpRectScale(
                             rt, new Vector3(1.3f, 1.3f, 1f), 0.08f, TweenUtility.EaseOutBack));
+                        StartCoroutine(StarTwinkle(si));
                     }
                 }
             }
@@ -465,50 +595,67 @@ namespace BoltSort.Gameplay
             _settingsPanel.Initialize(font, canvasGO.transform);
 
             // ── Win overlay ──────────────────────────────────────────────────────
+            // Layering (back→front): dim background (WinOverlay's own Image, full
+            // screen) → looping confetti rain → card content (trophy/stars/text,
+            // background fully transparent so confetti shows through) → buttons.
             _winOverlay = MakePanel(canvasGO, "WinOverlay", new Color(0f, 0f, 0f, 0.78f));
             var winRect = _winOverlay.GetComponent<RectTransform>();
             winRect.anchorMin = Vector2.zero; winRect.anchorMax = Vector2.one;
             winRect.offsetMin = winRect.offsetMax = Vector2.zero;
 
-            // Confetti fullscreen overlay (renders behind win card, above dim)
-            var confettiGO = new GameObject("Confetti");
-            confettiGO.transform.SetParent(_winOverlay.transform, false);
-            _confettiImg = confettiGO.AddComponent<Image>();
-            GameAssets.Apply(_confettiImg, GameAssets.Confetti, preserveAspect: true);
-            if (GameAssets.Confetti == null) _confettiImg.color = new Color(0f, 0f, 0f, 0f);
-            var confettiRt = confettiGO.GetComponent<RectTransform>();
-            confettiRt.anchorMin = Vector2.zero; confettiRt.anchorMax = Vector2.one;
-            confettiRt.offsetMin = confettiRt.offsetMax = Vector2.zero;
-            _confettiImg.raycastTarget = false;
+            // Confetti rain — 3 parallax layers of the same scattered confetti sheet,
+            // each scaled/flipped/offset differently and scrolling at its own speed
+            // so the seamless per-layer loop doesn't read as one repeating image.
+            _confettiLayers = new Image[3];
+            _confettiRects  = new RectTransform[3];
+            (float scale, float xFlip, Vector2 startOffset)[] confettiCfg =
+            {
+                (1.00f,  1f, new Vector2(  0f,    0f)),
+                (1.20f, -1f, new Vector2( 20f, -420f)),
+                (0.85f,  1f, new Vector2(-30f, -840f)),
+            };
+            for (int i = 0; i < confettiCfg.Length; i++)
+            {
+                var cGO = new GameObject($"ConfettiLayer_{i}");
+                cGO.transform.SetParent(_winOverlay.transform, false);
+                var cImg = cGO.AddComponent<Image>();
+                GameAssets.Apply(cImg, GameAssets.ConfettiSheet, preserveAspect: false);
+                if (GameAssets.ConfettiSheet == null) cImg.color = new Color(0f, 0f, 0f, 0f);
+                cImg.raycastTarget = false;
+                var cRT = cGO.GetComponent<RectTransform>();
+                cRT.anchorMin = cRT.anchorMax = new Vector2(0.5f, 0.5f);
+                cRT.pivot     = new Vector2(0.5f, 0.5f);
+                var cfg = confettiCfg[i];
+                cRT.sizeDelta        = new Vector2(720f * cfg.scale, 1280f * cfg.scale);
+                cRT.anchoredPosition = cfg.startOffset;
+                cRT.localScale       = new Vector3(cfg.xFlip, 1f, 1f);
+                _confettiLayers[i] = cImg;
+                _confettiRects[i]  = cRT;
+            }
 
-            // Win card — use victory_screen sprite as background if available
-            var winCard  = MakePanel(_winOverlay, "WinCard", new Color(0.071f, 0.071f, 0.118f, 0.97f));
+            // Win card — transparent layout container only; no background image,
+            // so the confetti rain stays visible behind the trophy and text.
+            var winCard  = MakePanel(_winOverlay, "WinCard", new Color(0f, 0f, 0f, 0f));
+            winCard.GetComponent<Image>().raycastTarget = false;
             _winCardRT   = winCard.GetComponent<RectTransform>();
             _winCardRT.anchorMin        = new Vector2(0.5f, 0.5f);
             _winCardRT.anchorMax        = new Vector2(0.5f, 0.5f);
             _winCardRT.pivot            = new Vector2(0.5f, 0.5f);
             _winCardRT.anchoredPosition = Vector2.zero;
-            _winCardRT.sizeDelta        = new Vector2(520f, 680f);
+            _winCardRT.sizeDelta        = new Vector2(620f, 880f);
 
-            // Win card background — solid panel color only (no sprite); the
-            // dark fallback color from MakePanel stays so it never covers the
-            // trophy/stars/buttons with a giant background image.
+            // Title — top of the card
+            var winTitle = MakeLabel(winCard, "WinTitle", "LEVEL COMPLETE!",
+                                     font, 52, TextAnchor.MiddleCenter, bold: true, shadow: true);
+            winTitle.color = BoltSortTheme.WinGold;
+            AddOutline(winTitle, new Color(0f, 0f, 0f, 0.9f), 3f);
+            _winTitleRT = winTitle.GetComponent<RectTransform>();
+            _winTitleRT.anchorMin = _winTitleRT.anchorMax = new Vector2(0.5f, 1f);
+            _winTitleRT.pivot     = new Vector2(0.5f, 1f);
+            _winTitleRT.anchoredPosition = new Vector2(0f, -20f);
+            _winTitleRT.sizeDelta        = new Vector2(560f, 80f);
 
-            // Trophy — large, centered on the card (and thus the screen), and
-            // first sibling of winCard so it renders BEHIND the stars/text/buttons.
-            var trophyGO = new GameObject("Trophy");
-            trophyGO.transform.SetParent(winCard.transform, false);
-            _trophyImg = trophyGO.AddComponent<Image>();
-            GameAssets.Apply(_trophyImg, GameAssets.Trophy, preserveAspect: true);
-            if (GameAssets.Trophy == null) _trophyImg.color = new Color(0f, 0f, 0f, 0f);
-            var trt = trophyGO.GetComponent<RectTransform>();
-            trt.anchorMin = trt.anchorMax = new Vector2(0.5f, 0.5f);
-            trt.pivot     = new Vector2(0.5f, 0.5f);
-            trt.anchoredPosition = new Vector2(0f, 50f);
-            trt.sizeDelta        = new Vector2(280f, 280f);
-            _trophyImg.raycastTarget = false;
-
-            // 3 star icons in the top strip of the card, above the trophy (no overlap)
+            // 3 star icons below the title, above the trophy (no overlap)
             _winStarImages = new Image[3];
             for (int i = 0; i < 3; i++)
             {
@@ -518,37 +665,64 @@ namespace BoltSort.Gameplay
                 Sprite spr  = GameAssets.StarLarge;
                 if (spr != null) { starImg.sprite = spr; starImg.color = new Color(1f, 1f, 1f, 0.25f); starImg.preserveAspect = true; }
                 else              { starImg.color = new Color(0f, 0f, 0f, 0f); }
+                starImg.raycastTarget = false;
                 var stRT = starGO.GetComponent<RectTransform>();
                 stRT.anchorMin = stRT.anchorMax = new Vector2(0.5f, 1f);
                 stRT.pivot     = new Vector2(0.5f, 1f);
-                float starW = 100f;
                 float offsetX = (i - 1) * 120f;
-                stRT.anchoredPosition = new Vector2(offsetX, -10f);
-                stRT.sizeDelta        = new Vector2(starW, starW);
+                stRT.anchoredPosition = new Vector2(offsetX, -110f);
+                stRT.sizeDelta        = new Vector2(90f, 90f);
                 _winStarImages[i]     = starImg;
             }
 
-            var winTitle = MakeLabel(winCard, "WinTitle", "LEVEL COMPLETE!",
-                                     font, 52, TextAnchor.MiddleCenter, bold: true, shadow: true);
-            winTitle.color = BoltSortTheme.WinGold;
-            var wtRect = winTitle.GetComponent<RectTransform>();
-            wtRect.anchorMin = new Vector2(0f, 0.55f); wtRect.anchorMax = new Vector2(1f, 0.72f);
-            wtRect.offsetMin = new Vector2(12f, 0f);   wtRect.offsetMax = new Vector2(-12f, 0f);
+            // Trophy — centered in the card, below the stars (no overlap)
+            var trophyGO = new GameObject("Trophy");
+            trophyGO.transform.SetParent(winCard.transform, false);
+            _trophyImg = trophyGO.AddComponent<Image>();
+            GameAssets.Apply(_trophyImg, GameAssets.Trophy, preserveAspect: true);
+            if (GameAssets.Trophy == null) _trophyImg.color = new Color(0f, 0f, 0f, 0f);
+            _trophyRT = trophyGO.GetComponent<RectTransform>();
+            _trophyRT.anchorMin = _trophyRT.anchorMax = new Vector2(0.5f, 0.5f);
+            _trophyRT.pivot     = new Vector2(0.5f, 0.5f);
+            _trophyRT.anchoredPosition = new Vector2(0f, 100f);
+            _trophyRT.sizeDelta        = new Vector2(260f, 260f);
+            _trophyImg.raycastTarget = false;
 
+            // Moves text — below the trophy
             _winMovesText = MakeLabel(winCard, "WinMoves", "Moves: 0",
-                                      font, 38, TextAnchor.MiddleCenter, bold: false, shadow: false);
+                                      font, 38, TextAnchor.MiddleCenter, bold: false, shadow: true);
             _winMovesText.color = Color.white;
             var wmRect = _winMovesText.GetComponent<RectTransform>();
-            wmRect.anchorMin = new Vector2(0f, 0.44f); wmRect.anchorMax = new Vector2(1f, 0.56f);
-            wmRect.offsetMin = wmRect.offsetMax = Vector2.zero;
+            wmRect.anchorMin = wmRect.anchorMax = new Vector2(0.5f, 1f);
+            wmRect.pivot     = new Vector2(0.5f, 1f);
+            wmRect.anchoredPosition = new Vector2(0f, -490f);
+            wmRect.sizeDelta        = new Vector2(560f, 50f);
 
-            // Coins earned label (WIN-04)
+            // Coins earned label (WIN-04) — below moves, with outline for legibility
+            // over the confetti rain
             _winCoinsText = MakeLabel(winCard, "WinCoins", "",
-                                      font, 30, TextAnchor.MiddleCenter, bold: false, shadow: false);
+                                      font, 36, TextAnchor.MiddleCenter, bold: true, shadow: true);
             _winCoinsText.color = new Color(1f, 0.85f, 0.2f, 1f);
+            AddOutline(_winCoinsText, new Color(0.25f, 0.12f, 0f, 0.9f), 2.5f);
             var wcRect = _winCoinsText.GetComponent<RectTransform>();
-            wcRect.anchorMin = new Vector2(0f, 0.34f); wcRect.anchorMax = new Vector2(1f, 0.44f);
-            wcRect.offsetMin = wcRect.offsetMax = Vector2.zero;
+            wcRect.anchorMin = wcRect.anchorMax = new Vector2(0.5f, 1f);
+            wcRect.pivot     = new Vector2(0.5f, 1f);
+            wcRect.anchoredPosition = new Vector2(0f, -550f);
+            wcRect.sizeDelta        = new Vector2(320f, 70f);
+
+            // More-levels fallback — between the coins label and the button row
+            _moreLevelsText = MakeLabel(winCard, "MoreLevels", "More levels coming soon!",
+                                        font, 26, TextAnchor.MiddleCenter, bold: false, shadow: true);
+            _moreLevelsText.color = new Color(1f, 0.95f, 0.7f, 1f);
+            var mlRect = _moreLevelsText.GetComponent<RectTransform>();
+            mlRect.anchorMin = mlRect.anchorMax = new Vector2(0.5f, 1f);
+            mlRect.pivot     = new Vector2(0.5f, 1f);
+            mlRect.anchoredPosition = new Vector2(0f, -640f);
+            mlRect.sizeDelta        = new Vector2(560f, 70f);
+            _moreLevelsText.gameObject.SetActive(false);
+
+            // Buttons — bottom row of the card
+            _winButtonRects = new RectTransform[3];
 
             // Replay button (left) — retry.png sprite; "↩" fallback label (WIN-06)
             var replayBtn = MakeIconButton(winCard, "ReplayButton", "↩", font, 28,
@@ -558,8 +732,9 @@ namespace BoltSort.Gameplay
             var rpRect = replayBtn.GetComponent<RectTransform>();
             rpRect.anchorMin = rpRect.anchorMax = new Vector2(0.5f, 0f);
             rpRect.pivot     = new Vector2(0.5f, 0f);
-            rpRect.anchoredPosition = new Vector2(-130f, 30f);
+            rpRect.anchoredPosition = new Vector2(-130f, 20f);
             rpRect.sizeDelta        = new Vector2(110f, 110f);
+            _winButtonRects[0] = rpRect;
 
             // Next Level button (center) — next_button.png sprite
             var nextBtn = MakeIconButton(winCard, "NextLevelButton", "NEXT", font, 34,
@@ -569,8 +744,9 @@ namespace BoltSort.Gameplay
             var nbRect = nextBtn.GetComponent<RectTransform>();
             nbRect.anchorMin = nbRect.anchorMax = new Vector2(0.5f, 0f);
             nbRect.pivot     = new Vector2(0.5f, 0f);
-            nbRect.anchoredPosition = new Vector2(0f, 30f);
+            nbRect.anchoredPosition = new Vector2(0f, 20f);
             nbRect.sizeDelta        = new Vector2(110f, 110f);
+            _winButtonRects[1] = nbRect;
 
             // Home button (right) — home_button.png sprite (WIN-02)
             var homeBtn = MakeIconButton(winCard, "HomeButton", "HOME", font, 28,
@@ -580,17 +756,9 @@ namespace BoltSort.Gameplay
             var hbRect = homeBtn.GetComponent<RectTransform>();
             hbRect.anchorMin = hbRect.anchorMax = new Vector2(0.5f, 0f);
             hbRect.pivot     = new Vector2(0.5f, 0f);
-            hbRect.anchoredPosition = new Vector2(130f, 30f);
+            hbRect.anchoredPosition = new Vector2(130f, 20f);
             hbRect.sizeDelta        = new Vector2(110f, 110f);
-
-            _moreLevelsText = MakeLabel(winCard, "MoreLevels", "More levels coming soon!",
-                                        font, 26, TextAnchor.MiddleCenter, bold: false, shadow: false);
-            _moreLevelsText.color = new Color(0.8f, 0.8f, 0.5f, 1f);
-            var mlRect = _moreLevelsText.GetComponent<RectTransform>();
-            mlRect.anchorMin = new Vector2(0f, 0f); mlRect.anchorMax = new Vector2(1f, 0f);
-            mlRect.pivot     = new Vector2(0.5f, 0f);
-            mlRect.offsetMin = new Vector2(8f, 30f); mlRect.offsetMax = new Vector2(-8f, 76f);
-            _moreLevelsText.gameObject.SetActive(false);
+            _winButtonRects[2] = hbRect;
 
             _winOverlay.SetActive(false);
         }

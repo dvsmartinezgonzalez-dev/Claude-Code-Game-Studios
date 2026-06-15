@@ -24,7 +24,7 @@ namespace BoltSort.Gameplay
         private HUDController                              _hud;
 
         private int _currentLevelId = 1;
-        private const int MaxLevelId = 50;
+        private int _maxLevelId = 1;
         private const string NextLevelKey = "bs.next_level";
 
         private void Awake()
@@ -68,6 +68,7 @@ namespace BoltSort.Gameplay
             yield return new WaitUntil(() => _lds.IsReady);
             Destroy(loadingOverlay);                        // GP-04: hide after LDS ready
 
+            _maxLevelId     = Mathf.Max(1, _lds.GetMaxLevelId());
             _currentLevelId = ReadTargetLevel();
 
             // Background controller (gradient + vignette + ambient particles)
@@ -107,7 +108,7 @@ namespace BoltSort.Gameplay
 
         public void LoadNextLevel()
         {
-            if (_currentLevelId >= MaxLevelId)
+            if (_currentLevelId >= _maxLevelId)
             {
                 _hud?.ShowMoreLevelsSoon();
                 return;
@@ -175,7 +176,7 @@ namespace BoltSort.Gameplay
 
             int savedCurrent = ss.GetCurrentLevelId();
             int newCurrent   = Math.Max(levelId + 1, savedCurrent);
-            newCurrent       = Math.Min(newCurrent, MaxLevelId + 1);
+            newCurrent       = Math.Min(newCurrent, _maxLevelId + 1);
 
             await ss.WriteCompletionAtomic(levelId, stars, Application.version, newCurrent);
         }
@@ -224,11 +225,11 @@ namespace BoltSort.Gameplay
             {
                 int id = PlayerPrefs.GetInt(NextLevelKey, 1);
                 PlayerPrefs.DeleteKey(NextLevelKey);
-                return Mathf.Clamp(id, 1, MaxLevelId);
+                return Mathf.Clamp(id, 1, _maxLevelId);
             }
             var ss = SaveSystem.SaveSystem.Instance;
             return (ss != null && ss.IsReady)
-                ? Mathf.Clamp(ss.GetCurrentLevelId(), 1, MaxLevelId)
+                ? Mathf.Clamp(ss.GetCurrentLevelId(), 1, _maxLevelId)
                 : 1;
         }
 

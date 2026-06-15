@@ -300,6 +300,12 @@ namespace BoltSort.Gameplay
                                          TextAnchor.MiddleCenter, bold: true, shadow: true);
                 numLabel.color = isCompleted ? BoltSortTheme.WinGold : new Color(1f, 1f, 1f, 0.95f);
                 numLabel.raycastTarget = false;
+                // Overflow (not Truncate): at the largest ratio (1-9), GummyPop's line
+                // height can exceed the anchored box, and legacy Text's default
+                // VerticalWrapMode.Truncate drops the whole line rather than clipping it
+                // — the digit silently disappears. Overflow always renders, still centered.
+                numLabel.horizontalOverflow = HorizontalWrapMode.Overflow;
+                numLabel.verticalOverflow   = VerticalWrapMode.Overflow;
                 var nlr = numLabel.GetComponent<RectTransform>();
                 nlr.anchorMin = new Vector2(0.08f, 0.18f); nlr.anchorMax = new Vector2(0.92f, 0.92f);
                 nlr.offsetMin = nlr.offsetMax = Vector2.zero;

@@ -228,6 +228,18 @@ namespace BoltSort.LevelData
         /// </summary>
         public SystemReadiness GetReadiness() => _readiness;
 
+        /// <summary>
+        /// Returns the highest level_id present in the catalogue, or 0 if the cache is empty.
+        /// Used by GameBootstrap to size player progression to the actual catalogue contents
+        /// instead of a hardcoded constant.
+        /// </summary>
+        /// <exception cref="InvalidOperationException">When called before initialization completes.</exception>
+        public int GetMaxLevelId()
+        {
+            GuardReady();
+            return _levelCache.Count > 0 ? _levelCache.Keys.Max() : 0;
+        }
+
         /// <summary>Returns the level with the given ID.</summary>
         /// <exception cref="InvalidOperationException">When called before initialization completes.</exception>
         /// <exception cref="LevelDataException">When the level ID is not present in the catalogue.</exception>
