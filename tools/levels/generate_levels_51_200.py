@@ -50,8 +50,8 @@ BANDS: List[Tuple[int, int, int, int]] = [
     (6, 5, 1, 5),   # 51-60   single full buffer
     (6, 5, 2, 4),   # 61-70   restricted double buffer
     (6, 5, 2, 3),   # 71-80   heavily restricted double buffer
-    (7, 5, 2, 5),   # 81-90   7th color, comfortable double
-    (7, 5, 1, 5),   # 91-100  7 colors, single buffer (tier 3 capstone)
+    (7, 5, 1, 5),   # 81-90   7th color, single full buffer (7+1=8 cols, ADR-0013 cap)
+    (7, 5, 1, 5),   # 91-100  7 colors, single full buffer (tier 3 capstone)
     (7, 5, 2, 4),   # 101-110 7 colors, restricted double (tier 4 begins)
     (6, 6, 2, 6),   # 111-120 depth 6, comfortable double
     (6, 6, 1, 6),   # 121-130 depth 6, single buffer
