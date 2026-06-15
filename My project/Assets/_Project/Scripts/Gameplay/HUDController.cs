@@ -41,8 +41,11 @@ namespace BoltSort.Gameplay
         private Text        _winCoinsText;     // WIN-04
         private int         _winStarCount = 3; // WIN-01: set by GameBootstrap before HUD handler fires
         private int         _winCoins     = 0; // WIN-04
-        private Image[]     _confettiLayers;
-        private RectTransform[] _confettiRects;
+        private RectTransform[] _confettiPieces;
+        private Image[]     _confettiImages;
+        private float[]     _confettiSpeeds;
+        private float[]     _confettiRotSpeeds;
+        private float[]     _confettiBaseAlphas;
         private Coroutine   _confettiLoop;
         private Image       _trophyImg;
         private RectTransform _trophyRT;
@@ -51,9 +54,14 @@ namespace BoltSort.Gameplay
         private Coroutine   _winIdleAnim;
         private SettingsPanel _settingsPanel;
 
-        // Per-layer alpha/speed for the looping confetti rain (back→front).
-        private static readonly float[] ConfettiAlphas = { 0.85f, 0.55f, 0.40f };
-        private static readonly float[] ConfettiSpeeds = { 55f, 90f, 130f };
+        // Confetti rain layout, in the 720×1280 logical-pixel space (see class doc).
+        private const int   ConfettiPieceCount = 30;
+        private const float ConfettiHalfWidth   = 360f;  // 720 / 2
+        private const float ConfettiHalfHeight  = 640f;  // 1280 / 2
+        private const float ConfettiMargin      = 80f;   // spawn/despawn buffer beyond visible area
+        private const float ConfettiFadeBand    = 140f;  // distance over which pieces fade in/out
+        private const float ConfettiTopSpawnY    =  ConfettiHalfHeight + ConfettiMargin;
+        private const float ConfettiBottomDespawnY = -ConfettiHalfHeight - ConfettiMargin;
 
         // ── Move counter animation ────────────────────────────────────────────────
         private int       _lastMoveCount = -1;
@@ -91,9 +99,6 @@ namespace BoltSort.Gameplay
                 _lastMoveCount = 0;
                 RefreshDeadlock();
                 if (_winOverlay != null) _winOverlay.SetActive(false);
-                if (_confettiLayers != null)
-                    foreach (var ci in _confettiLayers)
-                        if (ci != null) { var c = ci.color; c.a = 0f; ci.color = c; }
                 if (_confettiLoop != null) { StopCoroutine(_confettiLoop); _confettiLoop = null; }
                 if (_winIdleAnim != null) { StopCoroutine(_winIdleAnim); _winIdleAnim = null; }
             };
@@ -163,43 +168,70 @@ namespace BoltSort.Gameplay
             ol.effectDistance = new Vector2(distance, -distance);
         }
 
-        /// <summary>Continuously scrolls each confetti layer downward, wrapping
-        /// seamlessly once it has fallen its own height. Layer 2 also drifts
-        /// with a slow rotational sway for visual variety.</summary>
+        /// <summary>Drives the confetti rain: each piece falls and spins independently
+        /// at its own speed, fading in as it enters from above and fading out as it
+        /// nears the bottom edge, then recycling back above the top once fully faded.
+        /// A continuous, gap-free stream of individual pieces rather than a looping
+        /// background image.</summary>
         private IEnumerator ConfettiLoop()
         {
             while (_winOverlay != null && _winOverlay.activeSelf)
             {
-                for (int i = 0; i < _confettiRects.Length; i++)
+                for (int i = 0; i < _confettiPieces.Length; i++)
                 {
-                    var rt = _confettiRects[i];
+                    var rt = _confettiPieces[i];
                     if (rt == null) continue;
-                    var pos = rt.anchoredPosition;
-                    pos.y -= ConfettiSpeeds[i] * Time.deltaTime;
-                    if (pos.y <= -rt.sizeDelta.y) pos.y += rt.sizeDelta.y;
-                    rt.anchoredPosition = pos;
 
-                    if (i == 2)
-                        rt.localRotation = Quaternion.Euler(0f, 0f, Mathf.Sin(Time.time * 0.6f) * 4f);
+                    var pos = rt.anchoredPosition;
+                    pos.y -= _confettiSpeeds[i] * Time.deltaTime;
+
+                    if (pos.y < ConfettiBottomDespawnY)
+                    {
+                        ResetConfettiPiece(i, spreadAcrossScreen: false);
+                        continue;
+                    }
+
+                    rt.anchoredPosition = pos;
+                    rt.Rotate(0f, 0f, _confettiRotSpeeds[i] * Time.deltaTime);
+
+                    float fadeIn  = Mathf.Clamp01((ConfettiTopSpawnY - pos.y) / ConfettiFadeBand);
+                    float fadeOut = Mathf.Clamp01((pos.y - ConfettiBottomDespawnY) / ConfettiFadeBand);
+                    var c = _confettiImages[i].color;
+                    c.a = Mathf.Min(fadeIn, fadeOut) * _confettiBaseAlphas[i];
+                    _confettiImages[i].color = c;
                 }
                 yield return null;
             }
         }
 
-        private IEnumerator FadeConfettiLayer(Image img, float targetAlpha, float delay, float dur)
+        /// <summary>Randomizes one confetti piece's position, fall speed, spin and
+        /// color. With <paramref name="spreadAcrossScreen"/> true (initial setup),
+        /// the piece is placed at a random height across the whole fall range so the
+        /// rain starts staggered instead of as one synchronized wave. Otherwise
+        /// (recycling after falling off the bottom) it is placed just above the
+        /// top edge to fall back in.</summary>
+        private void ResetConfettiPiece(int i, bool spreadAcrossScreen)
         {
-            if (delay > 0f) yield return new WaitForSeconds(delay);
-            float elapsed = 0f;
-            while (elapsed < dur)
-            {
-                if (img == null) yield break;
-                elapsed += Time.deltaTime;
-                var c = img.color;
-                c.a = Mathf.Lerp(0f, targetAlpha, elapsed / dur);
-                img.color = c;
-                yield return null;
-            }
-            if (img != null) { var c = img.color; c.a = targetAlpha; img.color = c; }
+            var rt  = _confettiPieces[i];
+            var img = _confettiImages[i];
+            if (rt == null || img == null) return;
+
+            float scale = UnityEngine.Random.Range(0.4f, 1.0f);
+            rt.localScale    = new Vector3(scale, scale, 1f);
+            rt.localRotation = Quaternion.Euler(0f, 0f, UnityEngine.Random.Range(0f, 360f));
+
+            _confettiSpeeds[i]     = UnityEngine.Random.Range(180f, 480f) * Mathf.Lerp(0.6f, 1.2f, scale);
+            _confettiRotSpeeds[i]  = UnityEngine.Random.Range(-220f, 220f);
+            _confettiBaseAlphas[i] = UnityEngine.Random.Range(0.7f, 1f);
+
+            var color = BoltSortTheme.BoltColors[UnityEngine.Random.Range(0, BoltSortTheme.BoltColors.Length)];
+            img.color = new Color(color.r, color.g, color.b, 0f);
+
+            float posY = spreadAcrossScreen
+                ? UnityEngine.Random.Range(ConfettiBottomDespawnY, ConfettiTopSpawnY)
+                : ConfettiTopSpawnY;
+            rt.anchoredPosition = new Vector2(
+                UnityEngine.Random.Range(-ConfettiHalfWidth, ConfettiHalfWidth), posY);
         }
 
         /// <summary>Slow continuous scale breathing for the win title while the overlay is shown.</summary>
@@ -282,19 +314,11 @@ namespace BoltSort.Gameplay
             // D.2-C: brief white flash before card arrives
             StartCoroutine(WinFlash());
 
-            // Continuous looping confetti rain — 3 parallax layers fade in with a
-            // slight stagger so the rain builds up rather than popping in at once.
-            if (_confettiLayers != null)
+            // Continuous looping confetti rain — many independently falling pieces.
+            if (_confettiPieces != null)
             {
                 if (_confettiLoop != null) StopCoroutine(_confettiLoop);
                 _confettiLoop = StartCoroutine(ConfettiLoop());
-                for (int i = 0; i < _confettiLayers.Length; i++)
-                {
-                    var img = _confettiLayers[i];
-                    if (img == null) continue;
-                    var c = img.color; c.a = 0f; img.color = c;
-                    StartCoroutine(FadeConfettiLayer(img, ConfettiAlphas[i], 0.08f * i, 0.4f));
-                }
             }
 
             yield return new WaitForSeconds(0.06f);
@@ -603,34 +627,37 @@ namespace BoltSort.Gameplay
             winRect.anchorMin = Vector2.zero; winRect.anchorMax = Vector2.one;
             winRect.offsetMin = winRect.offsetMax = Vector2.zero;
 
-            // Confetti rain — 3 parallax layers of the same scattered confetti sheet,
-            // each scaled/flipped/offset differently and scrolling at its own speed
-            // so the seamless per-layer loop doesn't read as one repeating image.
-            _confettiLayers = new Image[3];
-            _confettiRects  = new RectTransform[3];
-            (float scale, float xFlip, Vector2 startOffset)[] confettiCfg =
+            // Confetti rain — many small individually-falling pieces. Each piece is
+            // a plain tinted Image (random size/aspect, color from the bolt palette)
+            // that falls, spins and fades at its own randomized rate, and recycles
+            // back above the top once it fades out at the bottom — a continuous,
+            // pooled rain with no per-piece allocation after setup.
+            _confettiPieces     = new RectTransform[ConfettiPieceCount];
+            _confettiImages     = new Image[ConfettiPieceCount];
+            _confettiSpeeds     = new float[ConfettiPieceCount];
+            _confettiRotSpeeds  = new float[ConfettiPieceCount];
+            _confettiBaseAlphas = new float[ConfettiPieceCount];
+
+            var confettiContainer = MakePanel(_winOverlay, "ConfettiContainer", new Color(0f, 0f, 0f, 0f));
+            confettiContainer.GetComponent<Image>().raycastTarget = false;
+            var confettiContainerRt = confettiContainer.GetComponent<RectTransform>();
+            confettiContainerRt.anchorMin = Vector2.zero; confettiContainerRt.anchorMax = Vector2.one;
+            confettiContainerRt.offsetMin = confettiContainerRt.offsetMax = Vector2.zero;
+
+            for (int i = 0; i < ConfettiPieceCount; i++)
             {
-                (1.00f,  1f, new Vector2(  0f,    0f)),
-                (1.20f, -1f, new Vector2( 20f, -420f)),
-                (0.85f,  1f, new Vector2(-30f, -840f)),
-            };
-            for (int i = 0; i < confettiCfg.Length; i++)
-            {
-                var cGO = new GameObject($"ConfettiLayer_{i}");
-                cGO.transform.SetParent(_winOverlay.transform, false);
-                var cImg = cGO.AddComponent<Image>();
-                GameAssets.Apply(cImg, GameAssets.ConfettiSheet, preserveAspect: false);
-                if (GameAssets.ConfettiSheet == null) cImg.color = new Color(0f, 0f, 0f, 0f);
-                cImg.raycastTarget = false;
-                var cRT = cGO.GetComponent<RectTransform>();
-                cRT.anchorMin = cRT.anchorMax = new Vector2(0.5f, 0.5f);
-                cRT.pivot     = new Vector2(0.5f, 0.5f);
-                var cfg = confettiCfg[i];
-                cRT.sizeDelta        = new Vector2(720f * cfg.scale, 1280f * cfg.scale);
-                cRT.anchoredPosition = cfg.startOffset;
-                cRT.localScale       = new Vector3(cfg.xFlip, 1f, 1f);
-                _confettiLayers[i] = cImg;
-                _confettiRects[i]  = cRT;
+                var pieceGO = new GameObject($"ConfettiPiece_{i}");
+                pieceGO.transform.SetParent(confettiContainer.transform, false);
+                var pieceImg = pieceGO.AddComponent<Image>();
+                pieceImg.raycastTarget = false;
+                var pieceRt = pieceGO.GetComponent<RectTransform>();
+                pieceRt.anchorMin = pieceRt.anchorMax = pieceRt.pivot = new Vector2(0.5f, 0.5f);
+                float w = UnityEngine.Random.Range(10f, 22f);
+                pieceRt.sizeDelta = new Vector2(w, w * UnityEngine.Random.Range(0.5f, 1.6f));
+
+                _confettiPieces[i] = pieceRt;
+                _confettiImages[i] = pieceImg;
+                ResetConfettiPiece(i, spreadAcrossScreen: true);
             }
 
             // Win card — transparent layout container only; no background image,
