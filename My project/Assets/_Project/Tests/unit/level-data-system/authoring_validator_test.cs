@@ -102,31 +102,31 @@ namespace BoltSort.Tests.Unit.LevelData
             Assert.IsTrue(result.IsValid, "par_moves == solver_min_moves+10 (upper bound inclusive) must pass");
         }
 
-        // ── Column cap fail: color_count=6, temp_slot_count=3 (9 columns > 8) ─
+        // ── Column cap fail: color_count=16, temp_slot_count=3 (19 columns > 18) ─
 
         [Test]
         public void Test_Validate_ColumnCapExceeded_ReturnsFailWithColumnCapMessage()
         {
-            // Arrange: 6 color + 3 temp = 9 columns
-            var record = MakeRecord(colorCount: 6, tempSlotCount: 3, parMoves: 12);
+            // Arrange: 16 color + 3 temp = 19 columns (ADR-0014 cap = 18)
+            var record = MakeRecord(colorCount: 16, tempSlotCount: 3, parMoves: 12);
 
             var result = EditorValidator.Validate(record, solverMinMoves: 8);
 
-            Assert.IsFalse(result.IsValid, "9 columns must fail the column cap check");
+            Assert.IsFalse(result.IsValid, "19 columns must fail the column cap check");
             StringAssert.Contains("Column cap exceeded", result.Error);
         }
 
-        // ── Column cap pass: color_count=6, temp_slot_count=2 (8 columns == cap) ─
+        // ── Column cap pass: color_count=16, temp_slot_count=2 (18 columns == cap) ─
 
         [Test]
         public void Test_Validate_ColumnCapAtMaximum_PassesCapCheck()
         {
-            // Arrange: 6 color + 2 temp = 8 columns (exactly at cap)
-            var record = MakeRecord(colorCount: 6, tempSlotCount: 2, parMoves: 12);
+            // Arrange: 16 color + 2 temp = 18 columns (exactly at ADR-0014 cap)
+            var record = MakeRecord(colorCount: 16, tempSlotCount: 2, parMoves: 12);
 
             var result = EditorValidator.Validate(record, solverMinMoves: 8);
 
-            Assert.IsTrue(result.IsValid, "Exactly 8 columns must pass the column cap check");
+            Assert.IsTrue(result.IsValid, "Exactly 18 columns must pass the column cap check");
         }
 
         // ── Column cap evaluated before par_moves (ordering guarantee) ─────────
@@ -134,8 +134,8 @@ namespace BoltSort.Tests.Unit.LevelData
         [Test]
         public void Test_Validate_ColumnCapFailPrecludesParMovesCheck()
         {
-            // Arrange: 9 columns AND par_moves below minimum — column cap error takes precedence
-            var record = MakeRecord(colorCount: 6, tempSlotCount: 3, parMoves: 6);
+            // Arrange: 19 columns AND par_moves below minimum — column cap error takes precedence
+            var record = MakeRecord(colorCount: 16, tempSlotCount: 3, parMoves: 6);
 
             var result = EditorValidator.Validate(record, solverMinMoves: 8);
 

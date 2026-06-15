@@ -5,14 +5,14 @@ namespace BoltSort.Editor.LevelData
     /// <summary>
     /// Authoring-pipeline validator for <see cref="LevelRecord"/>.
     /// Runs checks that are only meaningful at design/import time:
-    /// column-cap compliance (ADR-0013) and par_moves plausibility against
+    /// column-cap compliance (ADR-0014, supersedes ADR-0013) and par_moves plausibility against
     /// a solver-provided minimum move count.
     /// Distinct from the runtime <see cref="BoltSort.LevelData.LevelRecordValidator"/>
     /// which validates structural integrity at LDS load time.
     /// </summary>
     public static class LevelRecordValidator
     {
-        private const int MaxColumnCount = 8; // ADR-0013
+        private const int MaxColumnCount = 18; // ADR-0014 (supersedes ADR-0013)
 
         /// <summary>
         /// Validates a <see cref="LevelRecord"/> against authoring constraints.
@@ -29,7 +29,7 @@ namespace BoltSort.Editor.LevelData
             int totalColumns = record.ColorCount + record.TempSlotCount;
             if (totalColumns > MaxColumnCount)
                 return new ValidationResult(false,
-                    $"Column cap exceeded: {totalColumns} columns (max {MaxColumnCount}, ADR-0013).");
+                    $"Column cap exceeded: {totalColumns} columns (max {MaxColumnCount}, ADR-0014).");
 
             if (record.ParMoves < solverMinMoves)
                 return new ValidationResult(false,

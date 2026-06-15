@@ -336,27 +336,36 @@ namespace BoltSort.Tests.Unit.SortMechanic
         [Test]
         public void ColumnCap_AtMaximum_InitializesSuccessfully()
         {
-            // Arrange: 6 color stacks + 2 temp slots = 8 ≤ 8 — must pass
+            // Arrange: 16 color stacks + 2 temp slots = 18 == cap (ADR-0014) — must pass
             _gsm.SetColorStacks(
-                new[] { 1 }, new[] { 2 }, new[] { 3 }, new[] { 4 }, new[] { 5 }, new[] { 6 });
+                new[] { 1 },  new[] { 2 },  new[] { 3 },  new[] { 4 },
+                new[] { 5 },  new[] { 6 },  new[] { 7 },  new[] { 8 },
+                new[] { 9 },  new[] { 10 }, new[] { 11 }, new[] { 12 },
+                new[] { 13 }, new[] { 14 }, new[] { 15 }, new[] { 16 });
             _gsm.StackDepth = 3;
             _gsm.SetTempSlots(new int[0], new int[0]); // 2 temp slots, empty
 
+            _sm.InjectForTesting(_gsm);
+            var spy2 = new EventSpy();
+            spy2.Subscribe(_sm);
             _sm.InitializeBoard();
 
             // Assert: column cap assertion ran and passed — both guards confirm
             Assert.IsFalse(_sm.InputBlockedForTesting,
-                "TR-SORT-010: color_count(6) + temp_slot_count(2) = 8 must NOT trigger level_load_failed.");
-            Assert.AreEqual(0, _spy.LevelLoadFailedCount,
+                "TR-SORT-010: color_count(16) + temp_slot_count(2) = 18 must NOT trigger level_load_failed.");
+            Assert.AreEqual(0, spy2.LevelLoadFailedCount,
                 "TR-SORT-010: no upstream assertion must fail; LevelLoadFailed must be 0.");
         }
 
         [Test]
         public void ColumnCap_Exceeded_EmitsLevelLoadFailed()
         {
-            // Arrange: 7 color stacks + 2 temp slots = 9 > 8 — must fail
+            // Arrange: 17 color stacks + 2 temp slots = 19 > 18 (ADR-0014 cap) — must fail
             _gsm.SetColorStacks(
-                new[] { 1 }, new[] { 2 }, new[] { 3 }, new[] { 4 }, new[] { 5 }, new[] { 6 }, new[] { 7 });
+                new[] { 1 },  new[] { 2 },  new[] { 3 },  new[] { 4 },
+                new[] { 5 },  new[] { 6 },  new[] { 7 },  new[] { 8 },
+                new[] { 9 },  new[] { 10 }, new[] { 11 }, new[] { 12 },
+                new[] { 13 }, new[] { 14 }, new[] { 15 }, new[] { 16 }, new[] { 17 });
             _gsm.StackDepth = 3;
             _gsm.SetTempSlots(new int[0], new int[0]); // 2 temp slots
 
@@ -367,7 +376,7 @@ namespace BoltSort.Tests.Unit.SortMechanic
 
             // Assert
             Assert.IsTrue(_sm.InputBlockedForTesting,
-                "TR-SORT-010: color_count(7) + temp_slot_count(2) = 9 must trigger level_load_failed.");
+                "TR-SORT-010: color_count(17) + temp_slot_count(2) = 19 must trigger level_load_failed.");
             Assert.AreEqual(1, spy2.LevelLoadFailedCount,
                 "TR-SORT-010: level_load_failed must be emitted once on column cap violation.");
         }

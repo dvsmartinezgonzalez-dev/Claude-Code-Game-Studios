@@ -36,10 +36,13 @@ namespace BoltSort.SortMechanic
         private const string LogCategory = "SortMechanic";
 
         /// <summary>
-        /// Maximum number of columns (color stacks + temp slots) per ADR-0013.
-        /// Derived from iPhone SE 375pt viewport and the 44pt/48dp tap-target mandate (ADR-0008).
+        /// Maximum number of columns (color stacks + temp slots) per ADR-0014
+        /// (supersedes ADR-0013's flat cap of 8). Multi-row board layout
+        /// (<see cref="BoltSort.Gameplay.GameplayBoardLayout"/>) restores 44pt/48dp tap
+        /// targets at high tube counts, so the cap is the layout's row-distribution ceiling
+        /// (≤4 rows × ≤5 tubes) rather than a single-row width limit.
         /// </summary>
-        private const int MaxColumnCount = 8;
+        private const int MaxColumnCount = 18;
 
         // ── Dependencies (injected or assigned in Awake) ──────────────────────────
 
@@ -385,8 +388,8 @@ namespace BoltSort.SortMechanic
         }
 
         /// <summary>
-        /// Assertion 4 — <c>ColorCount + TempSlotCount ≤ 8</c> (ADR-0013 column cap).
-        /// Exceeding 8 columns makes tap-target compliance impossible on iPhone SE (375pt viewport).
+        /// Assertion 4 — <c>ColorCount + TempSlotCount ≤ 18</c> (ADR-0014 column cap).
+        /// Beyond 18 columns the multi-row layout can no longer keep tap targets compliant.
         /// Returns false (and calls BlockInput) on violation.
         /// </summary>
         private bool AssertColumnCapValid()
@@ -396,7 +399,7 @@ namespace BoltSort.SortMechanic
             if (colorCount + tempSlotCount <= MaxColumnCount) return true;
 
             BlockInput(SortMechLoadFailReason.CorruptedBoardState,
-                $"Assertion 4 failed: color_count ({colorCount}) + temp_slot_count ({tempSlotCount}) = {colorCount + tempSlotCount} > {MaxColumnCount} (ADR-0013 column cap).");
+                $"Assertion 4 failed: color_count ({colorCount}) + temp_slot_count ({tempSlotCount}) = {colorCount + tempSlotCount} > {MaxColumnCount} (ADR-0014 column cap).");
             return false;
         }
 

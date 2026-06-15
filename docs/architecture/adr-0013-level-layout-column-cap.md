@@ -1,7 +1,9 @@
 # ADR-0013: Level Layout Column Cap
 
 ## Status
-Accepted
+Superseded by ADR-0014 (2026-06-15) — the flat cap of 8 assumed a single-row layout. The shipped
+multi-row `GameplayBoardLayout` restores tap-target compliance at higher tube counts, so ADR-0014
+raises the cap to 18. The original rationale below is retained for historical context.
 
 ## Date
 2026-05-04
