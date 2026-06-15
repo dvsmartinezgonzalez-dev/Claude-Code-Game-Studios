@@ -57,6 +57,55 @@ namespace BoltSort.Visual
         public static Sprite LevelBackground => LoadRes("Sprites/Levels/level_background");
         public static Sprite LevelLock       => LoadRes("Sprites/Levels/lock");
 
+        // ── Gameplay sprites — balls & tubes (assets_admin/Sprites_objets/New → Resources/Sprites/) ──
+
+        /// <summary>1-based color_id → sprite name. Wraps if color_id exceeds 11 (not expected
+        /// for the current 50-level catalogue, whose color_count never exceeds 6).</summary>
+        private static readonly string[] BallSpriteNames =
+        {
+            "ball_red", "ball_green", "ball_blue", "ball_orange", "ball_purple", "ball_pink",
+            "ball_yellow", "ball_light_blue", "ball_brown", "ball_grey", "ball_black",
+        };
+
+        /// <summary>Pre-coloured ball sprite for a 1-based color_id. Returns null for colorId &lt;= 0.</summary>
+        public static Sprite BallSprite(int colorId)
+        {
+            if (colorId <= 0) return null;
+            return LoadRes($"Sprites/Balls/{BallSpriteNames[(colorId - 1) % BallSpriteNames.Length]}");
+        }
+
+        /// <summary>Mystery-ball sprite (hidden color). Phase-2 mechanic (negative color id).</summary>
+        public static Sprite BallMystery    => LoadRes("Sprites/Balls/ball_mystery");
+
+        /// <summary>Multicolor wildcard ball sprite (matches any color). Phase-2 mechanic (color id 0).</summary>
+        public static Sprite BallMulticolor => LoadRes("Sprites/Balls/ball_multicolor");
+
+        /// <summary>
+        /// Board ball sprite for a raw token: 0 → multicolor wildcard, &lt;0 → mystery (hidden),
+        /// &gt;0 → the pre-coloured ball for that color id. Central mapping used by BoardView.
+        /// </summary>
+        public static Sprite BallSpriteForToken(int token)
+        {
+            if (token == 0) return BallMulticolor;
+            if (token < 0)  return BallMystery;
+            return BallSprite(token);
+        }
+
+        /// <summary>
+        /// Tube body sprite for the given slot capacity (3 → short, 4 → normal, 5 → large,
+        /// 6 → extra large, 7+ → XXL), in its selected or unselected state.
+        /// </summary>
+        public static Sprite TubeSprite(int capacity, bool selected)
+        {
+            string size = capacity <= 3 ? "_short"
+                         : capacity == 4 ? ""
+                         : capacity == 5 ? "_large"
+                         : capacity == 6 ? "_extra_large"
+                         : "_XXL";
+            string state = selected ? "Tube_selected" : "Tube_unselected";
+            return LoadRes($"Sprites/Tubes/{state}{size}");
+        }
+
         // ── Fonts ───────────────────────────────────────────────────────────────────
         private static Font _menuFont;
 

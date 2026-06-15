@@ -16,9 +16,26 @@ namespace BoltSort.Gameplay
     {
         // ── Layout constants ──────────────────────────────────────────────────────
         private float _colWidth;
-        private float _boltHeight;
         private float _boltStep;
         private float _boardCenterY;
+        /// <summary>Vertical distance between ball centers, per column — derived from each
+        /// tube sprite's glass-region geometry (see <see cref="_tubeMetricsByTier"/>).</summary>
+        private float[] _ballStep;
+        /// <summary>Ball diameter (world units) per column — fits both tube interior width and slot height.</summary>
+        private float[] _ballSize;
+        /// <summary>Final visible tube width (world units) per column — used to re-normalize the
+        /// selected/unselected sprite swap (the two PNGs have different native widths).</summary>
+        private float[] _tubeWidth;
+        /// <summary>Local Y of slot 0's ball CENTER, per column.</summary>
+        private float[] _slot0CenterLocal;
+
+        /// <summary>Per-column capacity (asymmetric-aware; mirrors GSM.GetColumnCapacity).</summary>
+        private int[] _colCap;
+
+        // ── Phase-2 frozen-tube overlay (per column) ──────────────────────────────
+        private SpriteRenderer[] _frozenIcon;   // snowflake glyph, shown while frozen
+        private TextMesh[]       _frozenLabel;  // remaining-turn counter
+        private static Sprite    _snowSprite;
 
         // ── System references ─────────────────────────────────────────────────────
         private BoltSort.GameStateManager.GameStateManager _gsm;
@@ -38,7 +55,8 @@ namespace BoltSort.Gameplay
         private Transform[]      _columnTransforms;
         private SpriteRenderer[] _columnBgRenderers;
         private SpriteRenderer[] _columnGlowRenderers;
-        private Vector3[]        _columnSlot0World;   // world-space origin of slot 0 per column
+        private SpriteRenderer[] _tubeRenderers;      // tube body sprite per column (swaps selected/unselected)
+        private Vector3[]        _columnSlot0World;   // world-space CENTER of slot 0's ball per column
         private Vector3[]        _columnTargetLocal;  // settled local position per column (multi-row layout)
 
         // ── Selection animation state ─────────────────────────────────────────────
@@ -59,9 +77,6 @@ namespace BoltSort.Gameplay
         private Coroutine _winCoroutine;
 
         // ── Shared sprites ────────────────────────────────────────────────────────
-        private static Sprite _whiteSprite;
-        private static Sprite _boltSprite;
-        private static Sprite _ringSprite;
         private static Sprite _shineSprite;
         private static Sprite _shadowSprite;
         private static Sprite _glowSprite;
@@ -75,15 +90,14 @@ namespace BoltSort.Gameplay
             _gsm          = gsm;
             _sortMechanic = sm;
 
-            _whiteSprite  = _whiteSprite  ?? CreateWhiteSprite();
-            _boltSprite   = _boltSprite   ?? CreateMarbleSprite();
-            _ringSprite   = _ringSprite   ?? CreateRingSprite();
             _shineSprite  = _shineSprite  ?? CreateShineSprite();
             _shadowSprite = _shadowSprite ?? CreateShadowSprite();
             _glowSprite   = _glowSprite   ?? CreateGlowSprite();
+            _snowSprite   = _snowSprite   ?? CreateSnowSprite();
 
             gsm.OnLevelLoaded    += OnLevelLoaded;
             gsm.OnLevelComplete  += OnLevelComplete;
+            gsm.OnMysteryRevealed += OnMysteryRevealed;
             sm.OnMoveCommitted   += OnMoveCommitted;
             sm.OnMoveRejected    += OnMoveRejected;
 
@@ -96,6 +110,7 @@ namespace BoltSort.Gameplay
             {
                 _gsm.OnLevelLoaded   -= OnLevelLoaded;
                 _gsm.OnLevelComplete -= OnLevelComplete;
+                _gsm.OnMysteryRevealed -= OnMysteryRevealed;
             }
             SceneTransitionManager.OnTransitionOut -= OnTransitionOut;
         }
@@ -291,28 +306,32 @@ namespace BoltSort.Gameplay
 
             int dstSlot = dstCol != null ? dstCol.Count - 1 : 0;
 
-            // Bolt size in world units (same as bolt local scale x)
-            float boltSize = _colWidth - 0.12f;
+            // Ball diameter in world units (matches a settled ball in the source column).
+            float boltSize = (_ballSize != null && src < _ballSize.Length) ? _ballSize[src] : _ballStep[src];
 
-            Vector3 srcWorld = _columnSlot0World[src];
             // src slot: GSM already removed the bolt — slot count now is correct
             IReadOnlyList<int> srcColAfter = src < _colorCount
                 ? (stacks != null && src < stacks.Length ? stacks[src] : null)
                 : (temps  != null && (src - _colorCount) < temps.Length
                        ? temps[src - _colorCount] : null);
             int srcSlot = srcColAfter != null ? srcColAfter.Count : 0;
-            srcWorld = _columnSlot0World[src] + Vector3.up * (srcSlot * _boltStep);
+            Vector3 srcWorld = _columnSlot0World[src] + Vector3.up * (srcSlot * _ballStep[src]);
 
-            Vector3 dstWorld = _columnSlot0World[dst] + Vector3.up * (dstSlot * _boltStep);
+            Vector3 dstWorld = _columnSlot0World[dst] + Vector3.up * (dstSlot * _ballStep[dst]);
 
             // Hide the destination slot while ghost is in the air
             _hideDstCol  = dst;
             _hideDstSlot = dstSlot;
 
-            // Create ghost bolt
+            // Create ghost bolt — convert the target world diameter to a local scale using
+            // the ball sprite's native size (independent of import PPU).
+            Sprite ghostSpr   = GameAssets.BallSpriteForToken(colorId);
+            float  ghostNative = ghostSpr != null ? ghostSpr.bounds.size.x : 1f;
+            float  ghostScale  = boltSize / Mathf.Max(0.0001f, ghostNative);
+
             _moveGhost = new GameObject("MoveGhost");
             _moveGhost.transform.position   = srcWorld;
-            _moveGhost.transform.localScale = new Vector3(boltSize, _boltHeight, 1f);
+            _moveGhost.transform.localScale = new Vector3(ghostScale, ghostScale, 1f);
 
             var shadowGO = new GameObject("GhostShadow");
             shadowGO.transform.SetParent(_moveGhost.transform, false);
@@ -324,8 +343,8 @@ namespace BoltSort.Gameplay
             shadowSr.sortingOrder = 8;
 
             var ghostSr = _moveGhost.AddComponent<SpriteRenderer>();
-            ghostSr.sprite       = _boltSprite;
-            ghostSr.color        = BoltSortTheme.BoltColorForId(colorId);
+            ghostSr.sprite       = ghostSpr;
+            ghostSr.color        = Color.white;
             ghostSr.sortingOrder = 9;
 
             var shineGO = new GameObject("GhostShine");
@@ -378,15 +397,14 @@ namespace BoltSort.Gameplay
 
             float squishDur = 0.08f;
             elapsed = 0f;
-            Vector3 normalScale = new Vector3(boltSize, _boltHeight, 1f);
             while (elapsed < squishDur)
             {
                 if (_moveGhost == null) yield break;
                 elapsed += Time.deltaTime;
                 float t = TweenUtility.EaseOutElastic(Mathf.Clamp01(elapsed / squishDur));
                 // squish is the "going in" motion (scale toward squished) then spring
-                float sx = Mathf.LerpUnclamped(boltSize * 1.20f, boltSize, t);
-                float sy = Mathf.LerpUnclamped(_boltHeight * 0.85f, _boltHeight, t);
+                float sx = Mathf.LerpUnclamped(ghostScale * 1.20f, ghostScale, t);
+                float sy = Mathf.LerpUnclamped(ghostScale * 0.85f, ghostScale, t);
                 _moveGhost.transform.localScale = new Vector3(sx, sy, 1f);
                 _moveGhost.transform.position   = dstWorld;
                 yield return null;
@@ -605,7 +623,7 @@ namespace BoltSort.Gameplay
             go.transform.localScale = Vector3.one * size;
 
             var sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite       = _boltSprite;
+            sr.sprite       = _glowSprite;
             sr.color        = color;
             sr.sortingOrder = 15;
 
@@ -661,6 +679,38 @@ namespace BoltSort.Gameplay
             }
         }
 
+        // ── Tube sprite geometry ──────────────────────────────────────────────────
+
+        /// <summary>Measured proportions of a Tube_*.png sprite at a given capacity tier:
+        /// overall bbox aspect (height/width), the glass-interior region as a fraction of
+        /// bbox height, and the bottom-cap region as a fraction of bbox height.</summary>
+        private struct TubeMetrics
+        {
+            public float Aspect;        // bbox height / width — fallback only; real value read from sprite
+            public float GlassFrac;     // glass interior height as a fraction of bbox height
+            public float BotCapFrac;    // bottom purple cap height as a fraction of bbox height
+            public float InteriorWFrac; // glass interior width as a fraction of bbox width
+        }
+
+        private static readonly TubeMetrics[] _tubeMetricsByTier =
+        {
+            new TubeMetrics { Aspect = 2.440f, GlassFrac = 0.834f, BotCapFrac = 0.073f, InteriorWFrac = 0.838f }, // short   (depth <= 3)
+            new TubeMetrics { Aspect = 2.844f, GlassFrac = 0.859f, BotCapFrac = 0.056f, InteriorWFrac = 0.844f }, // normal  (depth == 4)
+            new TubeMetrics { Aspect = 3.252f, GlassFrac = 0.870f, BotCapFrac = 0.058f, InteriorWFrac = 0.850f }, // large   (depth == 5)
+            new TubeMetrics { Aspect = 3.944f, GlassFrac = 0.893f, BotCapFrac = 0.048f, InteriorWFrac = 0.850f }, // x-large (depth == 6)
+            new TubeMetrics { Aspect = 5.127f, GlassFrac = 0.918f, BotCapFrac = 0.037f, InteriorWFrac = 0.882f }, // xxl     (depth >= 7)
+        };
+
+        private static TubeMetrics TubeMetricsForCapacity(int capacity)
+        {
+            int tier = capacity <= 3 ? 0
+                     : capacity == 4 ? 1
+                     : capacity == 5 ? 2
+                     : capacity == 6 ? 3
+                     : 4;
+            return _tubeMetricsByTier[tier];
+        }
+
         // ── Column construction ───────────────────────────────────────────────────
 
         private void RebuildColumns()
@@ -668,6 +718,18 @@ namespace BoltSort.Gameplay
             foreach (Transform child in transform) Destroy(child.gameObject);
 
             int totalCols = _colorCount + _tempSlotCount;
+
+            // Per-column capacities (asymmetric-aware). For uniform levels this equals the
+            // scalar depths; for tube_capacities levels it is the per-tube capacity.
+            _colCap = new int[totalCols];
+            int maxColorCap = _stackDepth, maxTempCap = _tempSlotDepth;
+            for (int c = 0; c < totalCols; c++)
+            {
+                _colCap[c] = _gsm != null ? _gsm.GetColumnCapacity(c)
+                                          : (c < _colorCount ? _stackDepth : _tempSlotDepth);
+                if (c < _colorCount) maxColorCap = Mathf.Max(maxColorCap, _colCap[c]);
+                else                 maxTempCap  = Mathf.Max(maxTempCap,  _colCap[c]);
+            }
 
             Camera cam          = Camera.main;
             float  camHalfH     = cam != null ? cam.orthographicSize  : 9.6f;
@@ -683,14 +745,19 @@ namespace BoltSort.Gameplay
             float boardBot = -camHalfH + buttonH;
 
             // Responsive multi-row layout — positions/sizes only, no game rules.
+            // Pass the MAX capacities so ball sizing fits the tallest tube on asymmetric boards.
             BoardLayout layout = GameplayBoardLayout.Compute(
-                _colorCount, _tempSlotCount, _stackDepth, _tempSlotDepth,
+                _colorCount, _tempSlotCount, maxColorCap, maxTempCap,
                 camHalfW, boardTop, boardBot);
 
             _colWidth     = layout.ColWidth;
             _boltStep     = layout.BoltStep;
-            _boltHeight   = layout.BoltHeight;
             _boardCenterY = layout.BoardCenterY;
+
+            // Vertical budget per tube row — used to clamp tube height to the screen.
+            float boardH    = boardTop - boardBot;
+            int   rowCount  = Mathf.Max(1, layout.RowCount);
+            float rowHeight = (boardH - (rowCount - 1) * GameplayBoardLayout.RowGap) / rowCount;
 
             int boltLayer = LayerMask.NameToLayer("BoltStacks");
             if (boltLayer < 0) boltLayer = 0;
@@ -700,13 +767,20 @@ namespace BoltSort.Gameplay
             _columnTransforms    = new Transform[totalCols];
             _columnBgRenderers   = new SpriteRenderer[totalCols];
             _columnGlowRenderers = new SpriteRenderer[totalCols];
+            _tubeRenderers       = new SpriteRenderer[totalCols];
             _columnSlot0World    = new Vector3[totalCols];
             _columnTargetLocal   = new Vector3[totalCols];
+            _ballStep            = new float[totalCols];
+            _ballSize            = new float[totalCols];
+            _tubeWidth           = new float[totalCols];
+            _slot0CenterLocal    = new float[totalCols];
+            _frozenIcon          = new SpriteRenderer[totalCols];
+            _frozenLabel         = new TextMesh[totalCols];
 
             for (int col = 0; col < totalCols; col++)
             {
                 bool    isTemp    = col >= _colorCount;
-                int     depth     = isTemp ? _tempSlotDepth : _stackDepth;
+                int     depth     = _colCap[col]; // per-tube (asymmetric-aware)
                 Vector3 colLocal  = layout.Columns[col]; // (x, slot0-Y, 0)
                 float   colH      = depth * _boltStep;
                 float   colCtrLoc = (depth - 1) * 0.5f * _boltStep;
@@ -718,7 +792,6 @@ namespace BoltSort.Gameplay
 
                 _columnTransforms[col]  = colGO.transform;
                 _columnTargetLocal[col] = colLocal;
-                _columnSlot0World[col]  = transform.position + colLocal;
 
                 // Ambient glow beneath column (very subtle, column color at 10% alpha)
                 var glowGO = new GameObject("ColumnGlow");
@@ -733,49 +806,93 @@ namespace BoltSort.Gameplay
                 glowSr.sortingOrder = -3;
                 _columnGlowRenderers[col] = glowSr;
 
-                // Border
-                PlaceRect(colGO, "Border",
-                    new Vector3(0f, colCtrLoc, 0f),
-                    new Vector3(_colWidth + 0.18f, colH + 0.36f, 1f),
-                    isTemp ? BoltSortTheme.HexColor("4A3A5C") : BoltSortTheme.TubeRim,
-                    sortingOrder: -2);
+                // Tube body sprite — real art, bottom-anchored. The PNG is a tall portrait
+                // image; we scale it UNIFORMLY so the visible tube is exactly _colWidth wide
+                // while keeping the sprite's own aspect (caps never distort). Sizing is driven
+                // by the available screen space, NOT by the sprite's native pixel size.
+                TubeMetrics metrics = TubeMetricsForCapacity(depth);
+                Sprite tubeSpr      = GameAssets.TubeSprite(depth, selected: false);
+                float spriteNativeW = (tubeSpr != null) ? tubeSpr.bounds.size.x : 1f;
+                float spriteNativeH = (tubeSpr != null) ? tubeSpr.bounds.size.y : metrics.Aspect;
 
-                // Background fill (tube body)
-                var bgGO = new GameObject("Background");
-                bgGO.transform.SetParent(colGO.transform, false);
-                bgGO.transform.localPosition = new Vector3(0f, colCtrLoc, 0f);
-                bgGO.transform.localScale    = new Vector3(_colWidth, colH + 0.14f, 1f);
-                var bgSr = bgGO.AddComponent<SpriteRenderer>();
-                bgSr.sprite       = _whiteSprite;
-                bgSr.color        = isTemp
-                    ? new Color(0.114f, 0.102f, 0.165f, 1f)
-                    : BoltSortTheme.TubeBody;
-                bgSr.sortingOrder = -1;
-                _columnBgRenderers[col] = bgSr;
+                // Width-driven scale, then clamp so a tube never exceeds the per-row height
+                // (and never more than 75% of the whole board for a single row).
+                float tubeScale  = _colWidth / Mathf.Max(0.0001f, spriteNativeW);
+                float tubeHeight = spriteNativeH * tubeScale;
+                float maxTubeH   = Mathf.Min(rowHeight * 0.95f, boardH * 0.75f);
+                if (tubeHeight > maxTubeH)
+                {
+                    tubeScale *= maxTubeH / tubeHeight;
+                    tubeHeight = maxTubeH;
+                }
+                float tubeWidth = spriteNativeW * tubeScale; // == _colWidth unless height-clamped
 
-                // Glass reflection — thin white line on left edge
-                var glassGO = new GameObject("GlassReflect");
-                glassGO.transform.SetParent(colGO.transform, false);
-                glassGO.transform.localPosition = new Vector3(-_colWidth * 0.44f, colCtrLoc, 0f);
-                glassGO.transform.localScale    = new Vector3(0.04f, colH + 0.10f, 1f);
-                var glassSr = glassGO.AddComponent<SpriteRenderer>();
-                glassSr.sprite       = _whiteSprite;
-                glassSr.color        = new Color(1f, 1f, 1f, 0.12f);
-                glassSr.sortingOrder = 0;
+                float tubeBottomLoc  = colCtrLoc - tubeHeight * 0.5f;
+                float glassBottomLoc = tubeBottomLoc + tubeHeight * metrics.BotCapFrac;
+                float glassHeight    = tubeHeight * metrics.GlassFrac;
+                float ballStep       = glassHeight / depth;
 
-                // Top rim highlight
-                var rimGO = new GameObject("TopRim");
-                rimGO.transform.SetParent(colGO.transform, false);
-                rimGO.transform.localPosition = new Vector3(0f, colCtrLoc + (colH + 0.14f) * 0.5f - 0.04f, 0f);
-                rimGO.transform.localScale    = new Vector3(_colWidth, 0.08f, 1f);
-                var rimSr = rimGO.AddComponent<SpriteRenderer>();
-                rimSr.sprite       = _whiteSprite;
-                rimSr.color        = new Color(1f, 1f, 1f, 0.20f);
-                rimSr.sortingOrder = 0;
+                // Ball diameter: 88% of the glass interior width, but never taller than its
+                // slot (so balls never overlap the caps or each other). Vertical spacing is
+                // ballStep, i.e. ~ballDiameter × 1.05 when height-limited.
+                float interiorWidth  = tubeWidth * metrics.InteriorWFrac;
+                float ballSize       = Mathf.Min(interiorWidth * 0.88f, ballStep * 0.95f);
 
-                // Physics collider
+                _ballStep[col]         = ballStep;
+                _ballSize[col]         = ballSize;
+                _tubeWidth[col]        = tubeWidth;
+                _slot0CenterLocal[col] = glassBottomLoc + 0.5f * ballStep;
+                _columnSlot0World[col] = transform.position + colLocal + Vector3.up * _slot0CenterLocal[col];
+
+                // Position so the sprite's BOTTOM edge lands exactly at tubeBottomLoc,
+                // regardless of the sprite's pivot (bottom-center once imported; center if
+                // the import hasn't refreshed yet). sprite.bounds is centered on the pivot,
+                // so bounds.min.y is the pivot→bottom offset in native units.
+                float spriteBottomOffset = (tubeSpr != null ? tubeSpr.bounds.min.y : 0f) * tubeScale;
+
+                var tubeGO = new GameObject("Tube");
+                tubeGO.transform.SetParent(colGO.transform, false);
+                tubeGO.transform.localPosition = new Vector3(0f, tubeBottomLoc - spriteBottomOffset, 0f);
+                tubeGO.transform.localScale    = new Vector3(tubeScale, tubeScale, 1f);
+                var tubeSr = tubeGO.AddComponent<SpriteRenderer>();
+                tubeSr.sprite       = tubeSpr;
+                tubeSr.color        = isTemp ? new Color(0.85f, 0.80f, 0.95f, 1f) : Color.white;
+                tubeSr.sortingOrder = -1;
+                _tubeRenderers[col]     = tubeSr;
+                _columnBgRenderers[col] = tubeSr; // reused by PlayWinCelebration's FlashColumn
+
+                // Phase-2 frozen-tube overlay — snowflake + remaining-turn counter near the tube
+                // top. Created hidden; shown/updated each frame in LateUpdate from GSM freeze state.
+                float overlayY = colCtrLoc + colH * 0.5f + ballSize * 0.25f;
+
+                var snowGO = new GameObject("FrozenIcon");
+                snowGO.transform.SetParent(colGO.transform, false);
+                snowGO.transform.localPosition = new Vector3(0f, overlayY, -0.2f);
+                snowGO.transform.localScale    = Vector3.one * (ballSize * 0.85f);
+                var snowSr = snowGO.AddComponent<SpriteRenderer>();
+                snowSr.sprite       = _snowSprite;
+                snowSr.color        = new Color(0.72f, 0.90f, 1f, 0.95f);
+                snowSr.sortingOrder = 5;
+                snowSr.enabled      = false;
+                _frozenIcon[col]    = snowSr;
+
+                var lblGO = new GameObject("FrozenCounter");
+                lblGO.transform.SetParent(colGO.transform, false);
+                lblGO.transform.localPosition = new Vector3(0f, overlayY, -0.3f);
+                var tm = lblGO.AddComponent<TextMesh>();
+                tm.text          = "";
+                tm.anchor        = TextAnchor.MiddleCenter;
+                tm.alignment     = TextAlignment.Center;
+                tm.fontSize      = 48;
+                tm.characterSize = Mathf.Max(0.02f, ballSize * 0.18f);
+                tm.color         = new Color(0.08f, 0.22f, 0.5f, 1f);
+                var tmr = lblGO.GetComponent<MeshRenderer>();
+                if (tmr != null) { tmr.sortingOrder = 6; tmr.enabled = false; }
+                _frozenLabel[col] = tm;
+
+                // Physics collider — matches the visible tube so taps register accurately.
                 var col2d    = colGO.AddComponent<BoxCollider2D>();
-                col2d.size   = new Vector2(_colWidth, colH + 0.14f);
+                col2d.size   = new Vector2(tubeWidth, tubeHeight);
                 col2d.offset = new Vector2(0f, colCtrLoc);
 
                 colGO.AddComponent<BoltSort.SortMechanic.BoltStackIndex>().Initialize(col);
@@ -786,27 +903,29 @@ namespace BoltSort.Gameplay
 
                 for (int slot = 0; slot < depth; slot++)
                 {
+                    float slotCenterLoc = _slot0CenterLocal[col] + slot * ballStep;
+
                     // Shadow layer
                     var shadowGO = new GameObject($"Shadow_{slot}");
                     shadowGO.transform.SetParent(colGO.transform, false);
-                    shadowGO.transform.localPosition = new Vector3(0.03f, slot * _boltStep - 0.05f, 0f);
-                    shadowGO.transform.localScale    = new Vector3(_colWidth * 0.90f, _boltHeight * 0.55f, 1f);
+                    shadowGO.transform.localPosition = new Vector3(0.03f, slotCenterLoc - ballSize * 0.4f, 0f);
+                    shadowGO.transform.localScale    = new Vector3(ballSize * 0.95f, ballSize * 0.40f, 1f);
                     var shadowSr = shadowGO.AddComponent<SpriteRenderer>();
                     shadowSr.sprite       = _shadowSprite;
                     shadowSr.color        = new Color(0f, 0f, 0f, 0.35f);
                     shadowSr.sortingOrder = 0;
                     shadowSr.enabled      = false; // enabled only for filled bolts
 
-                    // Base bolt
+                    // Ball — final scale is set per-frame in LateUpdate (normalized to the
+                    // actual ball sprite), so placeholder scale here is just the diameter.
                     var boltGO = new GameObject($"Slot_{slot}");
                     boltGO.transform.SetParent(colGO.transform, false);
-                    boltGO.transform.localPosition = new Vector3(0f, slot * _boltStep, 0f);
-                    boltGO.transform.localScale    = new Vector3(_colWidth - 0.12f, _boltHeight, 1f);
+                    boltGO.transform.localPosition = new Vector3(0f, slotCenterLoc, 0f);
+                    boltGO.transform.localScale    = new Vector3(ballSize, ballSize, 1f);
 
                     var boltSr = boltGO.AddComponent<SpriteRenderer>();
-                    boltSr.sprite       = _ringSprite;
-                    boltSr.color        = new Color(0.165f, 0.165f, 0.290f, 0.80f);
                     boltSr.sortingOrder = 1;
+                    boltSr.enabled      = false; // shown by LateUpdate when filled
                     _boltRenderers[col][slot] = boltSr;
 
                     // Specular highlight
@@ -870,20 +989,6 @@ namespace BoltSort.Gameplay
             if (colTr != null) colTr.localPosition = target;
         }
 
-        private void PlaceRect(GameObject parent, string name,
-                               Vector3 localPos, Vector3 localScale,
-                               Color color, int sortingOrder)
-        {
-            var go = new GameObject(name);
-            go.transform.SetParent(parent.transform, false);
-            go.transform.localPosition = localPos;
-            go.transform.localScale    = localScale;
-            var sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite       = _whiteSprite;
-            sr.color        = color;
-            sr.sortingOrder = sortingOrder;
-        }
-
         // ── Per-frame rendering ───────────────────────────────────────────────────
 
         private void LateUpdate()
@@ -920,7 +1025,7 @@ namespace BoltSort.Gameplay
                     : (temps  != null && (col - _colorCount) < temps.Length
                            ? temps[col - _colorCount] : null);
 
-                int depth = col < _colorCount ? _stackDepth : _tempSlotDepth;
+                int depth = _colCap[col];
                 for (int slot = 0; slot < depth; slot++)
                 {
                     var boltSr = _boltRenderers[col][slot];
@@ -934,10 +1039,26 @@ namespace BoltSort.Gameplay
                         if (shine != null) shine.enabled = false;
                         continue;
                     }
-                    boltSr.enabled = true;
+                    // Occupancy & sprite. A slot is filled when occupied — the token may be a
+                    // normal color (>0), the multicolor wildcard (0), or a covered mystery (<0),
+                    // so occupancy is by COUNT, not by color sign.
+                    bool occupied = column != null && slot < column.Count;
+                    int  token    = occupied ? column[slot] : 0;
+                    bool filled   = occupied;
 
-                    // Base position
-                    float slotY = slot * _boltStep;
+                    boltSr.enabled = filled;
+                    var shineSr = _shineRenderers[col]?[slot];
+                    if (!filled)
+                    {
+                        if (shineSr != null) shineSr.enabled = false;
+                        continue;
+                    }
+
+                    boltSr.sprite = GameAssets.BallSpriteForToken(token);
+                    boltSr.color  = Color.white;
+
+                    // Base position (slot center)
+                    float slotY = _slot0CenterLocal[col] + slot * _ballStep[col];
 
                     // Apply selection offset + bob for held bolt
                     bool isHeldSlot = (col == heldCol && slot == heldTopSlot);
@@ -951,123 +1072,127 @@ namespace BoltSort.Gameplay
 
                     boltSr.transform.localPosition = new Vector3(0f, slotY, 0f);
 
-                    // Scale — apply selection scale
-                    float sx = _colWidth - 0.12f;
-                    float sy = _boltHeight;
-                    if (isHeldSlot)
-                    {
-                        sx *= _selScale;
-                        sy *= _selScale;
-                    }
-                    boltSr.transform.localScale = new Vector3(sx, sy, 1f);
+                    // Scale to the target world diameter, normalized by the sprite's native
+                    // size so the result is independent of the PNG's import PPU.
+                    float diameter   = _ballSize[col] * (isHeldSlot ? _selScale : 1f);
+                    float nativeBallW = boltSr.sprite != null ? boltSr.sprite.bounds.size.x : 1f;
+                    float ballScale  = diameter / Mathf.Max(0.0001f, nativeBallW);
+                    boltSr.transform.localScale = new Vector3(ballScale, ballScale, 1f);
 
-                    // Color & sprite
-                    int  colorId = (column != null && slot < column.Count) ? column[slot] : 0;
-                    bool filled  = colorId > 0;
-
-                    boltSr.sprite = filled ? _boltSprite : _ringSprite;
-
-                    Color baseColor = BoltSortTheme.BoltColorForId(colorId);
-                    if (isHeldSlot && filled)
-                        baseColor = BoltSortTheme.BrightnessMult(baseColor, 1.25f);
-                    boltSr.color = baseColor;
-
-                    var shineSr = _shineRenderers[col]?[slot];
-                    if (shineSr != null) shineSr.enabled = filled;
+                    if (shineSr != null) shineSr.enabled = true;
                 }
             }
 
-            // Update column glow for selected column
-            if (_columnGlowRenderers != null)
+            // Update column glow + tube sprite for selected column
+            for (int col = 0; col < totalCols; col++)
             {
-                for (int col = 0; col < _columnGlowRenderers.Length; col++)
+                var tsr = _tubeRenderers != null && col < _tubeRenderers.Length ? _tubeRenderers[col] : null;
+                if (tsr != null)
                 {
-                    var gsr = _columnGlowRenderers[col];
-                    if (gsr == null) continue;
-                    if (col == heldCol)
+                    int    depth   = _colCap[col];
+                    Sprite wantSpr = GameAssets.TubeSprite(depth, selected: col == heldCol);
+                    if (tsr.sprite != wantSpr && wantSpr != null)
                     {
-                        Color gc = BoltSortTheme.TubeSelected;
-                        gc.a = 0.50f + Mathf.Sin(Time.time * 2f) * 0.05f; // D.2-E: raised from 0.30
-                        gsr.color = gc;
+                        tsr.sprite = wantSpr;
+                        // Keep the visible tube the same width across the swap — selected/
+                        // unselected PNGs have different native widths, so re-normalize.
+                        float targetW = (_tubeWidth != null && col < _tubeWidth.Length) ? _tubeWidth[col] : _colWidth;
+                        float s = targetW / Mathf.Max(0.0001f, wantSpr.bounds.size.x);
+                        tsr.transform.localScale = new Vector3(s, s, 1f);
                     }
-                    else
+
+                    // Phase-2 frozen tube: blue tint + snowflake/counter overlay (visible from move 0).
+                    int   frozenRem = _gsm != null ? _gsm.GetFreezeRemaining(col) : 0;
+                    bool  isTempCol = col >= _colorCount;
+                    Color baseTint  = isTempCol ? new Color(0.85f, 0.80f, 0.95f, 1f) : Color.white;
+                    tsr.color = frozenRem > 0 ? new Color(0.50f, 0.72f, 1f, 1f) : baseTint;
+
+                    if (_frozenIcon != null && col < _frozenIcon.Length && _frozenIcon[col] != null)
                     {
-                        var c = gsr.color;
-                        c.a = 0.08f;
-                        gsr.color = c;
+                        _frozenIcon[col].enabled = frozenRem > 0;
+                        float pulse = frozenRem == 1 ? 1f + 0.12f * Mathf.Sin(Time.time * 8f) : 1f; // thawing pulse
+                        _frozenIcon[col].transform.localScale = Vector3.one * (_ballSize[col] * 0.85f * pulse);
+                    }
+                    if (_frozenLabel != null && col < _frozenLabel.Length && _frozenLabel[col] != null)
+                    {
+                        var tmr = _frozenLabel[col].GetComponent<MeshRenderer>();
+                        if (frozenRem > 0) { _frozenLabel[col].text = frozenRem.ToString(); if (tmr != null) tmr.enabled = true; }
+                        else if (tmr != null) tmr.enabled = false;
                     }
                 }
+
+                var gsr = _columnGlowRenderers != null && col < _columnGlowRenderers.Length ? _columnGlowRenderers[col] : null;
+                if (gsr == null) continue;
+                if (col == heldCol)
+                {
+                    Color gc = BoltSortTheme.TubeSelected;
+                    gc.a = 0.50f + Mathf.Sin(Time.time * 2f) * 0.05f; // D.2-E: raised from 0.30
+                    gsr.color = gc;
+                }
+                else
+                {
+                    var c = gsr.color;
+                    c.a = 0.08f;
+                    gsr.color = c;
+                }
             }
+        }
+
+        // ── Mystery reveal ────────────────────────────────────────────────────────
+
+        /// <summary>
+        /// GSM fired a mystery-ball reveal (the negative token already flipped positive, so
+        /// LateUpdate now renders the real color). Adds a colored particle burst flourish at the
+        /// revealed ball's position. Phase-2 (schema_version 2).
+        /// </summary>
+        private void OnMysteryRevealed(int flatIndex, int revealedColor)
+        {
+            if (_columnSlot0World == null || _ballStep == null ||
+                flatIndex < 0 || flatIndex >= _columnSlot0World.Length) return;
+
+            IReadOnlyList<int>[] stacks = _gsm.StackContents;
+            IReadOnlyList<int>[] temps  = _gsm.TempSlotContents;
+            IReadOnlyList<int> col = flatIndex < _colorCount
+                ? (stacks != null && flatIndex < stacks.Length ? stacks[flatIndex] : null)
+                : (temps  != null && (flatIndex - _colorCount) < temps.Length
+                       ? temps[flatIndex - _colorCount] : null);
+            int topSlot = (col != null && col.Count > 0) ? col.Count - 1 : 0;
+            Vector3 world = _columnSlot0World[flatIndex] + Vector3.up * (topSlot * _ballStep[flatIndex]);
+
+            AudioMgr.Instance?.PlaySFX("mystery_reveal");
+            Color c = BoltSortTheme.BoltColorForId(revealedColor);
+            for (int i = 0; i < 12; i++)
+                StartCoroutine(WinParticle(world, i * 30f, Random.Range(2f, 4f),
+                                           Random.Range(0.06f, 0.12f), Random.Range(0.30f, 0.50f), c));
         }
 
         // ── Procedural sprite factories ───────────────────────────────────────────
 
-        private static Sprite CreateWhiteSprite()
+        /// <summary>Six-spoke snowflake glyph for the frozen-tube overlay.</summary>
+        private static Sprite CreateSnowSprite()
         {
-            var tex = new Texture2D(2, 2) { filterMode = FilterMode.Point, wrapMode = TextureWrapMode.Clamp };
-            tex.SetPixels(new[] { Color.white, Color.white, Color.white, Color.white });
-            tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, 2, 2), Vector2.one * 0.5f, 2f);
-        }
-
-        // Premium marble-look sphere sprite: radial shading + upper-left specular
-        private static Sprite CreateMarbleSprite()
-        {
-            const int size = 128;
+            const int size = 32;
             var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
                 { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
             var px  = new Color[size * size];
-            float c = size * 0.5f, r = c - 1f;
-
+            float cx = size * 0.5f, cy = size * 0.5f, R = size * 0.46f;
             for (int y = 0; y < size; y++)
             {
                 for (int x = 0; x < size; x++)
                 {
-                    float dx   = x + 0.5f - c, dy = y + 0.5f - c;
-                    float dist = Mathf.Sqrt(dx * dx + dy * dy);
-                    float alpha = Mathf.Clamp01((r - dist) * 2.5f);
-
-                    // Base radial shading — bright centre, shadowed rim
-                    float shade = Mathf.Lerp(1f, 0.55f, Mathf.Clamp01(dist / r));
-
-                    // Primary specular blob — upper left, sharp
-                    float hlDx  = dx + r * 0.30f, hlDy = dy + r * 0.30f;
-                    float hlDist = Mathf.Sqrt(hlDx * hlDx * 0.7f + hlDy * hlDy);
-                    float spec1  = Mathf.Clamp01(1f - hlDist / (r * 0.35f));
-                    shade        = Mathf.Min(1f, shade + spec1 * spec1 * 0.55f);
-
-                    // Secondary soft specular — larger, lower intensity
-                    float hlDx2  = dx + r * 0.15f, hlDy2 = dy + r * 0.15f;
-                    float hlDist2 = Mathf.Sqrt(hlDx2 * hlDx2 + hlDy2 * hlDy2);
-                    float spec2   = Mathf.Clamp01(1f - hlDist2 / (r * 0.55f));
-                    shade         = Mathf.Min(1f, shade + spec2 * 0.18f);
-
-                    // Rim darkening (subsurface scatter fake)
-                    float rimT = Mathf.Clamp01((dist - r * 0.75f) / (r * 0.25f));
-                    shade      = Mathf.Lerp(shade, shade * 0.70f, rimT * rimT);
-
-                    px[y * size + x] = new Color(shade, shade, shade, alpha);
-                }
-            }
-            tex.SetPixels(px); tex.Apply();
-            return Sprite.Create(tex, new Rect(0, 0, size, size), Vector2.one * 0.5f, size);
-        }
-
-        private static Sprite CreateRingSprite()
-        {
-            const int size = 64;
-            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
-                { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
-            var px  = new Color[size * size];
-            float c = size * 0.5f, rOuter = c - 2f, rInner = rOuter - 7f;
-            for (int y = 0; y < size; y++)
-            {
-                for (int x = 0; x < size; x++)
-                {
-                    float dist   = Mathf.Sqrt((x + .5f - c) * (x + .5f - c) + (y + .5f - c) * (y + .5f - c));
-                    float outerA = Mathf.Clamp01((rOuter - dist) * 2f);
-                    float innerA = Mathf.Clamp01((dist - rInner) * 2f);
-                    px[y * size + x] = new Color(1f, 1f, 1f, outerA * innerA * 0.7f);
+                    float dx = x + 0.5f - cx, dy = y + 0.5f - cy;
+                    float r  = Mathf.Sqrt(dx * dx + dy * dy);
+                    float a  = Mathf.Atan2(dy, dx);
+                    float fold = Mathf.Repeat(a, Mathf.PI / 3f);
+                    float dist = Mathf.Min(fold, Mathf.PI / 3f - fold); // angular distance to nearest spoke
+                    float alpha = 0f;
+                    if (r < R)
+                    {
+                        float spoke = Mathf.Clamp01(1f - dist / 0.18f) * Mathf.Clamp01(1f - r / R);
+                        float core  = Mathf.Clamp01(1f - r / (R * 0.30f));
+                        alpha = Mathf.Clamp01(Mathf.Max(spoke, core));
+                    }
+                    px[y * size + x] = new Color(1f, 1f, 1f, alpha);
                 }
             }
             tex.SetPixels(px); tex.Apply();

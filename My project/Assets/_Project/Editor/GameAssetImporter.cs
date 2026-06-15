@@ -28,6 +28,7 @@ namespace BoltSort.Editor
             ImportNutsBasic();
             ImportTubeContainers();
             ImportLevelButtonsGrid();
+            ImportBallsAndTubes();
 
             // Single-sprite images — name differs from filename → use named single entry
             ImportNamed("Assets/game_assets/level_selector/level_unlocked_1.png",
@@ -206,7 +207,81 @@ namespace BoltSort.Editor
             });
         }
 
+        static void ImportBallsAndTubes()
+        {
+            // Resources/Sprites/Balls/ — 11 ball PNGs, cropped to their opaque bbox.
+            // Pivot = Center (0.5, 0.5) per Part 3. PPU = bbox width so each ball
+            // renders at 1 world unit at scale 1 (cropped rects are near-square).
+            const string ballsDir = "Assets/Resources/Sprites/Balls/";
+            ImportCropped(ballsDir + "ball_red.png",        5, 7, 395, 394, BallPivot);
+            ImportCropped(ballsDir + "ball_green.png",      7, 8, 392, 393, BallPivot);
+            ImportCropped(ballsDir + "ball_blue.png",       7, 8, 394, 392, BallPivot);
+            ImportCropped(ballsDir + "ball_orange.png",     6, 8, 393, 393, BallPivot);
+            ImportCropped(ballsDir + "ball_purple.png",     6, 7, 395, 395, BallPivot);
+            ImportCropped(ballsDir + "ball_pink.png",       6, 9, 392, 392, BallPivot);
+            ImportCropped(ballsDir + "ball_yellow.png",     6, 7, 395, 395, BallPivot);
+            ImportCropped(ballsDir + "ball_light_blue.png", 6, 7, 394, 395, BallPivot);
+            ImportCropped(ballsDir + "ball_brown.png",      8, 8, 391, 392, BallPivot);
+            ImportCropped(ballsDir + "ball_grey.png",       8, 8, 393, 393, BallPivot);
+            ImportCropped(ballsDir + "ball_black.png",      7, 7, 394, 394, BallPivot);
+            // Phase-2 mechanic balls (407x407 source; imported full-image, centered).
+            ImportCropped(ballsDir + "ball_mystery.png",    0, 0, 407, 407, BallPivot);
+            ImportCropped(ballsDir + "ball_multicolor.png", 0, 0, 407, 407, BallPivot);
+
+            // Resources/Sprites/Tubes/ — 10 tube PNGs, cropped to their opaque bbox.
+            // Pivot = Bottom-Center (0.5, 0) per Part 3 so tubes anchor on the board floor.
+            const string tubesDir = "Assets/Resources/Sprites/Tubes/";
+            ImportCropped(tubesDir + "Tube_unselected_short.png",        55, 257, 480, 1171, TubePivot);
+            ImportCropped(tubesDir + "Tube_unselected.png",              51, 153, 480, 1365, TubePivot);
+            ImportCropped(tubesDir + "Tube_unselected_large.png",        52,  57, 481, 1564, TubePivot);
+            ImportCropped(tubesDir + "Tube_unselected_extra_large.png",  52, 135, 481, 1897, TubePivot);
+            ImportCropped(tubesDir + "Tube_unselected_XXL.png",          51,  82, 482, 2471, TubePivot);
+            ImportCropped(tubesDir + "Tube_selected_short.png",          12, 216, 568, 1256, TubePivot);
+            ImportCropped(tubesDir + "Tube_selected.png",                14, 115, 555, 1442, TubePivot);
+            ImportCropped(tubesDir + "Tube_selected_large.png",          10,  16, 563, 1647, TubePivot);
+            ImportCropped(tubesDir + "Tube_selected_extra_large.png",    10,  97, 563, 1973, TubePivot);
+            ImportCropped(tubesDir + "Tube_selected_XXL.png",            11,  41, 563, 2558, TubePivot);
+        }
+
         // ── Helpers ───────────────────────────────────────────────────────────────
+
+        static readonly Vector2 BallPivot = new Vector2(0.5f, 0.5f);
+        static readonly Vector2 TubePivot = new Vector2(0.5f, 0f);
+
+        /// <summary>
+        /// Imports a single-sprite PNG cropped to (x, y, w, h) — Unity bottom-left-origin
+        /// rect — with the given normalized pivot and spritePixelsPerUnit = w (so the
+        /// cropped sprite is exactly 1 world unit wide at scale 1).
+        /// </summary>
+        static void ImportCropped(string path, int x, int y, int w, int h, Vector2 pivot)
+        {
+            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null)
+            {
+                Debug.LogWarning($"[GameAssetImporter] Asset not found: {path}");
+                return;
+            }
+            importer.textureType         = TextureImporterType.Sprite;
+            importer.spriteImportMode    = SpriteImportMode.Multiple;
+            importer.spritePixelsPerUnit = w;
+            importer.filterMode          = FilterMode.Bilinear;
+            importer.maxTextureSize      = 4096;
+            importer.textureCompression  = TextureImporterCompression.CompressedHQ;
+            importer.alphaIsTransparency = true;
+            importer.mipmapEnabled       = false;
+            importer.spritesheet = new[]
+            {
+                new SpriteMetaData
+                {
+                    name      = System.IO.Path.GetFileNameWithoutExtension(path),
+                    rect      = new Rect(x, y, w, h),
+                    alignment = (int)SpriteAlignment.Custom,
+                    pivot     = pivot,
+                },
+            };
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+            Debug.Log($"[GameAssetImporter] {path} → cropped sprite ({w}x{h}, pivot {pivot})");
+        }
 
         static SpriteMetaData Spr(string name, int x, int y, int w, int h) =>
             new SpriteMetaData
@@ -283,16 +358,37 @@ namespace BoltSort.Editor
 
         static void AutoImportIfNeeded()
         {
-            const string probeAsset = "Assets/Resources/Sprites/Buttons/ui_buttons_set1.png";
-            var all = AssetDatabase.LoadAllAssetsAtPath(probeAsset);
-            foreach (var obj in all)
-                if (obj is Sprite s && s.name == "btn_play") return;
+            // Re-run the importer if EITHER the button sheets aren't sliced yet OR the
+            // tube sprites still carry their default (center) pivot. The tube check is
+            // essential: buttons may already be sliced from an earlier run, which would
+            // otherwise make us skip importing the newer ball/tube art entirely.
+            if (ButtonsSliced() && TubesBottomPivot()) return;
 
-            // btn_play sub-sprite not found — assets haven't been sliced yet
-            if (AssetImporter.GetAtPath(probeAsset) == null) return; // PNG not in project yet
-
-            Debug.Log("[GameAssets] Sprites not yet sliced — auto-importing game_assets...");
+            Debug.Log("[GameAssets] Game assets not fully configured — auto-importing...");
             GameAssetImporter.ImportAll();
+        }
+
+        static bool ButtonsSliced()
+        {
+            const string probeAsset = "Assets/Resources/Sprites/Buttons/ui_buttons_set1.png";
+            if (AssetImporter.GetAtPath(probeAsset) == null) return true; // PNG absent → nothing to do
+            foreach (var obj in AssetDatabase.LoadAllAssetsAtPath(probeAsset))
+                if (obj is Sprite s && s.name == "btn_play") return true;
+            return false;
+        }
+
+        // True when the tube sprite is configured with a bottom (y≈0) pivot, i.e. our
+        // ImportBallsAndTubes has run. A default-imported PNG has a centered pivot.
+        static bool TubesBottomPivot()
+        {
+            const string probeAsset = "Assets/Resources/Sprites/Tubes/Tube_unselected.png";
+            if (AssetImporter.GetAtPath(probeAsset) == null) return true; // PNG absent → nothing to do
+            foreach (var obj in AssetDatabase.LoadAllAssetsAtPath(probeAsset))
+            {
+                if (obj is Sprite s && s.rect.height > 0f)
+                    return (s.pivot.y / s.rect.height) < 0.10f;
+            }
+            return false; // no sprite sub-asset yet → needs import
         }
     }
 }
