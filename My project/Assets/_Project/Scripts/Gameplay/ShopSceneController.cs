@@ -137,9 +137,9 @@ namespace BoltSort.Gameplay
 
         private void BuildTabBar(GameObject canvasGO)
         {
-            var bar = new GameObject("TabBar");
+            var bar = new GameObject("TabBar", typeof(RectTransform));
             bar.transform.SetParent(canvasGO.transform, false);
-            var barRt = bar.GetComponent<RectTransform>() ?? bar.AddComponent<RectTransform>();
+            var barRt = bar.GetComponent<RectTransform>();
             barRt.anchorMin = new Vector2(0f, 1f); barRt.anchorMax = new Vector2(1f, 1f);
             barRt.pivot = new Vector2(0.5f, 1f);
             float top = 110f + _safeTop;
@@ -178,9 +178,9 @@ namespace BoltSort.Gameplay
 
         private void BuildScroll(GameObject canvasGO)
         {
-            var scrollGO = new GameObject("SkinScroll");
+            var scrollGO = new GameObject("SkinScroll", typeof(RectTransform));
             scrollGO.transform.SetParent(canvasGO.transform, false);
-            var scrollRt = scrollGO.AddComponent<RectTransform>();
+            var scrollRt = scrollGO.GetComponent<RectTransform>();
             scrollRt.anchorMin = Vector2.zero; scrollRt.anchorMax = Vector2.one;
             scrollRt.offsetMin = new Vector2(0f, _safeBottom + 16f);
             scrollRt.offsetMax = new Vector2(0f, -(110f + _safeTop + 104f));
@@ -204,9 +204,9 @@ namespace BoltSort.Gameplay
             scroll.viewport = vpRt;
 
             // Content
-            var content = new GameObject("Content");
+            var content = new GameObject("Content", typeof(RectTransform));
             content.transform.SetParent(vp.transform, false);
-            _gridContent = content.AddComponent<RectTransform>();
+            _gridContent = content.GetComponent<RectTransform>();
             _gridContent.anchorMin = new Vector2(0f, 1f); _gridContent.anchorMax = new Vector2(1f, 1f);
             _gridContent.pivot = new Vector2(0.5f, 1f);
             _gridContent.offsetMin = new Vector2(0f, 0f); _gridContent.offsetMax = new Vector2(0f, 0f);
