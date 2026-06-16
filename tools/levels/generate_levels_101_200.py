@@ -117,7 +117,8 @@ def load_existing_signatures() -> set:
     return {canonical_signature(rec) for rec in cat["levels"]}
 
 
-def make_level(level_id: int, existing_sigs: set) -> dict:
+def make_level(level_id: int, existing_sigs: set,
+               pct_override: float | None = None, pool_override: int | None = None) -> dict:
     cc, sd, tc, td = band_for(level_id)
     shape = LevelShape(cc, sd, tc, td)
     rng = random.Random(level_seed(level_id))
@@ -125,8 +126,8 @@ def make_level(level_id: int, existing_sigs: set) -> dict:
     floor = trivial_floor(shape)
 
     restricted = td < sd
-    pool_target = 3
-    max_tries = 400 if restricted else 80
+    pool_target = pool_override if pool_override is not None else 3
+    max_tries = (400 if restricted else 80) * (pool_target if pool_override else 1)
 
     pool: List[Candidate] = []
     seen_local = set()
@@ -155,7 +156,7 @@ def make_level(level_id: int, existing_sigs: set) -> dict:
         raise RuntimeError(f"L{level_id}: no candidates for {shape} (tries={tries})")
 
     pool.sort(key=lambda c: c.score)
-    pct = percentile_for(level_id)
+    pct = pct_override if pct_override is not None else percentile_for(level_id)
     chosen = pool[min(len(pool) - 1, max(0, round(pct * (len(pool) - 1))))]
 
     cushion = min(5, max(2, round(chosen.optimal * 0.2) + 1))
