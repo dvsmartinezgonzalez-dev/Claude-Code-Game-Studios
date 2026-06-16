@@ -24,6 +24,8 @@ namespace BoltSort.Visual
         public static Sprite GameBackground  => LoadRes("Sprites/game_background");
         public static Sprite VictoryBg       => LoadRes("Sprites/victory_screen");
         public static Sprite ShopPanel       => LoadRes("Sprites/shop_frame");
+        public static Sprite ShopTabSelected   => LoadFromSheet("Sprites/Shop/Selected_buttons", "tab_selected");
+        public static Sprite ShopTabUnselected => LoadFromSheet("Sprites/Shop/Selected_buttons", "tab_unselected");
         public static Sprite TileLevelLocked   => LoadRes("Sprites/level_locked");
         public static Sprite TileLevelUnlocked => LoadRes("Sprites/level_unlocked");
 
@@ -71,7 +73,15 @@ namespace BoltSort.Visual
         public static Sprite BallSprite(int colorId)
         {
             if (colorId <= 0) return null;
-            return LoadRes($"Sprites/Balls/{BallSpriteNames[(colorId - 1) % BallSpriteNames.Length]}");
+            string name   = BallSpriteNames[(colorId - 1) % BallSpriteNames.Length];
+            string folder = SkinManager.ActiveBallFolder;
+            // Skinned art falls back to default if the skin file is missing.
+            if (!string.IsNullOrEmpty(folder))
+            {
+                var skinned = LoadRes($"Sprites/Balls/{folder}{name}");
+                if (skinned != null) return skinned;
+            }
+            return LoadRes($"Sprites/Balls/{name}");
         }
 
         /// <summary>Mystery-ball sprite (hidden color). Phase-2 mechanic (negative color id).</summary>
@@ -102,7 +112,13 @@ namespace BoltSort.Visual
                          : capacity == 5 ? "_large"
                          : capacity == 6 ? "_extra_large"
                          : "_XXL";
-            string state = selected ? "Tube_selected" : "Tube_unselected";
+            string state  = selected ? "Tube_selected" : "Tube_unselected";
+            string folder = SkinManager.ActiveTubeFolder;
+            if (!string.IsNullOrEmpty(folder))
+            {
+                var skinned = LoadRes($"Sprites/Tubes/{folder}{state}{size}");
+                if (skinned != null) return skinned;
+            }
             return LoadRes($"Sprites/Tubes/{state}{size}");
         }
 

@@ -9,11 +9,52 @@ namespace BoltSort.Visual
     /// </summary>
     public class BackgroundController : MonoBehaviour
     {
+        private SpriteRenderer _wallpaperSr;
+
         private void Awake()
         {
             BuildGradientBackground();
+            BuildWallpaper();
             BuildVignette();
             BuildAmbientParticles();
+        }
+
+        private void OnEnable()  => SkinManager.OnSkinChanged += ApplyWallpaper;
+        private void OnDisable() => SkinManager.OnSkinChanged -= ApplyWallpaper;
+
+        /// <summary>Full-screen wallpaper layer above the gradient; hidden when Default skin is equipped.</summary>
+        private void BuildWallpaper()
+        {
+            var go = new GameObject("Wallpaper");
+            go.transform.SetParent(transform, false);
+            go.transform.localPosition = new Vector3(0f, 0f, 4f);
+
+            Camera cam  = Camera.main;
+            float  camH = cam != null ? cam.orthographicSize * 2f : 19.2f;
+            float  camW = cam != null ? camH * cam.aspect       : camH * (9f / 16f);
+            go.transform.localScale = new Vector3(camW, camH, 1f);
+
+            _wallpaperSr = go.AddComponent<SpriteRenderer>();
+            _wallpaperSr.sortingOrder = -99; // above gradient (-100), below board
+            ApplyWallpaper();
+        }
+
+        private void ApplyWallpaper()
+        {
+            if (_wallpaperSr == null) return;
+            Sprite spr = SkinManager.EquippedBackgroundSprite;
+            _wallpaperSr.sprite  = spr;
+            _wallpaperSr.enabled = spr != null;
+            if (spr != null)
+            {
+                // Cover the camera rect regardless of the wallpaper's native aspect.
+                Camera cam  = Camera.main;
+                float  camH = cam != null ? cam.orthographicSize * 2f : 19.2f;
+                float  camW = cam != null ? camH * cam.aspect       : camH * (9f / 16f);
+                float  sw   = spr.bounds.size.x, sh = spr.bounds.size.y;
+                float  s    = Mathf.Max(camW / Mathf.Max(0.0001f, sw), camH / Mathf.Max(0.0001f, sh));
+                _wallpaperSr.transform.localScale = new Vector3(s, s, 1f);
+            }
         }
 
         private void BuildGradientBackground()

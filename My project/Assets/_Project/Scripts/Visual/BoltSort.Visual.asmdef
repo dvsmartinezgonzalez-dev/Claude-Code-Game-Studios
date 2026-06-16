@@ -2,7 +2,8 @@
     "name": "BoltSort.Visual",
     "rootNamespace": "BoltSort.Visual",
     "references": [
-        "BoltSort.Audio"
+        "BoltSort.Audio",
+        "BoltSort.SaveSystem"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],
