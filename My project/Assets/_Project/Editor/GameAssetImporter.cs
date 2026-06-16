@@ -30,6 +30,8 @@ namespace BoltSort.Editor
             ImportLevelButtonsGrid();
             ImportBallsAndTubes();
             ImportConfettiSheet();
+            ImportShopTabs();
+            ImportShopWallpapers();
 
             // Single-sprite images — name differs from filename → use named single entry
             ImportNamed("Assets/game_assets/level_selector/level_unlocked_1.png",
@@ -292,6 +294,54 @@ namespace BoltSort.Editor
             });
         }
 
+        // ── Shop skin assets ──────────────────────────────────────────────────────
+
+        // Selected_buttons.png (1080×357): top half = selected tab state, bottom = unselected.
+        // Sliced into Sprites/Shop/Selected_buttons so GameAssets.LoadFromSheet can read it.
+        static void ImportShopTabs()
+        {
+            const string path = "Assets/Resources/Sprites/Shop/Selected_buttons.png";
+            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null) { Debug.LogWarning($"[GameAssetImporter] Asset not found: {path}"); return; }
+            importer.GetSourceTextureWidthAndHeight(out int w, out int h);
+            int halfTop = h - h / 2;       // top half height (Unity y origin = bottom-left)
+            int halfBot = h / 2;
+            ImportSheet(path, new List<SpriteMetaData>
+            {
+                Spr("tab_selected",   0, h - halfTop, w, halfTop),
+                Spr("tab_unselected", 0, 0,           w, halfBot),
+            });
+        }
+
+        // Wallpapers (.jpg) → single sprites under Resources/Sprites/Shop/Wallpapers/.
+        static void ImportShopWallpapers()
+        {
+            const string dir = "Assets/Resources/Sprites/Shop/Wallpapers";
+            if (!System.IO.Directory.Exists(dir)) return;
+            foreach (var file in System.IO.Directory.GetFiles(dir))
+            {
+                if (file.EndsWith(".meta")) continue;
+                string ext = System.IO.Path.GetExtension(file).ToLowerInvariant();
+                if (ext != ".jpg" && ext != ".jpeg" && ext != ".png") continue;
+                ImportWallpaper(file.Replace('\\', '/'));
+            }
+        }
+
+        static void ImportWallpaper(string path)
+        {
+            var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null) { Debug.LogWarning($"[GameAssetImporter] Asset not found: {path}"); return; }
+            importer.textureType         = TextureImporterType.Sprite;
+            importer.spriteImportMode    = SpriteImportMode.Single;
+            importer.spritePixelsPerUnit = 100f;
+            importer.filterMode          = FilterMode.Bilinear;
+            importer.maxTextureSize      = 1024;
+            importer.textureCompression  = TextureImporterCompression.Compressed;
+            importer.mipmapEnabled       = false;
+            AssetDatabase.ImportAsset(path, ImportAssetOptions.ForceUpdate);
+            Debug.Log($"[GameAssetImporter] {path} → wallpaper sprite");
+        }
+
         // ── Helpers ───────────────────────────────────────────────────────────────
 
         static readonly Vector2 BallPivot = new Vector2(0.5f, 0.5f);
@@ -411,7 +461,7 @@ namespace BoltSort.Editor
             // tube sprites still carry their default (center) pivot. The tube check is
             // essential: buttons may already be sliced from an earlier run, which would
             // otherwise make us skip importing the newer ball/tube art entirely.
-            if (ButtonsSliced() && TubesBottomPivot() && ConfettiSliced()) return;
+            if (ButtonsSliced() && TubesBottomPivot() && ConfettiSliced() && ShopTabsSliced()) return;
 
             Debug.Log("[GameAssets] Game assets not fully configured — auto-importing...");
             GameAssetImporter.ImportAll();
@@ -423,6 +473,16 @@ namespace BoltSort.Editor
             if (AssetImporter.GetAtPath(probeAsset) == null) return true; // PNG absent → nothing to do
             foreach (var obj in AssetDatabase.LoadAllAssetsAtPath(probeAsset))
                 if (obj is Sprite s && s.name == "btn_play") return true;
+            return false;
+        }
+
+        // True when the shop tab sheet has been sliced into tab_selected/tab_unselected.
+        static bool ShopTabsSliced()
+        {
+            const string probeAsset = "Assets/Resources/Sprites/Shop/Selected_buttons.png";
+            if (AssetImporter.GetAtPath(probeAsset) == null) return true; // PNG absent → nothing to do
+            foreach (var obj in AssetDatabase.LoadAllAssetsAtPath(probeAsset))
+                if (obj is Sprite s && s.name == "tab_selected") return true;
             return false;
         }
 
