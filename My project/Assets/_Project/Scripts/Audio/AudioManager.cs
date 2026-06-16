@@ -50,7 +50,7 @@ namespace BoltSort.Audio
         {
             _musicSource            = gameObject.AddComponent<AudioSource>();
             _musicSource.loop       = true;
-            _musicSource.volume     = 0.4f;
+            _musicSource.volume     = 0.20f;
             _musicSource.playOnAwake = false;
 
             _sfxSource              = gameObject.AddComponent<AudioSource>();
@@ -66,7 +66,7 @@ namespace BoltSort.Audio
             _boltInvalid = Resources.Load<AudioClip>("Audio/bolt_invalid");
             _levelWin    = Resources.Load<AudioClip>("Audio/level_win");
             _buttonTap   = Resources.Load<AudioClip>("Audio/button_tap");
-            _bgmMain     = Resources.Load<AudioClip>("Audio/bgm_main");
+            _bgmMain     = GenerateBGM();
             _sceneWhoosh = Resources.Load<AudioClip>("Audio/scene_whoosh") ?? GenerateWhoosh();
         }
 
@@ -120,6 +120,43 @@ namespace BoltSort.Audio
         }
 
         public void SetSFXEnabled(bool enabled) => _sfxEnabled = enabled;
+
+        // Procedural BGM: soft ambient pad using layered sine waves in C major (8-second loop)
+        private static AudioClip GenerateBGM()
+        {
+            const int   sampleRate = 44100;
+            const float duration   = 8.0f;
+            int         samples    = (int)(sampleRate * duration);
+            var         clip       = AudioClip.Create("bgm_proc", samples, 1, sampleRate, false);
+            var         data       = new float[samples];
+
+            // C major chord tones (Hz): root, major third, fifth, octave
+            float[] freqs  = { 65.41f, 98.00f, 130.81f, 164.81f, 196.00f };
+            float[] amps   = { 0.28f,  0.18f,  0.22f,   0.14f,   0.12f   };
+
+            for (int i = 0; i < samples; i++)
+            {
+                float t    = (float)i / sampleRate;
+                float norm = (float)i / samples; // 0..1
+                // Gentle amplitude envelope: smooth ramp in/out for seamless loop
+                float env = norm < 0.05f ? norm / 0.05f
+                          : norm > 0.95f ? (1f - norm) / 0.05f
+                          : 1f;
+                // Slow tremolo (0.25 Hz) adds subtle life
+                float tremolo = 1f + 0.04f * Mathf.Sin(2f * Mathf.PI * 0.25f * t);
+
+                float sample = 0f;
+                for (int f = 0; f < freqs.Length; f++)
+                {
+                    // Slight detuning per partial for warmth
+                    float detune = 1f + (f % 2 == 0 ? 0.0015f : -0.0015f);
+                    sample += amps[f] * Mathf.Sin(2f * Mathf.PI * freqs[f] * detune * t);
+                }
+                data[i] = Mathf.Clamp(sample * env * tremolo, -1f, 1f);
+            }
+            clip.SetData(data, 0);
+            return clip;
+        }
 
         // Procedural whoosh: bandpass-filtered white noise, 300ms, fade in/out
         private static AudioClip GenerateWhoosh()
