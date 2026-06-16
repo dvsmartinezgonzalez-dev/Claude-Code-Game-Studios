@@ -77,6 +77,10 @@ namespace BoltSort.Visual
         {
             new SkinItem { SkinId = "ball_default", DisplayName = "Default",
                            Category = SkinCategory.Balls, IsDefault = true, AssetFolder = "" },
+            new SkinItem { SkinId = "ball_icecream", DisplayName = "Ice Cream",
+                           Category = SkinCategory.Balls, IsDefault = false, UnlockCost = 1000,
+                           AssetFolder = "IceCream/",
+                           ThumbnailPath = "Sprites/Balls/IceCream/ball_blue" },
         };
 
         private static readonly List<SkinItem> _backgrounds = new()
