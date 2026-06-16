@@ -8,7 +8,18 @@
       "schema_version": 1,
       "color_count": 2,
       "stack_depth": 3,
-      "color_stacks": [[1,2,2],[1,1,2]],
+      "color_stacks": [
+        [
+          1,
+          2,
+          2
+        ],
+        [
+          1,
+          1,
+          2
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 3,
       "is_tutorial": true,
@@ -23,7 +34,18 @@
       "schema_version": 1,
       "color_count": 2,
       "stack_depth": 3,
-      "color_stacks": [[1,2,2],[1,2,1]],
+      "color_stacks": [
+        [
+          1,
+          2,
+          2
+        ],
+        [
+          1,
+          2,
+          1
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 3,
       "is_tutorial": true,
@@ -38,7 +60,20 @@
       "schema_version": 1,
       "color_count": 2,
       "stack_depth": 4,
-      "color_stacks": [[1,2,1,1],[2,2,1,2]],
+      "color_stacks": [
+        [
+          1,
+          2,
+          1,
+          1
+        ],
+        [
+          2,
+          2,
+          1,
+          2
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -53,7 +88,23 @@
       "schema_version": 1,
       "color_count": 3,
       "stack_depth": 3,
-      "color_stacks": [[1,2,1],[1,3,3],[3,2,2]],
+      "color_stacks": [
+        [
+          1,
+          2,
+          1
+        ],
+        [
+          1,
+          3,
+          3
+        ],
+        [
+          3,
+          2,
+          2
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 3,
       "is_tutorial": false,
@@ -68,7 +119,26 @@
       "schema_version": 1,
       "color_count": 3,
       "stack_depth": 4,
-      "color_stacks": [[3,3,2,1],[1,2,3,1],[1,2,3,2]],
+      "color_stacks": [
+        [
+          3,
+          3,
+          2,
+          1
+        ],
+        [
+          1,
+          2,
+          3,
+          1
+        ],
+        [
+          1,
+          2,
+          3,
+          2
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -83,7 +153,26 @@
       "schema_version": 1,
       "color_count": 3,
       "stack_depth": 4,
-      "color_stacks": [[1,2,2,2],[2,1,3,3],[1,3,1,3]],
+      "color_stacks": [
+        [
+          1,
+          2,
+          2,
+          2
+        ],
+        [
+          2,
+          1,
+          3,
+          3
+        ],
+        [
+          1,
+          3,
+          1,
+          3
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -98,7 +187,26 @@
       "schema_version": 1,
       "color_count": 3,
       "stack_depth": 4,
-      "color_stacks": [[1,3,2,3],[1,2,1,2],[1,2,3,3]],
+      "color_stacks": [
+        [
+          1,
+          3,
+          2,
+          3
+        ],
+        [
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          1,
+          2,
+          3,
+          3
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -113,7 +221,32 @@
       "schema_version": 1,
       "color_count": 4,
       "stack_depth": 4,
-      "color_stacks": [[3,1,3,3],[4,1,1,2],[2,4,3,4],[1,2,4,2]],
+      "color_stacks": [
+        [
+          3,
+          1,
+          3,
+          3
+        ],
+        [
+          4,
+          1,
+          1,
+          2
+        ],
+        [
+          2,
+          4,
+          3,
+          4
+        ],
+        [
+          1,
+          2,
+          4,
+          2
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -128,7 +261,32 @@
       "schema_version": 1,
       "color_count": 4,
       "stack_depth": 4,
-      "color_stacks": [[2,1,3,3],[2,3,1,4],[4,2,3,2],[1,4,1,4]],
+      "color_stacks": [
+        [
+          2,
+          1,
+          3,
+          3
+        ],
+        [
+          2,
+          3,
+          1,
+          4
+        ],
+        [
+          4,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          4,
+          1,
+          4
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -143,7 +301,26 @@
       "schema_version": 1,
       "color_count": 3,
       "stack_depth": 4,
-      "color_stacks": [[2,2,3,2],[1,1,2,1],[3,3,1,3]],
+      "color_stacks": [
+        [
+          2,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          1,
+          2,
+          1
+        ],
+        [
+          3,
+          3,
+          1,
+          3
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -158,7 +335,32 @@
       "schema_version": 1,
       "color_count": 4,
       "stack_depth": 4,
-      "color_stacks": [[2,2,1,2],[4,3,4,1],[3,1,2,4],[4,3,3,1]],
+      "color_stacks": [
+        [
+          2,
+          2,
+          1,
+          2
+        ],
+        [
+          4,
+          3,
+          4,
+          1
+        ],
+        [
+          3,
+          1,
+          2,
+          4
+        ],
+        [
+          4,
+          3,
+          3,
+          1
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -173,7 +375,32 @@
       "schema_version": 1,
       "color_count": 4,
       "stack_depth": 4,
-      "color_stacks": [[2,4,3,3],[2,2,1,1],[4,3,1,4],[1,3,4,2]],
+      "color_stacks": [
+        [
+          2,
+          4,
+          3,
+          3
+        ],
+        [
+          2,
+          2,
+          1,
+          1
+        ],
+        [
+          4,
+          3,
+          1,
+          4
+        ],
+        [
+          1,
+          3,
+          4,
+          2
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -188,7 +415,32 @@
       "schema_version": 1,
       "color_count": 4,
       "stack_depth": 4,
-      "color_stacks": [[4,2,2,1],[2,1,4,2],[3,1,3,1],[3,4,4,3]],
+      "color_stacks": [
+        [
+          4,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          1,
+          4,
+          2
+        ],
+        [
+          3,
+          1,
+          3,
+          1
+        ],
+        [
+          3,
+          4,
+          4,
+          3
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -203,7 +455,36 @@
       "schema_version": 1,
       "color_count": 4,
       "stack_depth": 5,
-      "color_stacks": [[1,2,1,4,1],[3,3,1,3,1],[2,4,4,3,2],[2,4,2,4,3]],
+      "color_stacks": [
+        [
+          1,
+          2,
+          1,
+          4,
+          1
+        ],
+        [
+          3,
+          3,
+          1,
+          3,
+          1
+        ],
+        [
+          2,
+          4,
+          4,
+          3,
+          2
+        ],
+        [
+          2,
+          4,
+          2,
+          4,
+          3
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -218,7 +499,36 @@
       "schema_version": 1,
       "color_count": 4,
       "stack_depth": 5,
-      "color_stacks": [[2,1,4,1,4],[3,2,2,4,3],[3,4,1,3,2],[2,4,3,1,1]],
+      "color_stacks": [
+        [
+          2,
+          1,
+          4,
+          1,
+          4
+        ],
+        [
+          3,
+          2,
+          2,
+          4,
+          3
+        ],
+        [
+          3,
+          4,
+          1,
+          3,
+          2
+        ],
+        [
+          2,
+          4,
+          3,
+          1,
+          1
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -233,7 +543,38 @@
       "schema_version": 1,
       "color_count": 5,
       "stack_depth": 4,
-      "color_stacks": [[5,3,5,3],[2,1,5,3],[4,1,5,2],[2,4,1,2],[4,4,3,1]],
+      "color_stacks": [
+        [
+          5,
+          3,
+          5,
+          3
+        ],
+        [
+          2,
+          1,
+          5,
+          3
+        ],
+        [
+          4,
+          1,
+          5,
+          2
+        ],
+        [
+          2,
+          4,
+          1,
+          2
+        ],
+        [
+          4,
+          4,
+          3,
+          1
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -248,7 +589,38 @@
       "schema_version": 1,
       "color_count": 5,
       "stack_depth": 4,
-      "color_stacks": [[3,1,2,5],[4,1,5,5],[4,3,3,5],[1,4,3,2],[2,1,2,4]],
+      "color_stacks": [
+        [
+          3,
+          1,
+          2,
+          5
+        ],
+        [
+          4,
+          1,
+          5,
+          5
+        ],
+        [
+          4,
+          3,
+          3,
+          5
+        ],
+        [
+          1,
+          4,
+          3,
+          2
+        ],
+        [
+          2,
+          1,
+          2,
+          4
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -263,7 +635,43 @@
       "schema_version": 1,
       "color_count": 5,
       "stack_depth": 5,
-      "color_stacks": [[1,2,2,5,3],[5,2,4,1,3],[1,3,4,5,3],[2,1,4,3,5],[4,4,1,5,2]],
+      "color_stacks": [
+        [
+          1,
+          2,
+          2,
+          5,
+          3
+        ],
+        [
+          5,
+          2,
+          4,
+          1,
+          3
+        ],
+        [
+          1,
+          3,
+          4,
+          5,
+          3
+        ],
+        [
+          2,
+          1,
+          4,
+          3,
+          5
+        ],
+        [
+          4,
+          4,
+          1,
+          5,
+          2
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -278,7 +686,43 @@
       "schema_version": 1,
       "color_count": 5,
       "stack_depth": 5,
-      "color_stacks": [[2,1,3,5,4],[3,3,2,5,1],[2,1,4,3,4],[2,5,3,2,1],[4,1,5,4,5]],
+      "color_stacks": [
+        [
+          2,
+          1,
+          3,
+          5,
+          4
+        ],
+        [
+          3,
+          3,
+          2,
+          5,
+          1
+        ],
+        [
+          2,
+          1,
+          4,
+          3,
+          4
+        ],
+        [
+          2,
+          5,
+          3,
+          2,
+          1
+        ],
+        [
+          4,
+          1,
+          5,
+          4,
+          5
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -293,7 +737,36 @@
       "schema_version": 1,
       "color_count": 4,
       "stack_depth": 5,
-      "color_stacks": [[2,2,2,3,1],[4,1,3,3,2],[3,1,1,4,4],[4,2,3,4,1]],
+      "color_stacks": [
+        [
+          2,
+          2,
+          2,
+          3,
+          1
+        ],
+        [
+          4,
+          1,
+          3,
+          3,
+          2
+        ],
+        [
+          3,
+          1,
+          1,
+          4,
+          4
+        ],
+        [
+          4,
+          2,
+          3,
+          4,
+          1
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -308,7 +781,38 @@
       "schema_version": 1,
       "color_count": 5,
       "stack_depth": 4,
-      "color_stacks": [[1,4,5,1],[2,3,4,2],[3,1,3,2],[1,4,5,5],[5,4,2,3]],
+      "color_stacks": [
+        [
+          1,
+          4,
+          5,
+          1
+        ],
+        [
+          2,
+          3,
+          4,
+          2
+        ],
+        [
+          3,
+          1,
+          3,
+          2
+        ],
+        [
+          1,
+          4,
+          5,
+          5
+        ],
+        [
+          5,
+          4,
+          2,
+          3
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -323,7 +827,43 @@
       "schema_version": 1,
       "color_count": 5,
       "stack_depth": 5,
-      "color_stacks": [[1,3,5,4,2],[4,1,2,4,2],[2,5,3,3,1],[5,2,4,3,3],[4,1,5,1,5]],
+      "color_stacks": [
+        [
+          1,
+          3,
+          5,
+          4,
+          2
+        ],
+        [
+          4,
+          1,
+          2,
+          4,
+          2
+        ],
+        [
+          2,
+          5,
+          3,
+          3,
+          1
+        ],
+        [
+          5,
+          2,
+          4,
+          3,
+          3
+        ],
+        [
+          4,
+          1,
+          5,
+          1,
+          5
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -338,7 +878,43 @@
       "schema_version": 1,
       "color_count": 5,
       "stack_depth": 5,
-      "color_stacks": [[3,5,4,2,3],[1,5,4,4,1],[1,3,3,5,2],[2,2,4,5,1],[1,2,3,5,4]],
+      "color_stacks": [
+        [
+          3,
+          5,
+          4,
+          2,
+          3
+        ],
+        [
+          1,
+          5,
+          4,
+          4,
+          1
+        ],
+        [
+          1,
+          3,
+          3,
+          5,
+          2
+        ],
+        [
+          2,
+          2,
+          4,
+          5,
+          1
+        ],
+        [
+          1,
+          2,
+          3,
+          5,
+          4
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -353,7 +929,43 @@
       "schema_version": 1,
       "color_count": 5,
       "stack_depth": 5,
-      "color_stacks": [[5,3,4,2,5],[3,3,4,1,2],[4,3,1,1,5],[5,2,1,2,3],[1,5,2,4,4]],
+      "color_stacks": [
+        [
+          5,
+          3,
+          4,
+          2,
+          5
+        ],
+        [
+          3,
+          3,
+          4,
+          1,
+          2
+        ],
+        [
+          4,
+          3,
+          1,
+          1,
+          5
+        ],
+        [
+          5,
+          2,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          5,
+          2,
+          4,
+          4
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -368,7 +980,43 @@
       "schema_version": 1,
       "color_count": 5,
       "stack_depth": 5,
-      "color_stacks": [[4,3,3,1,4],[4,2,5,1,1],[4,5,5,3,2],[2,5,4,1,3],[5,2,2,3,1]],
+      "color_stacks": [
+        [
+          4,
+          3,
+          3,
+          1,
+          4
+        ],
+        [
+          4,
+          2,
+          5,
+          1,
+          1
+        ],
+        [
+          4,
+          5,
+          5,
+          3,
+          2
+        ],
+        [
+          2,
+          5,
+          4,
+          1,
+          3
+        ],
+        [
+          5,
+          2,
+          2,
+          3,
+          1
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -383,7 +1031,44 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 4,
-      "color_stacks": [[3,3,5,2],[2,1,6,4],[4,5,2,1],[1,3,4,5],[5,3,6,6],[4,1,2,6]],
+      "color_stacks": [
+        [
+          3,
+          3,
+          5,
+          2
+        ],
+        [
+          2,
+          1,
+          6,
+          4
+        ],
+        [
+          4,
+          5,
+          2,
+          1
+        ],
+        [
+          1,
+          3,
+          4,
+          5
+        ],
+        [
+          5,
+          3,
+          6,
+          6
+        ],
+        [
+          4,
+          1,
+          2,
+          6
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -398,7 +1083,44 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 4,
-      "color_stacks": [[5,3,4,2],[6,3,5,5],[5,2,1,2],[4,3,1,4],[3,2,6,1],[4,1,6,6]],
+      "color_stacks": [
+        [
+          5,
+          3,
+          4,
+          2
+        ],
+        [
+          6,
+          3,
+          5,
+          5
+        ],
+        [
+          5,
+          2,
+          1,
+          2
+        ],
+        [
+          4,
+          3,
+          1,
+          4
+        ],
+        [
+          3,
+          2,
+          6,
+          1
+        ],
+        [
+          4,
+          1,
+          6,
+          6
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -413,7 +1135,43 @@
       "schema_version": 1,
       "color_count": 5,
       "stack_depth": 5,
-      "color_stacks": [[2,3,4,5,4],[3,5,2,3,2],[4,5,4,2,1],[3,1,3,1,2],[5,4,1,5,1]],
+      "color_stacks": [
+        [
+          2,
+          3,
+          4,
+          5,
+          4
+        ],
+        [
+          3,
+          5,
+          2,
+          3,
+          2
+        ],
+        [
+          4,
+          5,
+          4,
+          2,
+          1
+        ],
+        [
+          3,
+          1,
+          3,
+          1,
+          2
+        ],
+        [
+          5,
+          4,
+          1,
+          5,
+          1
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -428,7 +1186,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[6,4,6,3,5],[3,4,3,6,2],[2,1,1,2,6],[1,3,6,4,2],[5,5,1,4,4],[5,2,1,3,5]],
+      "color_stacks": [
+        [
+          6,
+          4,
+          6,
+          3,
+          5
+        ],
+        [
+          3,
+          4,
+          3,
+          6,
+          2
+        ],
+        [
+          2,
+          1,
+          1,
+          2,
+          6
+        ],
+        [
+          1,
+          3,
+          6,
+          4,
+          2
+        ],
+        [
+          5,
+          5,
+          1,
+          4,
+          4
+        ],
+        [
+          5,
+          2,
+          1,
+          3,
+          5
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -443,7 +1244,43 @@
       "schema_version": 1,
       "color_count": 5,
       "stack_depth": 5,
-      "color_stacks": [[4,3,3,2,2],[1,5,5,1,1],[4,5,3,4,4],[5,4,3,5,3],[2,2,1,1,2]],
+      "color_stacks": [
+        [
+          4,
+          3,
+          3,
+          2,
+          2
+        ],
+        [
+          1,
+          5,
+          5,
+          1,
+          1
+        ],
+        [
+          4,
+          5,
+          3,
+          4,
+          4
+        ],
+        [
+          5,
+          4,
+          3,
+          5,
+          3
+        ],
+        [
+          2,
+          2,
+          1,
+          1,
+          2
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -458,7 +1295,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[1,3,5,5,5],[6,5,6,4,1],[1,2,5,2,4],[1,4,4,6,2],[1,2,6,6,3],[3,3,2,4,3]],
+      "color_stacks": [
+        [
+          1,
+          3,
+          5,
+          5,
+          5
+        ],
+        [
+          6,
+          5,
+          6,
+          4,
+          1
+        ],
+        [
+          1,
+          2,
+          5,
+          2,
+          4
+        ],
+        [
+          1,
+          4,
+          4,
+          6,
+          2
+        ],
+        [
+          1,
+          2,
+          6,
+          6,
+          3
+        ],
+        [
+          3,
+          3,
+          2,
+          4,
+          3
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -473,7 +1353,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[2,4,3,5,6],[4,5,1,2,1],[4,2,2,3,6],[1,5,5,1,1],[6,3,3,4,5],[4,6,6,3,2]],
+      "color_stacks": [
+        [
+          2,
+          4,
+          3,
+          5,
+          6
+        ],
+        [
+          4,
+          5,
+          1,
+          2,
+          1
+        ],
+        [
+          4,
+          2,
+          2,
+          3,
+          6
+        ],
+        [
+          1,
+          5,
+          5,
+          1,
+          1
+        ],
+        [
+          6,
+          3,
+          3,
+          4,
+          5
+        ],
+        [
+          4,
+          6,
+          6,
+          3,
+          2
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -488,7 +1411,43 @@
       "schema_version": 1,
       "color_count": 5,
       "stack_depth": 5,
-      "color_stacks": [[1,3,3,5,1],[1,4,3,2,4],[5,2,4,5,1],[3,5,5,2,2],[3,4,4,2,1]],
+      "color_stacks": [
+        [
+          1,
+          3,
+          3,
+          5,
+          1
+        ],
+        [
+          1,
+          4,
+          3,
+          2,
+          4
+        ],
+        [
+          5,
+          2,
+          4,
+          5,
+          1
+        ],
+        [
+          3,
+          5,
+          5,
+          2,
+          2
+        ],
+        [
+          3,
+          4,
+          4,
+          2,
+          1
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -503,7 +1462,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[4,6,3,2,5],[1,4,5,4,2],[4,6,1,6,4],[1,5,1,6,2],[2,5,3,2,3],[3,6,5,3,1]],
+      "color_stacks": [
+        [
+          4,
+          6,
+          3,
+          2,
+          5
+        ],
+        [
+          1,
+          4,
+          5,
+          4,
+          2
+        ],
+        [
+          4,
+          6,
+          1,
+          6,
+          4
+        ],
+        [
+          1,
+          5,
+          1,
+          6,
+          2
+        ],
+        [
+          2,
+          5,
+          3,
+          2,
+          3
+        ],
+        [
+          3,
+          6,
+          5,
+          3,
+          1
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -518,7 +1520,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[6,4,2,4,4],[1,6,3,4,2],[2,6,5,5,5],[5,6,2,1,3],[1,2,3,1,3],[4,6,5,3,1]],
+      "color_stacks": [
+        [
+          6,
+          4,
+          2,
+          4,
+          4
+        ],
+        [
+          1,
+          6,
+          3,
+          4,
+          2
+        ],
+        [
+          2,
+          6,
+          5,
+          5,
+          5
+        ],
+        [
+          5,
+          6,
+          2,
+          1,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          1,
+          3
+        ],
+        [
+          4,
+          6,
+          5,
+          3,
+          1
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -533,7 +1578,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[5,1,4,2,6],[4,2,5,4,3],[2,6,3,1,6],[1,4,2,1,3],[6,2,5,6,3],[5,4,5,1,3]],
+      "color_stacks": [
+        [
+          5,
+          1,
+          4,
+          2,
+          6
+        ],
+        [
+          4,
+          2,
+          5,
+          4,
+          3
+        ],
+        [
+          2,
+          6,
+          3,
+          1,
+          6
+        ],
+        [
+          1,
+          4,
+          2,
+          1,
+          3
+        ],
+        [
+          6,
+          2,
+          5,
+          6,
+          3
+        ],
+        [
+          5,
+          4,
+          5,
+          1,
+          3
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -548,7 +1636,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[1,2,5,5,4],[5,6,3,4,1],[6,3,3,2,4],[3,4,2,6,1],[1,2,1,2,6],[4,5,5,6,3]],
+      "color_stacks": [
+        [
+          1,
+          2,
+          5,
+          5,
+          4
+        ],
+        [
+          5,
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          6,
+          3,
+          3,
+          2,
+          4
+        ],
+        [
+          3,
+          4,
+          2,
+          6,
+          1
+        ],
+        [
+          1,
+          2,
+          1,
+          2,
+          6
+        ],
+        [
+          4,
+          5,
+          5,
+          6,
+          3
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -563,7 +1694,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[3,1,5,5,1],[4,2,1,2,4],[6,2,3,3,6],[1,6,4,3,5],[5,4,6,5,3],[1,4,6,2,2]],
+      "color_stacks": [
+        [
+          3,
+          1,
+          5,
+          5,
+          1
+        ],
+        [
+          4,
+          2,
+          1,
+          2,
+          4
+        ],
+        [
+          6,
+          2,
+          3,
+          3,
+          6
+        ],
+        [
+          1,
+          6,
+          4,
+          3,
+          5
+        ],
+        [
+          5,
+          4,
+          6,
+          5,
+          3
+        ],
+        [
+          1,
+          4,
+          6,
+          2,
+          2
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -578,7 +1752,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[5,4,1,5,4],[6,2,6,4,6],[2,1,3,3,6],[3,5,5,2,4],[1,2,1,5,3],[4,6,2,3,1]],
+      "color_stacks": [
+        [
+          5,
+          4,
+          1,
+          5,
+          4
+        ],
+        [
+          6,
+          2,
+          6,
+          4,
+          6
+        ],
+        [
+          2,
+          1,
+          3,
+          3,
+          6
+        ],
+        [
+          3,
+          5,
+          5,
+          2,
+          4
+        ],
+        [
+          1,
+          2,
+          1,
+          5,
+          3
+        ],
+        [
+          4,
+          6,
+          2,
+          3,
+          1
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -593,7 +1810,43 @@
       "schema_version": 1,
       "color_count": 5,
       "stack_depth": 5,
-      "color_stacks": [[1,1,3,5,4],[2,2,1,3,5],[4,2,5,4,1],[2,4,5,5,3],[1,3,4,3,2]],
+      "color_stacks": [
+        [
+          1,
+          1,
+          3,
+          5,
+          4
+        ],
+        [
+          2,
+          2,
+          1,
+          3,
+          5
+        ],
+        [
+          4,
+          2,
+          5,
+          4,
+          1
+        ],
+        [
+          2,
+          4,
+          5,
+          5,
+          3
+        ],
+        [
+          1,
+          3,
+          4,
+          3,
+          2
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -608,7 +1861,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[4,1,6,4,5],[1,5,2,1,4],[1,3,5,4,2],[5,4,5,3,3],[6,2,6,2,1],[6,2,3,3,6]],
+      "color_stacks": [
+        [
+          4,
+          1,
+          6,
+          4,
+          5
+        ],
+        [
+          1,
+          5,
+          2,
+          1,
+          4
+        ],
+        [
+          1,
+          3,
+          5,
+          4,
+          2
+        ],
+        [
+          5,
+          4,
+          5,
+          3,
+          3
+        ],
+        [
+          6,
+          2,
+          6,
+          2,
+          1
+        ],
+        [
+          6,
+          2,
+          3,
+          3,
+          6
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -623,7 +1919,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[6,2,3,2,5],[3,4,6,4,1],[3,5,4,4,6],[1,2,3,2,6],[2,6,4,1,1],[5,3,1,5,5]],
+      "color_stacks": [
+        [
+          6,
+          2,
+          3,
+          2,
+          5
+        ],
+        [
+          3,
+          4,
+          6,
+          4,
+          1
+        ],
+        [
+          3,
+          5,
+          4,
+          4,
+          6
+        ],
+        [
+          1,
+          2,
+          3,
+          2,
+          6
+        ],
+        [
+          2,
+          6,
+          4,
+          1,
+          1
+        ],
+        [
+          5,
+          3,
+          1,
+          5,
+          5
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -638,7 +1977,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[4,1,6,4,5],[5,6,1,2,3],[1,6,5,2,3],[6,3,2,4,2],[2,4,3,1,1],[6,5,5,4,3]],
+      "color_stacks": [
+        [
+          4,
+          1,
+          6,
+          4,
+          5
+        ],
+        [
+          5,
+          6,
+          1,
+          2,
+          3
+        ],
+        [
+          1,
+          6,
+          5,
+          2,
+          3
+        ],
+        [
+          6,
+          3,
+          2,
+          4,
+          2
+        ],
+        [
+          2,
+          4,
+          3,
+          1,
+          1
+        ],
+        [
+          6,
+          5,
+          5,
+          4,
+          3
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -653,7 +2035,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[1,4,3,2,2],[2,5,2,6,3],[6,3,4,6,3],[6,5,1,4,5],[3,6,1,4,4],[5,1,5,2,1]],
+      "color_stacks": [
+        [
+          1,
+          4,
+          3,
+          2,
+          2
+        ],
+        [
+          2,
+          5,
+          2,
+          6,
+          3
+        ],
+        [
+          6,
+          3,
+          4,
+          6,
+          3
+        ],
+        [
+          6,
+          5,
+          1,
+          4,
+          5
+        ],
+        [
+          3,
+          6,
+          1,
+          4,
+          4
+        ],
+        [
+          5,
+          1,
+          5,
+          2,
+          1
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -668,7 +2093,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[1,5,2,2,4],[6,6,2,5,3],[1,4,6,5,5],[6,5,3,2,4],[3,1,3,4,1],[2,3,1,4,6]],
+      "color_stacks": [
+        [
+          1,
+          5,
+          2,
+          2,
+          4
+        ],
+        [
+          6,
+          6,
+          2,
+          5,
+          3
+        ],
+        [
+          1,
+          4,
+          6,
+          5,
+          5
+        ],
+        [
+          6,
+          5,
+          3,
+          2,
+          4
+        ],
+        [
+          3,
+          1,
+          3,
+          4,
+          1
+        ],
+        [
+          2,
+          3,
+          1,
+          4,
+          6
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -683,7 +2151,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[6,4,1,5,1],[3,4,6,1,3],[2,3,3,5,2],[5,6,4,6,5],[4,2,3,4,6],[1,5,2,1,2]],
+      "color_stacks": [
+        [
+          6,
+          4,
+          1,
+          5,
+          1
+        ],
+        [
+          3,
+          4,
+          6,
+          1,
+          3
+        ],
+        [
+          2,
+          3,
+          3,
+          5,
+          2
+        ],
+        [
+          5,
+          6,
+          4,
+          6,
+          5
+        ],
+        [
+          4,
+          2,
+          3,
+          4,
+          6
+        ],
+        [
+          1,
+          5,
+          2,
+          1,
+          2
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -698,7 +2209,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[2,1,6,1,5],[4,2,3,1,5],[6,4,3,1,6],[5,4,4,6,2],[5,3,6,2,5],[1,3,3,2,4]],
+      "color_stacks": [
+        [
+          2,
+          1,
+          6,
+          1,
+          5
+        ],
+        [
+          4,
+          2,
+          3,
+          1,
+          5
+        ],
+        [
+          6,
+          4,
+          3,
+          1,
+          6
+        ],
+        [
+          5,
+          4,
+          4,
+          6,
+          2
+        ],
+        [
+          5,
+          3,
+          6,
+          2,
+          5
+        ],
+        [
+          1,
+          3,
+          3,
+          2,
+          4
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -713,7 +2267,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[1,5,3,1,3],[1,6,2,3,4],[6,5,4,5,2],[5,6,4,3,1],[6,3,4,2,2],[4,1,5,2,6]],
+      "color_stacks": [
+        [
+          1,
+          5,
+          3,
+          1,
+          3
+        ],
+        [
+          1,
+          6,
+          2,
+          3,
+          4
+        ],
+        [
+          6,
+          5,
+          4,
+          5,
+          2
+        ],
+        [
+          5,
+          6,
+          4,
+          3,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          2,
+          2
+        ],
+        [
+          4,
+          1,
+          5,
+          2,
+          6
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -728,7 +2325,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[2,4,5,6,2],[3,5,2,3,6],[6,5,4,1,2],[2,6,6,1,4],[3,5,5,1,1],[4,1,3,3,4]],
+      "color_stacks": [
+        [
+          2,
+          4,
+          5,
+          6,
+          2
+        ],
+        [
+          3,
+          5,
+          2,
+          3,
+          6
+        ],
+        [
+          6,
+          5,
+          4,
+          1,
+          2
+        ],
+        [
+          2,
+          6,
+          6,
+          1,
+          4
+        ],
+        [
+          3,
+          5,
+          5,
+          1,
+          1
+        ],
+        [
+          4,
+          1,
+          3,
+          3,
+          4
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -743,7 +2383,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[3,1,6,1,1],[2,6,5,4,4],[2,6,2,4,4],[5,4,3,5,5],[2,1,6,5,3],[2,6,3,1,3]],
+      "color_stacks": [
+        [
+          3,
+          1,
+          6,
+          1,
+          1
+        ],
+        [
+          2,
+          6,
+          5,
+          4,
+          4
+        ],
+        [
+          2,
+          6,
+          2,
+          4,
+          4
+        ],
+        [
+          5,
+          4,
+          3,
+          5,
+          5
+        ],
+        [
+          2,
+          1,
+          6,
+          5,
+          3
+        ],
+        [
+          2,
+          6,
+          3,
+          1,
+          3
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -758,7 +2441,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[4,5,4,4,1],[1,3,1,4,6],[5,2,3,3,2],[3,4,2,5,6],[5,1,6,6,6],[2,2,5,3,1]],
+      "color_stacks": [
+        [
+          4,
+          5,
+          4,
+          4,
+          1
+        ],
+        [
+          1,
+          3,
+          1,
+          4,
+          6
+        ],
+        [
+          5,
+          2,
+          3,
+          3,
+          2
+        ],
+        [
+          3,
+          4,
+          2,
+          5,
+          6
+        ],
+        [
+          5,
+          1,
+          6,
+          6,
+          6
+        ],
+        [
+          2,
+          2,
+          5,
+          3,
+          1
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -773,7 +2499,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[6,4,3,6,1],[5,5,3,3,6],[6,1,4,4,4],[1,5,5,3,2],[5,2,2,2,4],[2,6,1,3,1]],
+      "color_stacks": [
+        [
+          6,
+          4,
+          3,
+          6,
+          1
+        ],
+        [
+          5,
+          5,
+          3,
+          3,
+          6
+        ],
+        [
+          6,
+          1,
+          4,
+          4,
+          4
+        ],
+        [
+          1,
+          5,
+          5,
+          3,
+          2
+        ],
+        [
+          5,
+          2,
+          2,
+          2,
+          4
+        ],
+        [
+          2,
+          6,
+          1,
+          3,
+          1
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -788,7 +2557,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[2,5,6,5,4],[4,2,1,3,2],[3,1,6,4,5],[6,4,2,2,5],[6,3,5,1,6],[1,4,3,1,3]],
+      "color_stacks": [
+        [
+          2,
+          5,
+          6,
+          5,
+          4
+        ],
+        [
+          4,
+          2,
+          1,
+          3,
+          2
+        ],
+        [
+          3,
+          1,
+          6,
+          4,
+          5
+        ],
+        [
+          6,
+          4,
+          2,
+          2,
+          5
+        ],
+        [
+          6,
+          3,
+          5,
+          1,
+          6
+        ],
+        [
+          1,
+          4,
+          3,
+          1,
+          3
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -803,7 +2615,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[5,1,1,1,5],[1,2,6,4,2],[4,6,3,4,1],[6,5,3,3,6],[2,6,5,3,4],[2,2,4,3,5]],
+      "color_stacks": [
+        [
+          5,
+          1,
+          1,
+          1,
+          5
+        ],
+        [
+          1,
+          2,
+          6,
+          4,
+          2
+        ],
+        [
+          4,
+          6,
+          3,
+          4,
+          1
+        ],
+        [
+          6,
+          5,
+          3,
+          3,
+          6
+        ],
+        [
+          2,
+          6,
+          5,
+          3,
+          4
+        ],
+        [
+          2,
+          2,
+          4,
+          3,
+          5
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -818,7 +2673,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[5,2,5,1,3],[1,1,3,3,3],[2,3,2,2,4],[4,5,4,4,5],[6,4,6,1,2],[1,6,6,5,6]],
+      "color_stacks": [
+        [
+          5,
+          2,
+          5,
+          1,
+          3
+        ],
+        [
+          1,
+          1,
+          3,
+          3,
+          3
+        ],
+        [
+          2,
+          3,
+          2,
+          2,
+          4
+        ],
+        [
+          4,
+          5,
+          4,
+          4,
+          5
+        ],
+        [
+          6,
+          4,
+          6,
+          1,
+          2
+        ],
+        [
+          1,
+          6,
+          6,
+          5,
+          6
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -833,7 +2731,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[3,3,6,2,5],[6,5,3,3,2],[1,4,2,5,4],[5,1,5,4,1],[4,4,1,3,1],[6,2,6,6,2]],
+      "color_stacks": [
+        [
+          3,
+          3,
+          6,
+          2,
+          5
+        ],
+        [
+          6,
+          5,
+          3,
+          3,
+          2
+        ],
+        [
+          1,
+          4,
+          2,
+          5,
+          4
+        ],
+        [
+          5,
+          1,
+          5,
+          4,
+          1
+        ],
+        [
+          4,
+          4,
+          1,
+          3,
+          1
+        ],
+        [
+          6,
+          2,
+          6,
+          6,
+          2
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -848,7 +2789,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[1,4,4,6,5],[2,6,3,1,4],[6,4,2,5,4],[3,2,3,3,2],[5,1,6,5,5],[1,3,1,2,6]],
+      "color_stacks": [
+        [
+          1,
+          4,
+          4,
+          6,
+          5
+        ],
+        [
+          2,
+          6,
+          3,
+          1,
+          4
+        ],
+        [
+          6,
+          4,
+          2,
+          5,
+          4
+        ],
+        [
+          3,
+          2,
+          3,
+          3,
+          2
+        ],
+        [
+          5,
+          1,
+          6,
+          5,
+          5
+        ],
+        [
+          1,
+          3,
+          1,
+          2,
+          6
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -863,7 +2847,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[2,4,3,3,6],[5,5,6,5,2],[4,4,1,6,3],[1,6,1,4,5],[2,1,2,3,4],[1,6,3,2,5]],
+      "color_stacks": [
+        [
+          2,
+          4,
+          3,
+          3,
+          6
+        ],
+        [
+          5,
+          5,
+          6,
+          5,
+          2
+        ],
+        [
+          4,
+          4,
+          1,
+          6,
+          3
+        ],
+        [
+          1,
+          6,
+          1,
+          4,
+          5
+        ],
+        [
+          2,
+          1,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          6,
+          3,
+          2,
+          5
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -878,7 +2905,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[1,2,5,5,4],[2,6,6,3,1],[3,4,3,2,3],[5,3,4,6,5],[1,5,6,4,2],[1,6,1,2,4]],
+      "color_stacks": [
+        [
+          1,
+          2,
+          5,
+          5,
+          4
+        ],
+        [
+          2,
+          6,
+          6,
+          3,
+          1
+        ],
+        [
+          3,
+          4,
+          3,
+          2,
+          3
+        ],
+        [
+          5,
+          3,
+          4,
+          6,
+          5
+        ],
+        [
+          1,
+          5,
+          6,
+          4,
+          2
+        ],
+        [
+          1,
+          6,
+          1,
+          2,
+          4
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -893,7 +2963,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[6,6,1,5,4],[3,1,3,3,2],[2,4,4,2,6],[2,6,4,5,3],[5,1,2,6,4],[5,1,5,3,1]],
+      "color_stacks": [
+        [
+          6,
+          6,
+          1,
+          5,
+          4
+        ],
+        [
+          3,
+          1,
+          3,
+          3,
+          2
+        ],
+        [
+          2,
+          4,
+          4,
+          2,
+          6
+        ],
+        [
+          2,
+          6,
+          4,
+          5,
+          3
+        ],
+        [
+          5,
+          1,
+          2,
+          6,
+          4
+        ],
+        [
+          5,
+          1,
+          5,
+          3,
+          1
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -908,7 +3021,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[5,3,6,2,4],[5,6,1,4,6],[3,5,5,1,1],[3,4,4,6,2],[2,2,2,6,1],[3,3,4,1,5]],
+      "color_stacks": [
+        [
+          5,
+          3,
+          6,
+          2,
+          4
+        ],
+        [
+          5,
+          6,
+          1,
+          4,
+          6
+        ],
+        [
+          3,
+          5,
+          5,
+          1,
+          1
+        ],
+        [
+          3,
+          4,
+          4,
+          6,
+          2
+        ],
+        [
+          2,
+          2,
+          2,
+          6,
+          1
+        ],
+        [
+          3,
+          3,
+          4,
+          1,
+          5
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -923,7 +3079,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[4,2,3,4,3],[6,2,5,4,4],[4,5,6,3,1],[5,2,5,1,2],[6,5,6,2,1],[3,3,6,1,1]],
+      "color_stacks": [
+        [
+          4,
+          2,
+          3,
+          4,
+          3
+        ],
+        [
+          6,
+          2,
+          5,
+          4,
+          4
+        ],
+        [
+          4,
+          5,
+          6,
+          3,
+          1
+        ],
+        [
+          5,
+          2,
+          5,
+          1,
+          2
+        ],
+        [
+          6,
+          5,
+          6,
+          2,
+          1
+        ],
+        [
+          3,
+          3,
+          6,
+          1,
+          1
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -938,7 +3137,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[6,1,3,3,2],[4,2,6,5,4],[6,2,1,5,3],[1,6,1,1,2],[5,4,4,3,2],[5,5,3,4,6]],
+      "color_stacks": [
+        [
+          6,
+          1,
+          3,
+          3,
+          2
+        ],
+        [
+          4,
+          2,
+          6,
+          5,
+          4
+        ],
+        [
+          6,
+          2,
+          1,
+          5,
+          3
+        ],
+        [
+          1,
+          6,
+          1,
+          1,
+          2
+        ],
+        [
+          5,
+          4,
+          4,
+          3,
+          2
+        ],
+        [
+          5,
+          5,
+          3,
+          4,
+          6
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -953,7 +3195,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[3,2,3,5,6],[6,4,2,1,6],[6,4,5,1,4],[3,5,2,4,5],[1,1,6,3,5],[3,2,2,4,1]],
+      "color_stacks": [
+        [
+          3,
+          2,
+          3,
+          5,
+          6
+        ],
+        [
+          6,
+          4,
+          2,
+          1,
+          6
+        ],
+        [
+          6,
+          4,
+          5,
+          1,
+          4
+        ],
+        [
+          3,
+          5,
+          2,
+          4,
+          5
+        ],
+        [
+          1,
+          1,
+          6,
+          3,
+          5
+        ],
+        [
+          3,
+          2,
+          2,
+          4,
+          1
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -968,7 +3253,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[4,1,5,5,6],[1,1,2,3,2],[1,5,3,2,3],[6,4,5,6,3],[4,6,1,4,5],[4,6,2,3,2]],
+      "color_stacks": [
+        [
+          4,
+          1,
+          5,
+          5,
+          6
+        ],
+        [
+          1,
+          1,
+          2,
+          3,
+          2
+        ],
+        [
+          1,
+          5,
+          3,
+          2,
+          3
+        ],
+        [
+          6,
+          4,
+          5,
+          6,
+          3
+        ],
+        [
+          4,
+          6,
+          1,
+          4,
+          5
+        ],
+        [
+          4,
+          6,
+          2,
+          3,
+          2
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -983,7 +3311,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[5,5,6,2,4],[4,2,6,3,3],[6,2,6,3,1],[2,1,4,1,4],[5,2,5,3,4],[5,6,3,1,1]],
+      "color_stacks": [
+        [
+          5,
+          5,
+          6,
+          2,
+          4
+        ],
+        [
+          4,
+          2,
+          6,
+          3,
+          3
+        ],
+        [
+          6,
+          2,
+          6,
+          3,
+          1
+        ],
+        [
+          2,
+          1,
+          4,
+          1,
+          4
+        ],
+        [
+          5,
+          2,
+          5,
+          3,
+          4
+        ],
+        [
+          5,
+          6,
+          3,
+          1,
+          1
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -998,7 +3369,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[2,3,3,3,4],[2,6,1,5,4],[5,3,1,4,5],[1,6,6,2,6],[6,5,1,4,1],[2,5,2,3,4]],
+      "color_stacks": [
+        [
+          2,
+          3,
+          3,
+          3,
+          4
+        ],
+        [
+          2,
+          6,
+          1,
+          5,
+          4
+        ],
+        [
+          5,
+          3,
+          1,
+          4,
+          5
+        ],
+        [
+          1,
+          6,
+          6,
+          2,
+          6
+        ],
+        [
+          6,
+          5,
+          1,
+          4,
+          1
+        ],
+        [
+          2,
+          5,
+          2,
+          3,
+          4
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -1013,7 +3427,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[2,6,4,5,4],[1,6,1,1,5],[2,6,5,4,1],[4,5,6,2,3],[3,2,2,3,4],[5,1,6,3,3]],
+      "color_stacks": [
+        [
+          2,
+          6,
+          4,
+          5,
+          4
+        ],
+        [
+          1,
+          6,
+          1,
+          1,
+          5
+        ],
+        [
+          2,
+          6,
+          5,
+          4,
+          1
+        ],
+        [
+          4,
+          5,
+          6,
+          2,
+          3
+        ],
+        [
+          3,
+          2,
+          2,
+          3,
+          4
+        ],
+        [
+          5,
+          1,
+          6,
+          3,
+          3
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -1028,7 +3485,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[5,3,6,4,5],[5,2,2,3,2],[4,1,2,2,3],[3,1,1,5,6],[4,1,6,6,5],[4,3,4,1,6]],
+      "color_stacks": [
+        [
+          5,
+          3,
+          6,
+          4,
+          5
+        ],
+        [
+          5,
+          2,
+          2,
+          3,
+          2
+        ],
+        [
+          4,
+          1,
+          2,
+          2,
+          3
+        ],
+        [
+          3,
+          1,
+          1,
+          5,
+          6
+        ],
+        [
+          4,
+          1,
+          6,
+          6,
+          5
+        ],
+        [
+          4,
+          3,
+          4,
+          1,
+          6
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -1043,7 +3543,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[3,5,6,4,3],[3,1,2,4,4],[2,5,1,4,2],[1,6,5,6,4],[1,5,5,3,6],[3,6,2,1,2]],
+      "color_stacks": [
+        [
+          3,
+          5,
+          6,
+          4,
+          3
+        ],
+        [
+          3,
+          1,
+          2,
+          4,
+          4
+        ],
+        [
+          2,
+          5,
+          1,
+          4,
+          2
+        ],
+        [
+          1,
+          6,
+          5,
+          6,
+          4
+        ],
+        [
+          1,
+          5,
+          5,
+          3,
+          6
+        ],
+        [
+          3,
+          6,
+          2,
+          1,
+          2
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 4,
       "is_tutorial": false,
@@ -1058,7 +3601,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[3,2,2,4,6],[6,4,4,6,3],[2,5,3,6,5],[1,1,6,4,2],[5,5,5,2,1],[4,1,3,1,3]],
+      "color_stacks": [
+        [
+          3,
+          2,
+          2,
+          4,
+          6
+        ],
+        [
+          6,
+          4,
+          4,
+          6,
+          3
+        ],
+        [
+          2,
+          5,
+          3,
+          6,
+          5
+        ],
+        [
+          1,
+          1,
+          6,
+          4,
+          2
+        ],
+        [
+          5,
+          5,
+          5,
+          2,
+          1
+        ],
+        [
+          4,
+          1,
+          3,
+          1,
+          3
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 3,
       "is_tutorial": false,
@@ -1073,7 +3659,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[2,1,2,4,4],[4,1,6,1,2],[6,3,5,4,3],[5,5,2,5,3],[1,6,5,6,1],[3,3,6,2,4]],
+      "color_stacks": [
+        [
+          2,
+          1,
+          2,
+          4,
+          4
+        ],
+        [
+          4,
+          1,
+          6,
+          1,
+          2
+        ],
+        [
+          6,
+          3,
+          5,
+          4,
+          3
+        ],
+        [
+          5,
+          5,
+          2,
+          5,
+          3
+        ],
+        [
+          1,
+          6,
+          5,
+          6,
+          1
+        ],
+        [
+          3,
+          3,
+          6,
+          2,
+          4
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 3,
       "is_tutorial": false,
@@ -1088,7 +3717,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[5,2,4,3,6],[3,2,4,4,1],[1,6,3,1,5],[6,4,5,3,5],[4,6,2,2,1],[2,6,3,5,1]],
+      "color_stacks": [
+        [
+          5,
+          2,
+          4,
+          3,
+          6
+        ],
+        [
+          3,
+          2,
+          4,
+          4,
+          1
+        ],
+        [
+          1,
+          6,
+          3,
+          1,
+          5
+        ],
+        [
+          6,
+          4,
+          5,
+          3,
+          5
+        ],
+        [
+          4,
+          6,
+          2,
+          2,
+          1
+        ],
+        [
+          2,
+          6,
+          3,
+          5,
+          1
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 3,
       "is_tutorial": false,
@@ -1103,7 +3775,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[3,5,3,3,5],[1,6,1,6,4],[2,6,6,3,2],[6,4,3,2,4],[4,2,1,5,1],[5,5,1,4,2]],
+      "color_stacks": [
+        [
+          3,
+          5,
+          3,
+          3,
+          5
+        ],
+        [
+          1,
+          6,
+          1,
+          6,
+          4
+        ],
+        [
+          2,
+          6,
+          6,
+          3,
+          2
+        ],
+        [
+          6,
+          4,
+          3,
+          2,
+          4
+        ],
+        [
+          4,
+          2,
+          1,
+          5,
+          1
+        ],
+        [
+          5,
+          5,
+          1,
+          4,
+          2
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 3,
       "is_tutorial": false,
@@ -1118,7 +3833,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[6,6,4,5,6],[4,4,5,2,3],[3,2,3,4,1],[5,5,2,1,1],[2,6,5,2,1],[1,3,6,3,4]],
+      "color_stacks": [
+        [
+          6,
+          6,
+          4,
+          5,
+          6
+        ],
+        [
+          4,
+          4,
+          5,
+          2,
+          3
+        ],
+        [
+          3,
+          2,
+          3,
+          4,
+          1
+        ],
+        [
+          5,
+          5,
+          2,
+          1,
+          1
+        ],
+        [
+          2,
+          6,
+          5,
+          2,
+          1
+        ],
+        [
+          1,
+          3,
+          6,
+          3,
+          4
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 3,
       "is_tutorial": false,
@@ -1133,7 +3891,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[1,2,3,1,2],[5,1,3,3,6],[4,3,4,6,4],[6,1,4,5,5],[3,4,5,6,2],[2,2,6,1,5]],
+      "color_stacks": [
+        [
+          1,
+          2,
+          3,
+          1,
+          2
+        ],
+        [
+          5,
+          1,
+          3,
+          3,
+          6
+        ],
+        [
+          4,
+          3,
+          4,
+          6,
+          4
+        ],
+        [
+          6,
+          1,
+          4,
+          5,
+          5
+        ],
+        [
+          3,
+          4,
+          5,
+          6,
+          2
+        ],
+        [
+          2,
+          2,
+          6,
+          1,
+          5
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 3,
       "is_tutorial": false,
@@ -1148,7 +3949,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[3,5,2,4,6],[1,1,1,5,5],[2,3,4,2,1],[5,2,1,4,6],[6,4,6,3,5],[4,3,6,2,3]],
+      "color_stacks": [
+        [
+          3,
+          5,
+          2,
+          4,
+          6
+        ],
+        [
+          1,
+          1,
+          1,
+          5,
+          5
+        ],
+        [
+          2,
+          3,
+          4,
+          2,
+          1
+        ],
+        [
+          5,
+          2,
+          1,
+          4,
+          6
+        ],
+        [
+          6,
+          4,
+          6,
+          3,
+          5
+        ],
+        [
+          4,
+          3,
+          6,
+          2,
+          3
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 3,
       "is_tutorial": false,
@@ -1163,7 +4007,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[2,3,2,3,5],[5,1,1,4,2],[6,2,2,4,4],[3,6,5,6,6],[1,1,6,1,5],[4,3,4,3,5]],
+      "color_stacks": [
+        [
+          2,
+          3,
+          2,
+          3,
+          5
+        ],
+        [
+          5,
+          1,
+          1,
+          4,
+          2
+        ],
+        [
+          6,
+          2,
+          2,
+          4,
+          4
+        ],
+        [
+          3,
+          6,
+          5,
+          6,
+          6
+        ],
+        [
+          1,
+          1,
+          6,
+          1,
+          5
+        ],
+        [
+          4,
+          3,
+          4,
+          3,
+          5
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 3,
       "is_tutorial": false,
@@ -1178,7 +4065,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[2,2,3,3,5],[6,6,4,6,5],[1,2,5,2,1],[5,6,3,1,5],[4,1,4,2,1],[3,4,3,6,4]],
+      "color_stacks": [
+        [
+          2,
+          2,
+          3,
+          3,
+          5
+        ],
+        [
+          6,
+          6,
+          4,
+          6,
+          5
+        ],
+        [
+          1,
+          2,
+          5,
+          2,
+          1
+        ],
+        [
+          5,
+          6,
+          3,
+          1,
+          5
+        ],
+        [
+          4,
+          1,
+          4,
+          2,
+          1
+        ],
+        [
+          3,
+          4,
+          3,
+          6,
+          4
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 3,
       "is_tutorial": false,
@@ -1193,7 +4123,50 @@
       "schema_version": 1,
       "color_count": 6,
       "stack_depth": 5,
-      "color_stacks": [[6,2,3,5,2],[3,5,3,4,5],[1,6,1,1,1],[4,4,4,3,2],[2,6,1,5,6],[5,6,2,3,4]],
+      "color_stacks": [
+        [
+          6,
+          2,
+          3,
+          5,
+          2
+        ],
+        [
+          3,
+          5,
+          3,
+          4,
+          5
+        ],
+        [
+          1,
+          6,
+          1,
+          1,
+          1
+        ],
+        [
+          4,
+          4,
+          4,
+          3,
+          2
+        ],
+        [
+          2,
+          6,
+          1,
+          5,
+          6
+        ],
+        [
+          5,
+          6,
+          2,
+          3,
+          4
+        ]
+      ],
       "temp_slot_count": 2,
       "temp_slot_depth": 3,
       "is_tutorial": false,
@@ -1208,7 +4181,57 @@
       "schema_version": 1,
       "color_count": 7,
       "stack_depth": 5,
-      "color_stacks": [[5,5,4,1,4],[2,1,4,6,2],[7,7,7,6,3],[6,2,5,7,5],[4,1,3,4,6],[1,3,5,3,1],[2,3,2,6,7]],
+      "color_stacks": [
+        [
+          5,
+          5,
+          4,
+          1,
+          4
+        ],
+        [
+          2,
+          1,
+          4,
+          6,
+          2
+        ],
+        [
+          7,
+          7,
+          7,
+          6,
+          3
+        ],
+        [
+          6,
+          2,
+          5,
+          7,
+          5
+        ],
+        [
+          4,
+          1,
+          3,
+          4,
+          6
+        ],
+        [
+          1,
+          3,
+          5,
+          3,
+          1
+        ],
+        [
+          2,
+          3,
+          2,
+          6,
+          7
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -1223,7 +4246,57 @@
       "schema_version": 1,
       "color_count": 7,
       "stack_depth": 5,
-      "color_stacks": [[4,1,3,1,3],[6,2,4,7,5],[7,1,5,5,5],[6,3,4,3,1],[6,1,7,5,7],[2,2,3,2,2],[4,4,6,7,6]],
+      "color_stacks": [
+        [
+          4,
+          1,
+          3,
+          1,
+          3
+        ],
+        [
+          6,
+          2,
+          4,
+          7,
+          5
+        ],
+        [
+          7,
+          1,
+          5,
+          5,
+          5
+        ],
+        [
+          6,
+          3,
+          4,
+          3,
+          1
+        ],
+        [
+          6,
+          1,
+          7,
+          5,
+          7
+        ],
+        [
+          2,
+          2,
+          3,
+          2,
+          2
+        ],
+        [
+          4,
+          4,
+          6,
+          7,
+          6
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -1238,7 +4311,57 @@
       "schema_version": 1,
       "color_count": 7,
       "stack_depth": 5,
-      "color_stacks": [[4,6,4,7,1],[7,2,7,3,1],[5,5,2,4,4],[7,7,6,3,2],[6,2,1,5,3],[6,4,5,3,5],[1,1,6,2,3]],
+      "color_stacks": [
+        [
+          4,
+          6,
+          4,
+          7,
+          1
+        ],
+        [
+          7,
+          2,
+          7,
+          3,
+          1
+        ],
+        [
+          5,
+          5,
+          2,
+          4,
+          4
+        ],
+        [
+          7,
+          7,
+          6,
+          3,
+          2
+        ],
+        [
+          6,
+          2,
+          1,
+          5,
+          3
+        ],
+        [
+          6,
+          4,
+          5,
+          3,
+          5
+        ],
+        [
+          1,
+          1,
+          6,
+          2,
+          3
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -1253,7 +4376,57 @@
       "schema_version": 1,
       "color_count": 7,
       "stack_depth": 5,
-      "color_stacks": [[6,2,7,4,3],[3,1,6,1,7],[1,4,5,3,4],[5,5,2,5,4],[7,7,2,6,4],[2,3,1,1,6],[2,3,5,6,7]],
+      "color_stacks": [
+        [
+          6,
+          2,
+          7,
+          4,
+          3
+        ],
+        [
+          3,
+          1,
+          6,
+          1,
+          7
+        ],
+        [
+          1,
+          4,
+          5,
+          3,
+          4
+        ],
+        [
+          5,
+          5,
+          2,
+          5,
+          4
+        ],
+        [
+          7,
+          7,
+          2,
+          6,
+          4
+        ],
+        [
+          2,
+          3,
+          1,
+          1,
+          6
+        ],
+        [
+          2,
+          3,
+          5,
+          6,
+          7
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -1268,7 +4441,57 @@
       "schema_version": 1,
       "color_count": 7,
       "stack_depth": 5,
-      "color_stacks": [[5,1,2,4,2],[1,2,1,5,6],[2,6,5,3,7],[4,7,6,5,1],[6,3,3,6,7],[3,5,4,7,7],[4,4,1,2,3]],
+      "color_stacks": [
+        [
+          5,
+          1,
+          2,
+          4,
+          2
+        ],
+        [
+          1,
+          2,
+          1,
+          5,
+          6
+        ],
+        [
+          2,
+          6,
+          5,
+          3,
+          7
+        ],
+        [
+          4,
+          7,
+          6,
+          5,
+          1
+        ],
+        [
+          6,
+          3,
+          3,
+          6,
+          7
+        ],
+        [
+          3,
+          5,
+          4,
+          7,
+          7
+        ],
+        [
+          4,
+          4,
+          1,
+          2,
+          3
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -1283,7 +4506,57 @@
       "schema_version": 1,
       "color_count": 7,
       "stack_depth": 5,
-      "color_stacks": [[6,1,5,1,2],[6,4,5,6,3],[7,4,7,2,2],[5,1,1,4,7],[7,3,5,2,3],[1,5,6,3,2],[3,6,4,7,4]],
+      "color_stacks": [
+        [
+          6,
+          1,
+          5,
+          1,
+          2
+        ],
+        [
+          6,
+          4,
+          5,
+          6,
+          3
+        ],
+        [
+          7,
+          4,
+          7,
+          2,
+          2
+        ],
+        [
+          5,
+          1,
+          1,
+          4,
+          7
+        ],
+        [
+          7,
+          3,
+          5,
+          2,
+          3
+        ],
+        [
+          1,
+          5,
+          6,
+          3,
+          2
+        ],
+        [
+          3,
+          6,
+          4,
+          7,
+          4
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -1298,7 +4571,57 @@
       "schema_version": 1,
       "color_count": 7,
       "stack_depth": 5,
-      "color_stacks": [[6,2,4,1,6],[1,7,3,3,6],[1,6,4,5,2],[4,3,2,5,7],[3,4,1,7,1],[2,7,6,5,5],[7,5,4,3,2]],
+      "color_stacks": [
+        [
+          6,
+          2,
+          4,
+          1,
+          6
+        ],
+        [
+          1,
+          7,
+          3,
+          3,
+          6
+        ],
+        [
+          1,
+          6,
+          4,
+          5,
+          2
+        ],
+        [
+          4,
+          3,
+          2,
+          5,
+          7
+        ],
+        [
+          3,
+          4,
+          1,
+          7,
+          1
+        ],
+        [
+          2,
+          7,
+          6,
+          5,
+          5
+        ],
+        [
+          7,
+          5,
+          4,
+          3,
+          2
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -1313,7 +4636,57 @@
       "schema_version": 1,
       "color_count": 7,
       "stack_depth": 5,
-      "color_stacks": [[7,2,4,1,2],[5,1,6,4,1],[6,2,5,6,3],[2,3,3,7,7],[3,4,6,1,4],[4,7,5,2,5],[3,6,7,5,1]],
+      "color_stacks": [
+        [
+          7,
+          2,
+          4,
+          1,
+          2
+        ],
+        [
+          5,
+          1,
+          6,
+          4,
+          1
+        ],
+        [
+          6,
+          2,
+          5,
+          6,
+          3
+        ],
+        [
+          2,
+          3,
+          3,
+          7,
+          7
+        ],
+        [
+          3,
+          4,
+          6,
+          1,
+          4
+        ],
+        [
+          4,
+          7,
+          5,
+          2,
+          5
+        ],
+        [
+          3,
+          6,
+          7,
+          5,
+          1
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -1328,7 +4701,57 @@
       "schema_version": 1,
       "color_count": 7,
       "stack_depth": 5,
-      "color_stacks": [[5,1,5,4,2],[1,3,2,7,7],[2,3,4,3,6],[2,5,7,1,4],[1,7,6,5,6],[6,3,3,2,7],[4,1,4,5,6]],
+      "color_stacks": [
+        [
+          5,
+          1,
+          5,
+          4,
+          2
+        ],
+        [
+          1,
+          3,
+          2,
+          7,
+          7
+        ],
+        [
+          2,
+          3,
+          4,
+          3,
+          6
+        ],
+        [
+          2,
+          5,
+          7,
+          1,
+          4
+        ],
+        [
+          1,
+          7,
+          6,
+          5,
+          6
+        ],
+        [
+          6,
+          3,
+          3,
+          2,
+          7
+        ],
+        [
+          4,
+          1,
+          4,
+          5,
+          6
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -1343,7 +4766,57 @@
       "schema_version": 1,
       "color_count": 7,
       "stack_depth": 5,
-      "color_stacks": [[5,2,1,2,3],[4,7,5,1,2],[2,4,6,4,7],[1,6,3,3,7],[5,6,7,3,3],[5,5,4,1,1],[6,7,2,6,4]],
+      "color_stacks": [
+        [
+          5,
+          2,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          7,
+          5,
+          1,
+          2
+        ],
+        [
+          2,
+          4,
+          6,
+          4,
+          7
+        ],
+        [
+          1,
+          6,
+          3,
+          3,
+          7
+        ],
+        [
+          5,
+          6,
+          7,
+          3,
+          3
+        ],
+        [
+          5,
+          5,
+          4,
+          1,
+          1
+        ],
+        [
+          6,
+          7,
+          2,
+          6,
+          4
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -1358,7 +4831,57 @@
       "schema_version": 1,
       "color_count": 7,
       "stack_depth": 5,
-      "color_stacks": [[2,2,1,2,1],[4,3,6,7,5],[6,6,4,1,3],[7,1,4,2,4],[5,3,2,5,7],[4,7,5,6,3],[7,5,3,1,6]],
+      "color_stacks": [
+        [
+          2,
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          4,
+          3,
+          6,
+          7,
+          5
+        ],
+        [
+          6,
+          6,
+          4,
+          1,
+          3
+        ],
+        [
+          7,
+          1,
+          4,
+          2,
+          4
+        ],
+        [
+          5,
+          3,
+          2,
+          5,
+          7
+        ],
+        [
+          4,
+          7,
+          5,
+          6,
+          3
+        ],
+        [
+          7,
+          5,
+          3,
+          1,
+          6
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -1373,7 +4896,57 @@
       "schema_version": 1,
       "color_count": 7,
       "stack_depth": 5,
-      "color_stacks": [[5,6,7,6,7],[3,1,1,2,6],[7,2,6,4,2],[4,4,6,4,3],[1,5,5,1,3],[2,4,2,3,3],[5,7,5,7,1]],
+      "color_stacks": [
+        [
+          5,
+          6,
+          7,
+          6,
+          7
+        ],
+        [
+          3,
+          1,
+          1,
+          2,
+          6
+        ],
+        [
+          7,
+          2,
+          6,
+          4,
+          2
+        ],
+        [
+          4,
+          4,
+          6,
+          4,
+          3
+        ],
+        [
+          1,
+          5,
+          5,
+          1,
+          3
+        ],
+        [
+          2,
+          4,
+          2,
+          3,
+          3
+        ],
+        [
+          5,
+          7,
+          5,
+          7,
+          1
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -1388,7 +4961,57 @@
       "schema_version": 1,
       "color_count": 7,
       "stack_depth": 5,
-      "color_stacks": [[1,5,7,4,6],[2,1,1,7,5],[4,1,4,6,5],[4,3,7,2,1],[3,3,7,5,6],[5,2,4,6,6],[2,3,2,7,3]],
+      "color_stacks": [
+        [
+          1,
+          5,
+          7,
+          4,
+          6
+        ],
+        [
+          2,
+          1,
+          1,
+          7,
+          5
+        ],
+        [
+          4,
+          1,
+          4,
+          6,
+          5
+        ],
+        [
+          4,
+          3,
+          7,
+          2,
+          1
+        ],
+        [
+          3,
+          3,
+          7,
+          5,
+          6
+        ],
+        [
+          5,
+          2,
+          4,
+          6,
+          6
+        ],
+        [
+          2,
+          3,
+          2,
+          7,
+          3
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -1403,7 +5026,57 @@
       "schema_version": 1,
       "color_count": 7,
       "stack_depth": 5,
-      "color_stacks": [[3,3,1,5,4],[6,5,3,1,3],[1,5,4,2,1],[3,7,2,4,2],[6,6,5,2,5],[7,4,2,7,1],[7,6,6,4,7]],
+      "color_stacks": [
+        [
+          3,
+          3,
+          1,
+          5,
+          4
+        ],
+        [
+          6,
+          5,
+          3,
+          1,
+          3
+        ],
+        [
+          1,
+          5,
+          4,
+          2,
+          1
+        ],
+        [
+          3,
+          7,
+          2,
+          4,
+          2
+        ],
+        [
+          6,
+          6,
+          5,
+          2,
+          5
+        ],
+        [
+          7,
+          4,
+          2,
+          7,
+          1
+        ],
+        [
+          7,
+          6,
+          6,
+          4,
+          7
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -1418,7 +5091,57 @@
       "schema_version": 1,
       "color_count": 7,
       "stack_depth": 5,
-      "color_stacks": [[1,4,3,7,4],[1,7,5,4,6],[3,2,6,2,2],[2,1,1,1,5],[3,5,3,5,6],[5,4,4,6,2],[7,7,6,3,7]],
+      "color_stacks": [
+        [
+          1,
+          4,
+          3,
+          7,
+          4
+        ],
+        [
+          1,
+          7,
+          5,
+          4,
+          6
+        ],
+        [
+          3,
+          2,
+          6,
+          2,
+          2
+        ],
+        [
+          2,
+          1,
+          1,
+          1,
+          5
+        ],
+        [
+          3,
+          5,
+          3,
+          5,
+          6
+        ],
+        [
+          5,
+          4,
+          4,
+          6,
+          2
+        ],
+        [
+          7,
+          7,
+          6,
+          3,
+          7
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -1433,7 +5156,57 @@
       "schema_version": 1,
       "color_count": 7,
       "stack_depth": 5,
-      "color_stacks": [[2,3,5,1,7],[1,5,3,4,7],[5,2,6,6,7],[2,4,4,6,7],[4,5,7,1,3],[1,4,1,6,6],[3,2,2,3,5]],
+      "color_stacks": [
+        [
+          2,
+          3,
+          5,
+          1,
+          7
+        ],
+        [
+          1,
+          5,
+          3,
+          4,
+          7
+        ],
+        [
+          5,
+          2,
+          6,
+          6,
+          7
+        ],
+        [
+          2,
+          4,
+          4,
+          6,
+          7
+        ],
+        [
+          4,
+          5,
+          7,
+          1,
+          3
+        ],
+        [
+          1,
+          4,
+          1,
+          6,
+          6
+        ],
+        [
+          3,
+          2,
+          2,
+          3,
+          5
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -1448,7 +5221,57 @@
       "schema_version": 1,
       "color_count": 7,
       "stack_depth": 5,
-      "color_stacks": [[7,6,3,1,6],[2,2,2,2,6],[5,1,6,3,4],[5,3,5,5,7],[1,5,4,7,4],[3,7,1,3,4],[2,1,4,7,6]],
+      "color_stacks": [
+        [
+          7,
+          6,
+          3,
+          1,
+          6
+        ],
+        [
+          2,
+          2,
+          2,
+          2,
+          6
+        ],
+        [
+          5,
+          1,
+          6,
+          3,
+          4
+        ],
+        [
+          5,
+          3,
+          5,
+          5,
+          7
+        ],
+        [
+          1,
+          5,
+          4,
+          7,
+          4
+        ],
+        [
+          3,
+          7,
+          1,
+          3,
+          4
+        ],
+        [
+          2,
+          1,
+          4,
+          7,
+          6
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -1463,7 +5286,57 @@
       "schema_version": 1,
       "color_count": 7,
       "stack_depth": 5,
-      "color_stacks": [[7,3,7,7,1],[6,3,4,5,2],[5,4,5,3,1],[4,5,6,4,2],[6,3,2,6,4],[2,2,3,7,1],[7,1,5,1,6]],
+      "color_stacks": [
+        [
+          7,
+          3,
+          7,
+          7,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          5,
+          2
+        ],
+        [
+          5,
+          4,
+          5,
+          3,
+          1
+        ],
+        [
+          4,
+          5,
+          6,
+          4,
+          2
+        ],
+        [
+          6,
+          3,
+          2,
+          6,
+          4
+        ],
+        [
+          2,
+          2,
+          3,
+          7,
+          1
+        ],
+        [
+          7,
+          1,
+          5,
+          1,
+          6
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -1478,7 +5351,57 @@
       "schema_version": 1,
       "color_count": 7,
       "stack_depth": 5,
-      "color_stacks": [[6,1,5,3,2],[4,5,6,1,6],[5,7,4,4,5],[1,7,3,3,5],[3,2,3,7,2],[4,6,2,6,1],[1,4,7,2,7]],
+      "color_stacks": [
+        [
+          6,
+          1,
+          5,
+          3,
+          2
+        ],
+        [
+          4,
+          5,
+          6,
+          1,
+          6
+        ],
+        [
+          5,
+          7,
+          4,
+          4,
+          5
+        ],
+        [
+          1,
+          7,
+          3,
+          3,
+          5
+        ],
+        [
+          3,
+          2,
+          3,
+          7,
+          2
+        ],
+        [
+          4,
+          6,
+          2,
+          6,
+          1
+        ],
+        [
+          1,
+          4,
+          7,
+          2,
+          7
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
@@ -1493,12 +5416,6462 @@
       "schema_version": 1,
       "color_count": 7,
       "stack_depth": 5,
-      "color_stacks": [[6,2,6,5,5],[2,4,7,6,3],[7,5,3,7,6],[4,1,2,4,1],[3,5,1,7,4],[3,6,3,1,1],[4,5,2,7,2]],
+      "color_stacks": [
+        [
+          6,
+          2,
+          6,
+          5,
+          5
+        ],
+        [
+          2,
+          4,
+          7,
+          6,
+          3
+        ],
+        [
+          7,
+          5,
+          3,
+          7,
+          6
+        ],
+        [
+          4,
+          1,
+          2,
+          4,
+          1
+        ],
+        [
+          3,
+          5,
+          1,
+          7,
+          4
+        ],
+        [
+          3,
+          6,
+          3,
+          1,
+          1
+        ],
+        [
+          4,
+          5,
+          2,
+          7,
+          2
+        ]
+      ],
       "temp_slot_count": 1,
       "temp_slot_depth": 5,
       "is_tutorial": false,
       "daily_challenge_eligible": true,
       "par_moves": 59,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 101,
+      "display_name": "Level 101",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          6,
+          4,
+          4,
+          4,
+          6,
+          3
+        ],
+        [
+          1,
+          1,
+          2,
+          5,
+          6,
+          6
+        ],
+        [
+          4,
+          1,
+          4,
+          5,
+          3,
+          1
+        ],
+        [
+          3,
+          2,
+          3,
+          2,
+          5,
+          2
+        ],
+        [
+          3,
+          1,
+          5,
+          6,
+          2,
+          1
+        ],
+        [
+          6,
+          5,
+          4,
+          3,
+          2,
+          5
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 54,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 102,
+      "display_name": "Level 102",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          3,
+          5,
+          5,
+          5,
+          2,
+          6
+        ],
+        [
+          2,
+          6,
+          2,
+          1,
+          4,
+          4
+        ],
+        [
+          5,
+          4,
+          1,
+          6,
+          5,
+          2
+        ],
+        [
+          1,
+          6,
+          2,
+          6,
+          3,
+          1
+        ],
+        [
+          3,
+          6,
+          4,
+          1,
+          1,
+          3
+        ],
+        [
+          4,
+          5,
+          4,
+          2,
+          3,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 55,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 103,
+      "display_name": "Level 103",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          2,
+          1,
+          6,
+          3,
+          1,
+          6
+        ],
+        [
+          6,
+          2,
+          4,
+          3,
+          2,
+          5
+        ],
+        [
+          1,
+          4,
+          4,
+          2,
+          2,
+          5
+        ],
+        [
+          6,
+          5,
+          2,
+          3,
+          6,
+          1
+        ],
+        [
+          3,
+          1,
+          3,
+          4,
+          4,
+          5
+        ],
+        [
+          1,
+          5,
+          4,
+          3,
+          6,
+          5
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 59,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 104,
+      "display_name": "Level 104",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          2,
+          3,
+          5,
+          5,
+          4
+        ],
+        [
+          4,
+          1,
+          4,
+          3,
+          3,
+          2
+        ],
+        [
+          1,
+          5,
+          6,
+          5,
+          6,
+          4
+        ],
+        [
+          1,
+          6,
+          2,
+          2,
+          6,
+          6
+        ],
+        [
+          3,
+          3,
+          1,
+          2,
+          5,
+          5
+        ],
+        [
+          1,
+          6,
+          2,
+          4,
+          4,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 59,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 105,
+      "display_name": "Level 105",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          6,
+          5,
+          1,
+          3,
+          2,
+          6
+        ],
+        [
+          2,
+          3,
+          1,
+          4,
+          2,
+          1
+        ],
+        [
+          3,
+          1,
+          3,
+          5,
+          3,
+          5
+        ],
+        [
+          3,
+          2,
+          4,
+          5,
+          6,
+          6
+        ],
+        [
+          2,
+          6,
+          4,
+          4,
+          1,
+          1
+        ],
+        [
+          5,
+          2,
+          5,
+          4,
+          6,
+          4
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 59,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 106,
+      "display_name": "Level 106",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          2,
+          4,
+          3,
+          5,
+          4,
+          1
+        ],
+        [
+          5,
+          3,
+          4,
+          5,
+          6,
+          5
+        ],
+        [
+          6,
+          4,
+          1,
+          1,
+          3,
+          6
+        ],
+        [
+          5,
+          5,
+          3,
+          3,
+          1,
+          2
+        ],
+        [
+          2,
+          1,
+          6,
+          6,
+          6,
+          1
+        ],
+        [
+          2,
+          2,
+          4,
+          3,
+          4,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 55,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 107,
+      "display_name": "Level 107",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          2,
+          6,
+          5,
+          2,
+          3,
+          4
+        ],
+        [
+          5,
+          2,
+          4,
+          5,
+          4,
+          4
+        ],
+        [
+          6,
+          1,
+          4,
+          3,
+          1,
+          2
+        ],
+        [
+          2,
+          3,
+          1,
+          5,
+          6,
+          1
+        ],
+        [
+          3,
+          1,
+          1,
+          3,
+          6,
+          6
+        ],
+        [
+          5,
+          3,
+          5,
+          6,
+          2,
+          4
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 58,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 108,
+      "display_name": "Level 108",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          5,
+          6,
+          2,
+          3,
+          3,
+          5
+        ],
+        [
+          6,
+          5,
+          2,
+          1,
+          4,
+          4
+        ],
+        [
+          2,
+          4,
+          5,
+          4,
+          1,
+          3
+        ],
+        [
+          2,
+          2,
+          5,
+          1,
+          4,
+          3
+        ],
+        [
+          1,
+          3,
+          3,
+          1,
+          6,
+          5
+        ],
+        [
+          1,
+          6,
+          6,
+          4,
+          2,
+          6
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 56,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 109,
+      "display_name": "Level 109",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          5,
+          1,
+          6,
+          5,
+          6,
+          4
+        ],
+        [
+          3,
+          4,
+          5,
+          2,
+          1,
+          5
+        ],
+        [
+          2,
+          1,
+          3,
+          1,
+          2,
+          4
+        ],
+        [
+          3,
+          1,
+          2,
+          4,
+          4,
+          2
+        ],
+        [
+          3,
+          3,
+          6,
+          1,
+          5,
+          2
+        ],
+        [
+          5,
+          6,
+          6,
+          3,
+          6,
+          4
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 58,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 110,
+      "display_name": "Level 110",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          3,
+          6,
+          3,
+          2,
+          5,
+          1
+        ],
+        [
+          3,
+          1,
+          3,
+          6,
+          6,
+          2
+        ],
+        [
+          4,
+          1,
+          5,
+          3,
+          4,
+          2
+        ],
+        [
+          4,
+          6,
+          5,
+          6,
+          1,
+          5
+        ],
+        [
+          5,
+          4,
+          1,
+          1,
+          2,
+          5
+        ],
+        [
+          4,
+          6,
+          4,
+          3,
+          2,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 60,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 111,
+      "display_name": "Level 111",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          1,
+          4,
+          2,
+          5,
+          4
+        ],
+        [
+          3,
+          4,
+          2,
+          4,
+          2,
+          6
+        ],
+        [
+          2,
+          4,
+          3,
+          4,
+          5,
+          3
+        ],
+        [
+          6,
+          2,
+          6,
+          3,
+          6,
+          1
+        ],
+        [
+          3,
+          1,
+          5,
+          6,
+          5,
+          3
+        ],
+        [
+          1,
+          5,
+          1,
+          6,
+          2,
+          5
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 55,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 112,
+      "display_name": "Level 112",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          4,
+          1,
+          3,
+          2,
+          3,
+          6
+        ],
+        [
+          6,
+          2,
+          5,
+          3,
+          4,
+          4
+        ],
+        [
+          1,
+          2,
+          6,
+          2,
+          2,
+          1
+        ],
+        [
+          6,
+          2,
+          6,
+          4,
+          1,
+          5
+        ],
+        [
+          3,
+          3,
+          6,
+          5,
+          5,
+          1
+        ],
+        [
+          4,
+          1,
+          4,
+          5,
+          5,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 56,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 113,
+      "display_name": "Level 113",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          5,
+          3,
+          1,
+          4,
+          2,
+          1
+        ],
+        [
+          3,
+          5,
+          4,
+          2,
+          6,
+          5
+        ],
+        [
+          6,
+          2,
+          3,
+          6,
+          6,
+          3
+        ],
+        [
+          1,
+          2,
+          3,
+          5,
+          5,
+          4
+        ],
+        [
+          6,
+          6,
+          3,
+          1,
+          4,
+          2
+        ],
+        [
+          1,
+          4,
+          5,
+          2,
+          4,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 55,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 114,
+      "display_name": "Level 114",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          3,
+          2,
+          6,
+          6,
+          3,
+          4
+        ],
+        [
+          4,
+          5,
+          5,
+          5,
+          6,
+          4
+        ],
+        [
+          6,
+          2,
+          3,
+          3,
+          4,
+          4
+        ],
+        [
+          1,
+          4,
+          3,
+          1,
+          5,
+          1
+        ],
+        [
+          2,
+          6,
+          3,
+          1,
+          2,
+          5
+        ],
+        [
+          2,
+          1,
+          5,
+          2,
+          1,
+          6
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 54,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 115,
+      "display_name": "Level 115",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          3,
+          1,
+          5,
+          5,
+          1
+        ],
+        [
+          2,
+          5,
+          5,
+          3,
+          2,
+          4
+        ],
+        [
+          4,
+          5,
+          6,
+          4,
+          3,
+          2
+        ],
+        [
+          6,
+          1,
+          4,
+          6,
+          3,
+          6
+        ],
+        [
+          5,
+          3,
+          2,
+          3,
+          2,
+          2
+        ],
+        [
+          6,
+          6,
+          4,
+          1,
+          1,
+          4
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 56,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 116,
+      "display_name": "Level 116",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          2,
+          2,
+          6,
+          3,
+          6,
+          3
+        ],
+        [
+          3,
+          3,
+          4,
+          2,
+          3,
+          1
+        ],
+        [
+          6,
+          4,
+          4,
+          5,
+          5,
+          6
+        ],
+        [
+          5,
+          5,
+          1,
+          1,
+          5,
+          2
+        ],
+        [
+          2,
+          5,
+          1,
+          4,
+          1,
+          6
+        ],
+        [
+          3,
+          4,
+          6,
+          4,
+          2,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 52,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 117,
+      "display_name": "Level 117",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          5,
+          3,
+          4,
+          1,
+          3,
+          5
+        ],
+        [
+          2,
+          4,
+          5,
+          4,
+          6,
+          6
+        ],
+        [
+          5,
+          2,
+          2,
+          1,
+          2,
+          1
+        ],
+        [
+          4,
+          4,
+          4,
+          3,
+          6,
+          5
+        ],
+        [
+          6,
+          1,
+          1,
+          3,
+          1,
+          2
+        ],
+        [
+          3,
+          6,
+          2,
+          6,
+          5,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 53,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 118,
+      "display_name": "Level 118",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          5,
+          6,
+          2,
+          4,
+          2,
+          5
+        ],
+        [
+          5,
+          1,
+          4,
+          5,
+          1,
+          5
+        ],
+        [
+          2,
+          6,
+          4,
+          2,
+          4,
+          5
+        ],
+        [
+          6,
+          1,
+          1,
+          3,
+          1,
+          1
+        ],
+        [
+          2,
+          6,
+          4,
+          6,
+          6,
+          3
+        ],
+        [
+          3,
+          4,
+          3,
+          3,
+          3,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 59,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 119,
+      "display_name": "Level 119",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          4,
+          5,
+          5,
+          3,
+          5,
+          1
+        ],
+        [
+          6,
+          1,
+          3,
+          3,
+          3,
+          6
+        ],
+        [
+          2,
+          4,
+          6,
+          2,
+          2,
+          1
+        ],
+        [
+          6,
+          2,
+          5,
+          4,
+          5,
+          4
+        ],
+        [
+          6,
+          2,
+          3,
+          1,
+          3,
+          2
+        ],
+        [
+          4,
+          4,
+          1,
+          6,
+          1,
+          5
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 58,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 120,
+      "display_name": "Level 120",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          6,
+          1,
+          4,
+          2,
+          3,
+          5
+        ],
+        [
+          4,
+          3,
+          1,
+          5,
+          2,
+          1
+        ],
+        [
+          4,
+          5,
+          2,
+          3,
+          5,
+          6
+        ],
+        [
+          3,
+          2,
+          4,
+          1,
+          6,
+          1
+        ],
+        [
+          2,
+          1,
+          3,
+          6,
+          6,
+          4
+        ],
+        [
+          5,
+          2,
+          4,
+          6,
+          3,
+          5
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 61,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 121,
+      "display_name": "Level 121",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          2,
+          5,
+          4,
+          5,
+          2,
+          6
+        ],
+        [
+          4,
+          5,
+          2,
+          3,
+          6,
+          2
+        ],
+        [
+          2,
+          4,
+          2,
+          5,
+          4,
+          4
+        ],
+        [
+          3,
+          1,
+          3,
+          1,
+          5,
+          6
+        ],
+        [
+          1,
+          6,
+          1,
+          3,
+          4,
+          6
+        ],
+        [
+          1,
+          1,
+          3,
+          3,
+          5,
+          6
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 54,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 122,
+      "display_name": "Level 122",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          3,
+          4,
+          6,
+          6,
+          1,
+          4
+        ],
+        [
+          5,
+          1,
+          4,
+          1,
+          4,
+          5
+        ],
+        [
+          1,
+          3,
+          3,
+          5,
+          4,
+          2
+        ],
+        [
+          6,
+          4,
+          1,
+          5,
+          5,
+          6
+        ],
+        [
+          6,
+          5,
+          2,
+          3,
+          2,
+          2
+        ],
+        [
+          2,
+          6,
+          3,
+          3,
+          2,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 53,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 123,
+      "display_name": "Level 123",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          3,
+          5,
+          2,
+          5,
+          4,
+          5
+        ],
+        [
+          4,
+          3,
+          1,
+          3,
+          5,
+          4
+        ],
+        [
+          6,
+          1,
+          3,
+          4,
+          3,
+          1
+        ],
+        [
+          1,
+          6,
+          6,
+          5,
+          6,
+          3
+        ],
+        [
+          2,
+          4,
+          1,
+          1,
+          2,
+          2
+        ],
+        [
+          2,
+          6,
+          5,
+          2,
+          6,
+          4
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 55,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 124,
+      "display_name": "Level 124",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          2,
+          3,
+          1,
+          4,
+          6,
+          6
+        ],
+        [
+          4,
+          5,
+          1,
+          1,
+          5,
+          1
+        ],
+        [
+          4,
+          2,
+          6,
+          3,
+          6,
+          4
+        ],
+        [
+          2,
+          6,
+          6,
+          5,
+          3,
+          5
+        ],
+        [
+          3,
+          1,
+          4,
+          1,
+          5,
+          3
+        ],
+        [
+          5,
+          4,
+          2,
+          3,
+          2,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 58,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 125,
+      "display_name": "Level 125",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          1,
+          5,
+          2,
+          6,
+          6
+        ],
+        [
+          2,
+          1,
+          1,
+          6,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          1,
+          6,
+          3,
+          4
+        ],
+        [
+          2,
+          3,
+          2,
+          4,
+          5,
+          5
+        ],
+        [
+          3,
+          4,
+          4,
+          2,
+          6,
+          1
+        ],
+        [
+          5,
+          5,
+          3,
+          3,
+          6,
+          4
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 53,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 126,
+      "display_name": "Level 126",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          6,
+          1,
+          6,
+          3,
+          5
+        ],
+        [
+          3,
+          1,
+          4,
+          2,
+          2,
+          4
+        ],
+        [
+          2,
+          4,
+          3,
+          3,
+          4,
+          1
+        ],
+        [
+          5,
+          1,
+          4,
+          5,
+          3,
+          6
+        ],
+        [
+          2,
+          1,
+          6,
+          2,
+          3,
+          6
+        ],
+        [
+          5,
+          6,
+          5,
+          5,
+          4,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 57,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 127,
+      "display_name": "Level 127",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          2,
+          4,
+          1,
+          3,
+          4,
+          5
+        ],
+        [
+          3,
+          1,
+          2,
+          2,
+          1,
+          6
+        ],
+        [
+          5,
+          4,
+          6,
+          3,
+          3,
+          6
+        ],
+        [
+          5,
+          4,
+          1,
+          5,
+          2,
+          6
+        ],
+        [
+          1,
+          3,
+          2,
+          4,
+          4,
+          3
+        ],
+        [
+          6,
+          5,
+          5,
+          6,
+          1,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 57,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 128,
+      "display_name": "Level 128",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          2,
+          2,
+          5,
+          5,
+          5,
+          4
+        ],
+        [
+          6,
+          2,
+          5,
+          6,
+          4,
+          1
+        ],
+        [
+          3,
+          6,
+          4,
+          2,
+          3,
+          1
+        ],
+        [
+          6,
+          2,
+          1,
+          1,
+          4,
+          4
+        ],
+        [
+          2,
+          3,
+          3,
+          3,
+          4,
+          1
+        ],
+        [
+          6,
+          6,
+          3,
+          5,
+          1,
+          5
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 53,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 129,
+      "display_name": "Level 129",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          2,
+          2,
+          1,
+          5,
+          3
+        ],
+        [
+          5,
+          4,
+          4,
+          6,
+          1,
+          4
+        ],
+        [
+          5,
+          2,
+          3,
+          3,
+          3,
+          2
+        ],
+        [
+          5,
+          4,
+          5,
+          4,
+          5,
+          1
+        ],
+        [
+          3,
+          6,
+          1,
+          6,
+          6,
+          2
+        ],
+        [
+          6,
+          4,
+          6,
+          3,
+          1,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 55,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 130,
+      "display_name": "Level 130",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          6,
+          5,
+          1,
+          5,
+          3,
+          4
+        ],
+        [
+          3,
+          6,
+          3,
+          2,
+          1,
+          4
+        ],
+        [
+          5,
+          4,
+          6,
+          2,
+          6,
+          5
+        ],
+        [
+          3,
+          1,
+          3,
+          1,
+          2,
+          4
+        ],
+        [
+          5,
+          4,
+          2,
+          2,
+          3,
+          2
+        ],
+        [
+          5,
+          6,
+          1,
+          1,
+          4,
+          6
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 59,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 131,
+      "display_name": "Level 131",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          6,
+          6,
+          2,
+          1,
+          6,
+          5
+        ],
+        [
+          4,
+          1,
+          4,
+          1,
+          1,
+          5
+        ],
+        [
+          2,
+          1,
+          3,
+          2,
+          3,
+          3
+        ],
+        [
+          6,
+          2,
+          5,
+          2,
+          3,
+          4
+        ],
+        [
+          2,
+          4,
+          3,
+          6,
+          4,
+          5
+        ],
+        [
+          4,
+          1,
+          6,
+          5,
+          5,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 56,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 132,
+      "display_name": "Level 132",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          3,
+          5,
+          2,
+          5,
+          4
+        ],
+        [
+          1,
+          6,
+          1,
+          4,
+          4,
+          6
+        ],
+        [
+          4,
+          3,
+          6,
+          2,
+          5,
+          1
+        ],
+        [
+          3,
+          4,
+          4,
+          5,
+          3,
+          1
+        ],
+        [
+          3,
+          5,
+          5,
+          6,
+          2,
+          6
+        ],
+        [
+          2,
+          2,
+          6,
+          2,
+          3,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 58,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 133,
+      "display_name": "Level 133",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          5,
+          5,
+          5,
+          2,
+          4,
+          1
+        ],
+        [
+          1,
+          2,
+          6,
+          6,
+          1,
+          2
+        ],
+        [
+          3,
+          4,
+          2,
+          5,
+          3,
+          3
+        ],
+        [
+          1,
+          5,
+          4,
+          3,
+          1,
+          4
+        ],
+        [
+          5,
+          3,
+          6,
+          2,
+          4,
+          4
+        ],
+        [
+          2,
+          3,
+          6,
+          6,
+          6,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 57,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 134,
+      "display_name": "Level 134",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          4,
+          3,
+          1,
+          2,
+          1,
+          2
+        ],
+        [
+          6,
+          2,
+          1,
+          4,
+          2,
+          5
+        ],
+        [
+          5,
+          1,
+          1,
+          3,
+          4,
+          1
+        ],
+        [
+          3,
+          6,
+          6,
+          2,
+          3,
+          4
+        ],
+        [
+          5,
+          4,
+          2,
+          6,
+          5,
+          3
+        ],
+        [
+          6,
+          5,
+          4,
+          3,
+          5,
+          6
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 59,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 135,
+      "display_name": "Level 135",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          4,
+          5,
+          1,
+          3,
+          5,
+          2
+        ],
+        [
+          3,
+          5,
+          6,
+          3,
+          6,
+          4
+        ],
+        [
+          3,
+          1,
+          6,
+          2,
+          1,
+          6
+        ],
+        [
+          5,
+          1,
+          2,
+          5,
+          3,
+          2
+        ],
+        [
+          5,
+          6,
+          2,
+          4,
+          4,
+          4
+        ],
+        [
+          1,
+          1,
+          4,
+          2,
+          3,
+          6
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 56,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 136,
+      "display_name": "Level 136",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          5,
+          2,
+          3,
+          1,
+          6
+        ],
+        [
+          4,
+          5,
+          1,
+          3,
+          2,
+          6
+        ],
+        [
+          2,
+          4,
+          2,
+          6,
+          2,
+          2
+        ],
+        [
+          3,
+          4,
+          5,
+          1,
+          3,
+          3
+        ],
+        [
+          5,
+          4,
+          6,
+          1,
+          4,
+          4
+        ],
+        [
+          1,
+          3,
+          5,
+          6,
+          6,
+          5
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 56,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 137,
+      "display_name": "Level 137",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          5,
+          5,
+          3,
+          5,
+          6
+        ],
+        [
+          6,
+          3,
+          2,
+          2,
+          1,
+          3
+        ],
+        [
+          4,
+          1,
+          2,
+          4,
+          4,
+          4
+        ],
+        [
+          5,
+          1,
+          1,
+          3,
+          4,
+          5
+        ],
+        [
+          6,
+          3,
+          6,
+          2,
+          6,
+          4
+        ],
+        [
+          1,
+          5,
+          6,
+          2,
+          2,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 56,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 138,
+      "display_name": "Level 138",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          3,
+          3,
+          5,
+          3,
+          4
+        ],
+        [
+          2,
+          1,
+          2,
+          2,
+          3,
+          4
+        ],
+        [
+          1,
+          5,
+          5,
+          1,
+          4,
+          5
+        ],
+        [
+          1,
+          6,
+          4,
+          5,
+          6,
+          4
+        ],
+        [
+          5,
+          3,
+          1,
+          2,
+          6,
+          6
+        ],
+        [
+          6,
+          2,
+          3,
+          4,
+          2,
+          6
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 60,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 139,
+      "display_name": "Level 139",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          4,
+          4,
+          2,
+          4,
+          1,
+          6
+        ],
+        [
+          5,
+          2,
+          5,
+          3,
+          3,
+          3
+        ],
+        [
+          6,
+          2,
+          1,
+          1,
+          1,
+          2
+        ],
+        [
+          2,
+          5,
+          3,
+          5,
+          4,
+          1
+        ],
+        [
+          5,
+          6,
+          6,
+          6,
+          4,
+          6
+        ],
+        [
+          2,
+          1,
+          3,
+          4,
+          5,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 56,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 140,
+      "display_name": "Level 140",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          2,
+          1,
+          5,
+          4,
+          4,
+          3
+        ],
+        [
+          3,
+          5,
+          6,
+          5,
+          1,
+          2
+        ],
+        [
+          2,
+          6,
+          1,
+          4,
+          1,
+          5
+        ],
+        [
+          4,
+          3,
+          2,
+          6,
+          5,
+          4
+        ],
+        [
+          3,
+          2,
+          1,
+          2,
+          4,
+          1
+        ],
+        [
+          5,
+          3,
+          3,
+          6,
+          6,
+          6
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 61,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 141,
+      "display_name": "Level 141",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          2,
+          5,
+          5,
+          5,
+          2
+        ],
+        [
+          4,
+          6,
+          1,
+          1,
+          4,
+          2
+        ],
+        [
+          4,
+          2,
+          6,
+          5,
+          1,
+          2
+        ],
+        [
+          2,
+          1,
+          3,
+          5,
+          3,
+          6
+        ],
+        [
+          3,
+          3,
+          6,
+          4,
+          4,
+          6
+        ],
+        [
+          5,
+          1,
+          6,
+          3,
+          4,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 54,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 142,
+      "display_name": "Level 142",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          2,
+          6,
+          5,
+          4,
+          6,
+          5
+        ],
+        [
+          5,
+          4,
+          3,
+          4,
+          6,
+          6
+        ],
+        [
+          1,
+          2,
+          1,
+          6,
+          1,
+          5
+        ],
+        [
+          1,
+          4,
+          3,
+          3,
+          4,
+          3
+        ],
+        [
+          5,
+          6,
+          1,
+          2,
+          2,
+          4
+        ],
+        [
+          3,
+          2,
+          5,
+          3,
+          1,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 56,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 143,
+      "display_name": "Level 143",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          4,
+          2,
+          3,
+          1,
+          3,
+          6
+        ],
+        [
+          4,
+          1,
+          5,
+          6,
+          4,
+          5
+        ],
+        [
+          5,
+          6,
+          2,
+          2,
+          1,
+          6
+        ],
+        [
+          5,
+          2,
+          3,
+          5,
+          5,
+          2
+        ],
+        [
+          4,
+          1,
+          6,
+          1,
+          1,
+          4
+        ],
+        [
+          2,
+          6,
+          3,
+          3,
+          3,
+          4
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 60,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 144,
+      "display_name": "Level 144",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          6,
+          5,
+          6,
+          3,
+          1,
+          3
+        ],
+        [
+          3,
+          1,
+          6,
+          5,
+          4,
+          6
+        ],
+        [
+          5,
+          2,
+          4,
+          2,
+          1,
+          3
+        ],
+        [
+          2,
+          6,
+          4,
+          5,
+          5,
+          1
+        ],
+        [
+          5,
+          4,
+          2,
+          3,
+          2,
+          3
+        ],
+        [
+          6,
+          4,
+          4,
+          1,
+          2,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 59,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 145,
+      "display_name": "Level 145",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          5,
+          5,
+          2,
+          6,
+          5,
+          2
+        ],
+        [
+          6,
+          1,
+          4,
+          6,
+          4,
+          1
+        ],
+        [
+          3,
+          2,
+          3,
+          6,
+          2,
+          6
+        ],
+        [
+          3,
+          1,
+          1,
+          2,
+          4,
+          3
+        ],
+        [
+          3,
+          1,
+          5,
+          3,
+          2,
+          5
+        ],
+        [
+          4,
+          6,
+          1,
+          4,
+          5,
+          4
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 57,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 146,
+      "display_name": "Level 146",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          4,
+          1,
+          6,
+          2,
+          5,
+          1
+        ],
+        [
+          4,
+          6,
+          6,
+          5,
+          3,
+          1
+        ],
+        [
+          6,
+          4,
+          3,
+          4,
+          6,
+          3
+        ],
+        [
+          5,
+          3,
+          4,
+          2,
+          4,
+          5
+        ],
+        [
+          2,
+          2,
+          1,
+          5,
+          5,
+          1
+        ],
+        [
+          2,
+          1,
+          3,
+          6,
+          2,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 58,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 147,
+      "display_name": "Level 147",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          6,
+          2,
+          4,
+          6,
+          2,
+          5
+        ],
+        [
+          3,
+          4,
+          6,
+          5,
+          1,
+          3
+        ],
+        [
+          2,
+          4,
+          5,
+          1,
+          6,
+          2
+        ],
+        [
+          1,
+          1,
+          5,
+          6,
+          5,
+          6
+        ],
+        [
+          2,
+          3,
+          3,
+          4,
+          4,
+          5
+        ],
+        [
+          1,
+          3,
+          1,
+          2,
+          4,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 56,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 148,
+      "display_name": "Level 148",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          3,
+          4,
+          6,
+          5,
+          5
+        ],
+        [
+          6,
+          3,
+          2,
+          6,
+          4,
+          5
+        ],
+        [
+          4,
+          2,
+          4,
+          4,
+          5,
+          1
+        ],
+        [
+          2,
+          3,
+          6,
+          1,
+          2,
+          1
+        ],
+        [
+          2,
+          3,
+          5,
+          2,
+          1,
+          6
+        ],
+        [
+          3,
+          1,
+          4,
+          3,
+          5,
+          6
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 58,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 149,
+      "display_name": "Level 149",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          2,
+          5,
+          5,
+          4,
+          3,
+          1
+        ],
+        [
+          6,
+          3,
+          1,
+          4,
+          1,
+          6
+        ],
+        [
+          6,
+          4,
+          2,
+          2,
+          3,
+          6
+        ],
+        [
+          5,
+          2,
+          6,
+          4,
+          1,
+          4
+        ],
+        [
+          2,
+          6,
+          1,
+          5,
+          5,
+          5
+        ],
+        [
+          1,
+          2,
+          3,
+          3,
+          3,
+          4
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 54,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 150,
+      "display_name": "Level 150",
+      "difficulty_tier": 4,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          6,
+          5,
+          3,
+          5,
+          3,
+          3
+        ],
+        [
+          2,
+          4,
+          5,
+          3,
+          2,
+          5
+        ],
+        [
+          6,
+          6,
+          4,
+          1,
+          2,
+          1
+        ],
+        [
+          6,
+          1,
+          4,
+          6,
+          2,
+          3
+        ],
+        [
+          5,
+          2,
+          1,
+          4,
+          3,
+          1
+        ],
+        [
+          6,
+          2,
+          1,
+          4,
+          4,
+          5
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 5,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 61,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 151,
+      "display_name": "Level 151",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          6,
+          4,
+          3,
+          2,
+          3
+        ],
+        [
+          2,
+          5,
+          5,
+          4,
+          2,
+          3
+        ],
+        [
+          4,
+          4,
+          4,
+          5,
+          1,
+          6
+        ],
+        [
+          3,
+          6,
+          1,
+          1,
+          6,
+          1
+        ],
+        [
+          5,
+          2,
+          3,
+          6,
+          1,
+          2
+        ],
+        [
+          5,
+          6,
+          2,
+          5,
+          3,
+          4
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 67,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 152,
+      "display_name": "Level 152",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          4,
+          6,
+          2,
+          5,
+          2
+        ],
+        [
+          1,
+          5,
+          4,
+          3,
+          2,
+          3
+        ],
+        [
+          4,
+          1,
+          4,
+          6,
+          3,
+          2
+        ],
+        [
+          6,
+          1,
+          3,
+          6,
+          3,
+          5
+        ],
+        [
+          5,
+          2,
+          3,
+          4,
+          1,
+          1
+        ],
+        [
+          6,
+          6,
+          5,
+          5,
+          4,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 64,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 153,
+      "display_name": "Level 153",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          3,
+          4,
+          6,
+          4,
+          3,
+          3
+        ],
+        [
+          1,
+          3,
+          1,
+          5,
+          2,
+          4
+        ],
+        [
+          4,
+          6,
+          6,
+          3,
+          1,
+          2
+        ],
+        [
+          4,
+          2,
+          6,
+          6,
+          5,
+          1
+        ],
+        [
+          2,
+          5,
+          2,
+          6,
+          5,
+          1
+        ],
+        [
+          5,
+          3,
+          2,
+          1,
+          4,
+          5
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 65,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 154,
+      "display_name": "Level 154",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          3,
+          5,
+          2,
+          5,
+          4,
+          1
+        ],
+        [
+          1,
+          2,
+          1,
+          3,
+          4,
+          6
+        ],
+        [
+          6,
+          3,
+          5,
+          2,
+          3,
+          3
+        ],
+        [
+          4,
+          4,
+          6,
+          3,
+          2,
+          5
+        ],
+        [
+          6,
+          4,
+          2,
+          1,
+          6,
+          4
+        ],
+        [
+          5,
+          1,
+          6,
+          2,
+          1,
+          5
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 64,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 155,
+      "display_name": "Level 155",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          3,
+          4,
+          5,
+          6,
+          5,
+          2
+        ],
+        [
+          2,
+          6,
+          3,
+          5,
+          5,
+          1
+        ],
+        [
+          2,
+          3,
+          5,
+          4,
+          5,
+          1
+        ],
+        [
+          1,
+          1,
+          2,
+          4,
+          6,
+          6
+        ],
+        [
+          3,
+          4,
+          2,
+          3,
+          6,
+          4
+        ],
+        [
+          6,
+          1,
+          4,
+          1,
+          3,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 67,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 156,
+      "display_name": "Level 156",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          5,
+          5,
+          5,
+          6,
+          5,
+          2
+        ],
+        [
+          3,
+          6,
+          2,
+          6,
+          4,
+          1
+        ],
+        [
+          3,
+          3,
+          2,
+          3,
+          6,
+          4
+        ],
+        [
+          2,
+          4,
+          1,
+          4,
+          3,
+          5
+        ],
+        [
+          2,
+          2,
+          5,
+          6,
+          6,
+          4
+        ],
+        [
+          1,
+          4,
+          1,
+          1,
+          3,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 63,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 157,
+      "display_name": "Level 157",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          1,
+          2,
+          3,
+          1,
+          3
+        ],
+        [
+          4,
+          2,
+          3,
+          4,
+          5,
+          6
+        ],
+        [
+          5,
+          6,
+          5,
+          3,
+          5,
+          5
+        ],
+        [
+          3,
+          3,
+          4,
+          2,
+          1,
+          5
+        ],
+        [
+          6,
+          2,
+          1,
+          4,
+          2,
+          4
+        ],
+        [
+          1,
+          6,
+          4,
+          6,
+          6,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 63,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 158,
+      "display_name": "Level 158",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          5,
+          3,
+          1,
+          2,
+          6,
+          1
+        ],
+        [
+          2,
+          5,
+          2,
+          3,
+          3,
+          2
+        ],
+        [
+          1,
+          4,
+          5,
+          6,
+          3,
+          3
+        ],
+        [
+          6,
+          1,
+          4,
+          3,
+          2,
+          1
+        ],
+        [
+          4,
+          2,
+          5,
+          6,
+          4,
+          6
+        ],
+        [
+          6,
+          5,
+          4,
+          4,
+          1,
+          5
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 72,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 159,
+      "display_name": "Level 159",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          3,
+          5,
+          2,
+          1,
+          6
+        ],
+        [
+          3,
+          6,
+          5,
+          1,
+          4,
+          4
+        ],
+        [
+          5,
+          5,
+          1,
+          4,
+          6,
+          2
+        ],
+        [
+          5,
+          1,
+          6,
+          6,
+          3,
+          4
+        ],
+        [
+          3,
+          4,
+          5,
+          2,
+          2,
+          1
+        ],
+        [
+          6,
+          3,
+          4,
+          2,
+          3,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 69,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 160,
+      "display_name": "Level 160",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          5,
+          2,
+          1,
+          2,
+          3
+        ],
+        [
+          5,
+          4,
+          5,
+          3,
+          2,
+          1
+        ],
+        [
+          3,
+          4,
+          5,
+          4,
+          2,
+          6
+        ],
+        [
+          6,
+          4,
+          2,
+          1,
+          6,
+          2
+        ],
+        [
+          4,
+          6,
+          1,
+          6,
+          5,
+          4
+        ],
+        [
+          3,
+          5,
+          6,
+          3,
+          3,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 77,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 161,
+      "display_name": "Level 161",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          4,
+          5,
+          3,
+          2,
+          6
+        ],
+        [
+          4,
+          1,
+          6,
+          1,
+          5,
+          5
+        ],
+        [
+          4,
+          3,
+          6,
+          2,
+          5,
+          4
+        ],
+        [
+          2,
+          2,
+          2,
+          4,
+          3,
+          1
+        ],
+        [
+          2,
+          1,
+          5,
+          4,
+          3,
+          6
+        ],
+        [
+          1,
+          6,
+          6,
+          3,
+          5,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 65,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 162,
+      "display_name": "Level 162",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          5,
+          1,
+          2,
+          3,
+          2,
+          4
+        ],
+        [
+          5,
+          4,
+          3,
+          6,
+          6,
+          1
+        ],
+        [
+          3,
+          2,
+          3,
+          2,
+          2,
+          5
+        ],
+        [
+          2,
+          6,
+          6,
+          3,
+          4,
+          5
+        ],
+        [
+          4,
+          6,
+          1,
+          1,
+          4,
+          3
+        ],
+        [
+          6,
+          1,
+          5,
+          5,
+          1,
+          4
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 67,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 163,
+      "display_name": "Level 163",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          5,
+          1,
+          5,
+          6,
+          6
+        ],
+        [
+          4,
+          5,
+          1,
+          3,
+          2,
+          4
+        ],
+        [
+          5,
+          6,
+          2,
+          3,
+          4,
+          5
+        ],
+        [
+          3,
+          2,
+          2,
+          6,
+          1,
+          2
+        ],
+        [
+          4,
+          6,
+          3,
+          4,
+          6,
+          1
+        ],
+        [
+          2,
+          5,
+          3,
+          3,
+          1,
+          4
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 70,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 164,
+      "display_name": "Level 164",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          3,
+          2,
+          4,
+          1,
+          6
+        ],
+        [
+          4,
+          5,
+          5,
+          2,
+          6,
+          6
+        ],
+        [
+          6,
+          2,
+          4,
+          4,
+          3,
+          5
+        ],
+        [
+          3,
+          6,
+          5,
+          1,
+          4,
+          1
+        ],
+        [
+          2,
+          2,
+          1,
+          6,
+          2,
+          5
+        ],
+        [
+          5,
+          3,
+          3,
+          4,
+          3,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 65,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 165,
+      "display_name": "Level 165",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          6,
+          1,
+          5,
+          5,
+          1,
+          6
+        ],
+        [
+          3,
+          1,
+          2,
+          6,
+          2,
+          4
+        ],
+        [
+          4,
+          5,
+          5,
+          5,
+          4,
+          1
+        ],
+        [
+          2,
+          4,
+          2,
+          6,
+          6,
+          3
+        ],
+        [
+          2,
+          1,
+          1,
+          4,
+          5,
+          3
+        ],
+        [
+          2,
+          3,
+          3,
+          4,
+          3,
+          6
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 60,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 166,
+      "display_name": "Level 166",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          2,
+          4,
+          2,
+          3,
+          5
+        ],
+        [
+          1,
+          2,
+          2,
+          4,
+          4,
+          6
+        ],
+        [
+          6,
+          3,
+          5,
+          1,
+          2,
+          5
+        ],
+        [
+          3,
+          6,
+          2,
+          5,
+          6,
+          4
+        ],
+        [
+          4,
+          6,
+          5,
+          3,
+          3,
+          5
+        ],
+        [
+          4,
+          1,
+          1,
+          3,
+          6,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 72,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 167,
+      "display_name": "Level 167",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          2,
+          6,
+          2,
+          1,
+          3,
+          6
+        ],
+        [
+          4,
+          4,
+          1,
+          3,
+          1,
+          1
+        ],
+        [
+          4,
+          2,
+          6,
+          3,
+          2,
+          3
+        ],
+        [
+          5,
+          3,
+          4,
+          6,
+          4,
+          4
+        ],
+        [
+          5,
+          1,
+          5,
+          2,
+          1,
+          5
+        ],
+        [
+          2,
+          3,
+          5,
+          6,
+          5,
+          6
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 69,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 168,
+      "display_name": "Level 168",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          2,
+          6,
+          3,
+          5,
+          1,
+          2
+        ],
+        [
+          6,
+          3,
+          5,
+          6,
+          1,
+          2
+        ],
+        [
+          4,
+          3,
+          3,
+          2,
+          4,
+          6
+        ],
+        [
+          6,
+          3,
+          4,
+          5,
+          4,
+          4
+        ],
+        [
+          1,
+          5,
+          2,
+          2,
+          5,
+          1
+        ],
+        [
+          1,
+          4,
+          3,
+          6,
+          5,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 74,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 169,
+      "display_name": "Level 169",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          2,
+          6,
+          6,
+          1,
+          1,
+          1
+        ],
+        [
+          3,
+          5,
+          4,
+          3,
+          6,
+          2
+        ],
+        [
+          3,
+          6,
+          2,
+          1,
+          2,
+          5
+        ],
+        [
+          3,
+          2,
+          4,
+          5,
+          6,
+          1
+        ],
+        [
+          4,
+          4,
+          1,
+          4,
+          5,
+          4
+        ],
+        [
+          6,
+          2,
+          3,
+          5,
+          3,
+          5
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 70,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 170,
+      "display_name": "Level 170",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          3,
+          2,
+          6,
+          2,
+          5,
+          4
+        ],
+        [
+          1,
+          3,
+          6,
+          6,
+          5,
+          1
+        ],
+        [
+          5,
+          2,
+          5,
+          1,
+          4,
+          3
+        ],
+        [
+          4,
+          2,
+          2,
+          4,
+          1,
+          3
+        ],
+        [
+          3,
+          4,
+          1,
+          4,
+          2,
+          6
+        ],
+        [
+          5,
+          1,
+          5,
+          3,
+          6,
+          6
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 70,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 171,
+      "display_name": "Level 171",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          5,
+          4,
+          1,
+          6,
+          5,
+          3
+        ],
+        [
+          3,
+          6,
+          6,
+          3,
+          1,
+          3
+        ],
+        [
+          5,
+          1,
+          5,
+          5,
+          6,
+          4
+        ],
+        [
+          1,
+          2,
+          1,
+          5,
+          2,
+          2
+        ],
+        [
+          1,
+          4,
+          4,
+          4,
+          3,
+          2
+        ],
+        [
+          6,
+          2,
+          3,
+          4,
+          6,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 61,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 172,
+      "display_name": "Level 172",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          3,
+          1,
+          4,
+          3,
+          4,
+          6
+        ],
+        [
+          6,
+          2,
+          2,
+          4,
+          6,
+          6
+        ],
+        [
+          4,
+          6,
+          1,
+          4,
+          1,
+          3
+        ],
+        [
+          6,
+          5,
+          4,
+          5,
+          3,
+          5
+        ],
+        [
+          5,
+          2,
+          5,
+          5,
+          3,
+          2
+        ],
+        [
+          2,
+          1,
+          2,
+          1,
+          3,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 70,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 173,
+      "display_name": "Level 173",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          5,
+          2,
+          5,
+          3,
+          1,
+          2
+        ],
+        [
+          6,
+          2,
+          6,
+          5,
+          2,
+          3
+        ],
+        [
+          1,
+          4,
+          2,
+          1,
+          5,
+          6
+        ],
+        [
+          2,
+          6,
+          5,
+          6,
+          6,
+          1
+        ],
+        [
+          4,
+          3,
+          5,
+          3,
+          4,
+          4
+        ],
+        [
+          4,
+          3,
+          1,
+          3,
+          1,
+          4
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 69,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 174,
+      "display_name": "Level 174",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          3,
+          1,
+          2,
+          6,
+          5,
+          3
+        ],
+        [
+          1,
+          6,
+          4,
+          5,
+          6,
+          3
+        ],
+        [
+          1,
+          2,
+          1,
+          3,
+          5,
+          4
+        ],
+        [
+          6,
+          5,
+          4,
+          4,
+          3,
+          5
+        ],
+        [
+          5,
+          4,
+          6,
+          2,
+          1,
+          3
+        ],
+        [
+          2,
+          4,
+          2,
+          2,
+          6,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 70,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 175,
+      "display_name": "Level 175",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          4,
+          1,
+          3,
+          1,
+          5
+        ],
+        [
+          1,
+          4,
+          3,
+          6,
+          3,
+          5
+        ],
+        [
+          6,
+          3,
+          2,
+          3,
+          4,
+          2
+        ],
+        [
+          6,
+          4,
+          6,
+          1,
+          4,
+          5
+        ],
+        [
+          5,
+          5,
+          1,
+          6,
+          2,
+          6
+        ],
+        [
+          2,
+          3,
+          2,
+          5,
+          4,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 65,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 176,
+      "display_name": "Level 176",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          2,
+          1,
+          6,
+          2,
+          6
+        ],
+        [
+          3,
+          3,
+          1,
+          1,
+          6,
+          1
+        ],
+        [
+          2,
+          3,
+          4,
+          2,
+          3,
+          5
+        ],
+        [
+          1,
+          4,
+          6,
+          4,
+          4,
+          5
+        ],
+        [
+          6,
+          5,
+          5,
+          2,
+          6,
+          4
+        ],
+        [
+          2,
+          3,
+          5,
+          4,
+          5,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 65,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 177,
+      "display_name": "Level 177",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          3,
+          4,
+          2,
+          3,
+          4,
+          3
+        ],
+        [
+          2,
+          4,
+          6,
+          5,
+          2,
+          5
+        ],
+        [
+          5,
+          2,
+          1,
+          1,
+          4,
+          4
+        ],
+        [
+          6,
+          4,
+          2,
+          6,
+          1,
+          5
+        ],
+        [
+          1,
+          5,
+          6,
+          1,
+          3,
+          6
+        ],
+        [
+          6,
+          2,
+          5,
+          1,
+          3,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 65,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 178,
+      "display_name": "Level 178",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          6,
+          2,
+          6,
+          3,
+          4,
+          3
+        ],
+        [
+          2,
+          5,
+          2,
+          5,
+          4,
+          6
+        ],
+        [
+          1,
+          4,
+          1,
+          3,
+          5,
+          1
+        ],
+        [
+          5,
+          3,
+          3,
+          6,
+          1,
+          2
+        ],
+        [
+          2,
+          5,
+          2,
+          1,
+          3,
+          4
+        ],
+        [
+          6,
+          4,
+          5,
+          6,
+          1,
+          4
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 80,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 179,
+      "display_name": "Level 179",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          6,
+          1,
+          5,
+          5,
+          1
+        ],
+        [
+          5,
+          6,
+          5,
+          4,
+          6,
+          6
+        ],
+        [
+          5,
+          2,
+          4,
+          3,
+          2,
+          3
+        ],
+        [
+          3,
+          6,
+          2,
+          3,
+          4,
+          1
+        ],
+        [
+          2,
+          5,
+          1,
+          2,
+          2,
+          4
+        ],
+        [
+          3,
+          6,
+          4,
+          4,
+          3,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 77,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 180,
+      "display_name": "Level 180",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          3,
+          3,
+          1,
+          5,
+          1
+        ],
+        [
+          2,
+          4,
+          2,
+          1,
+          3,
+          6
+        ],
+        [
+          4,
+          6,
+          6,
+          2,
+          4,
+          5
+        ],
+        [
+          4,
+          5,
+          5,
+          3,
+          6,
+          1
+        ],
+        [
+          6,
+          4,
+          5,
+          2,
+          2,
+          3
+        ],
+        [
+          1,
+          3,
+          4,
+          2,
+          6,
+          5
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 65,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 181,
+      "display_name": "Level 181",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          3,
+          5,
+          3,
+          2,
+          5,
+          1
+        ],
+        [
+          2,
+          6,
+          5,
+          5,
+          4,
+          3
+        ],
+        [
+          3,
+          5,
+          5,
+          4,
+          4,
+          6
+        ],
+        [
+          4,
+          2,
+          4,
+          6,
+          6,
+          6
+        ],
+        [
+          1,
+          1,
+          6,
+          1,
+          3,
+          4
+        ],
+        [
+          2,
+          2,
+          1,
+          2,
+          1,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 62,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 182,
+      "display_name": "Level 182",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          4,
+          5,
+          6,
+          5,
+          6,
+          3
+        ],
+        [
+          6,
+          3,
+          4,
+          4,
+          2,
+          5
+        ],
+        [
+          3,
+          3,
+          5,
+          1,
+          1,
+          3
+        ],
+        [
+          2,
+          5,
+          6,
+          2,
+          4,
+          3
+        ],
+        [
+          5,
+          2,
+          1,
+          1,
+          4,
+          1
+        ],
+        [
+          6,
+          4,
+          2,
+          1,
+          6,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 61,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 183,
+      "display_name": "Level 183",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          2,
+          6,
+          6,
+          4,
+          1,
+          3
+        ],
+        [
+          1,
+          5,
+          6,
+          5,
+          4,
+          5
+        ],
+        [
+          4,
+          4,
+          5,
+          6,
+          2,
+          2
+        ],
+        [
+          5,
+          5,
+          3,
+          6,
+          4,
+          3
+        ],
+        [
+          2,
+          6,
+          1,
+          2,
+          3,
+          1
+        ],
+        [
+          1,
+          1,
+          4,
+          2,
+          3,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 66,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 184,
+      "display_name": "Level 184",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          6,
+          6,
+          5,
+          2,
+          6,
+          5
+        ],
+        [
+          5,
+          6,
+          3,
+          4,
+          2,
+          3
+        ],
+        [
+          5,
+          3,
+          1,
+          3,
+          2,
+          3
+        ],
+        [
+          2,
+          1,
+          2,
+          5,
+          2,
+          3
+        ],
+        [
+          4,
+          5,
+          6,
+          1,
+          4,
+          1
+        ],
+        [
+          1,
+          4,
+          1,
+          6,
+          4,
+          4
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 67,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 185,
+      "display_name": "Level 185",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          4,
+          2,
+          6,
+          6,
+          4,
+          2
+        ],
+        [
+          4,
+          5,
+          5,
+          3,
+          5,
+          2
+        ],
+        [
+          4,
+          1,
+          3,
+          5,
+          1,
+          2
+        ],
+        [
+          1,
+          4,
+          3,
+          1,
+          6,
+          1
+        ],
+        [
+          3,
+          6,
+          3,
+          4,
+          3,
+          2
+        ],
+        [
+          6,
+          2,
+          1,
+          6,
+          5,
+          5
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 71,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 186,
+      "display_name": "Level 186",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          3,
+          1,
+          3,
+          2,
+          2,
+          6
+        ],
+        [
+          1,
+          6,
+          4,
+          5,
+          6,
+          1
+        ],
+        [
+          4,
+          2,
+          4,
+          1,
+          2,
+          5
+        ],
+        [
+          5,
+          4,
+          6,
+          3,
+          1,
+          6
+        ],
+        [
+          2,
+          3,
+          3,
+          4,
+          1,
+          5
+        ],
+        [
+          3,
+          5,
+          5,
+          4,
+          6,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 63,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 187,
+      "display_name": "Level 187",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          3,
+          1,
+          6,
+          3,
+          3,
+          5
+        ],
+        [
+          6,
+          4,
+          5,
+          4,
+          5,
+          4
+        ],
+        [
+          4,
+          3,
+          2,
+          5,
+          1,
+          2
+        ],
+        [
+          1,
+          2,
+          5,
+          1,
+          4,
+          2
+        ],
+        [
+          3,
+          6,
+          6,
+          2,
+          5,
+          2
+        ],
+        [
+          3,
+          1,
+          6,
+          1,
+          6,
+          4
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 68,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 188,
+      "display_name": "Level 188",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          3,
+          1,
+          2,
+          6,
+          5
+        ],
+        [
+          2,
+          6,
+          3,
+          3,
+          2,
+          2
+        ],
+        [
+          1,
+          2,
+          4,
+          4,
+          5,
+          4
+        ],
+        [
+          3,
+          4,
+          5,
+          6,
+          2,
+          3
+        ],
+        [
+          1,
+          5,
+          6,
+          6,
+          5,
+          4
+        ],
+        [
+          5,
+          1,
+          4,
+          6,
+          1,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 74,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 189,
+      "display_name": "Level 189",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          3,
+          2,
+          1,
+          5,
+          4,
+          2
+        ],
+        [
+          4,
+          4,
+          1,
+          6,
+          5,
+          4
+        ],
+        [
+          1,
+          1,
+          2,
+          1,
+          2,
+          5
+        ],
+        [
+          4,
+          5,
+          5,
+          6,
+          3,
+          2
+        ],
+        [
+          4,
+          6,
+          3,
+          3,
+          2,
+          6
+        ],
+        [
+          1,
+          3,
+          6,
+          3,
+          5,
+          6
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 70,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 190,
+      "display_name": "Level 190",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          6,
+          2,
+          5,
+          6,
+          1,
+          1
+        ],
+        [
+          5,
+          6,
+          4,
+          1,
+          5,
+          3
+        ],
+        [
+          5,
+          4,
+          4,
+          2,
+          2,
+          3
+        ],
+        [
+          6,
+          5,
+          4,
+          3,
+          4,
+          2
+        ],
+        [
+          6,
+          2,
+          1,
+          6,
+          1,
+          3
+        ],
+        [
+          3,
+          1,
+          3,
+          5,
+          4,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 71,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 191,
+      "display_name": "Level 191",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          2,
+          2,
+          1,
+          5,
+          6,
+          5
+        ],
+        [
+          3,
+          1,
+          3,
+          3,
+          4,
+          2
+        ],
+        [
+          6,
+          1,
+          6,
+          2,
+          4,
+          1
+        ],
+        [
+          3,
+          1,
+          4,
+          6,
+          5,
+          4
+        ],
+        [
+          6,
+          5,
+          5,
+          1,
+          2,
+          3
+        ],
+        [
+          4,
+          4,
+          6,
+          5,
+          3,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 60,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 192,
+      "display_name": "Level 192",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          2,
+          2,
+          4,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          3,
+          6,
+          4,
+          3,
+          1
+        ],
+        [
+          5,
+          5,
+          6,
+          6,
+          1,
+          2
+        ],
+        [
+          2,
+          4,
+          5,
+          5,
+          6,
+          5
+        ],
+        [
+          4,
+          4,
+          3,
+          6,
+          3,
+          2
+        ],
+        [
+          3,
+          1,
+          5,
+          4,
+          3,
+          6
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 57,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 193,
+      "display_name": "Level 193",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          6,
+          2,
+          5,
+          1,
+          3,
+          2
+        ],
+        [
+          5,
+          3,
+          6,
+          5,
+          3,
+          1
+        ],
+        [
+          3,
+          6,
+          1,
+          2,
+          2,
+          1
+        ],
+        [
+          3,
+          2,
+          4,
+          1,
+          2,
+          1
+        ],
+        [
+          4,
+          5,
+          5,
+          6,
+          4,
+          4
+        ],
+        [
+          4,
+          6,
+          5,
+          4,
+          6,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 70,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 194,
+      "display_name": "Level 194",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          6,
+          3,
+          5,
+          5,
+          1,
+          4
+        ],
+        [
+          4,
+          1,
+          6,
+          3,
+          5,
+          1
+        ],
+        [
+          6,
+          3,
+          3,
+          2,
+          1,
+          2
+        ],
+        [
+          2,
+          5,
+          4,
+          2,
+          1,
+          6
+        ],
+        [
+          3,
+          6,
+          1,
+          2,
+          4,
+          3
+        ],
+        [
+          4,
+          5,
+          4,
+          5,
+          2,
+          6
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 69,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 195,
+      "display_name": "Level 195",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          6,
+          4,
+          3,
+          3,
+          6,
+          4
+        ],
+        [
+          5,
+          4,
+          2,
+          2,
+          1,
+          1
+        ],
+        [
+          2,
+          4,
+          2,
+          1,
+          4,
+          5
+        ],
+        [
+          6,
+          3,
+          1,
+          3,
+          5,
+          6
+        ],
+        [
+          2,
+          5,
+          2,
+          3,
+          1,
+          6
+        ],
+        [
+          4,
+          5,
+          1,
+          5,
+          6,
+          3
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 61,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 196,
+      "display_name": "Level 196",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          6,
+          5,
+          4,
+          6,
+          4,
+          5
+        ],
+        [
+          2,
+          2,
+          3,
+          5,
+          1,
+          5
+        ],
+        [
+          1,
+          3,
+          3,
+          6,
+          1,
+          1
+        ],
+        [
+          2,
+          4,
+          3,
+          3,
+          1,
+          6
+        ],
+        [
+          4,
+          6,
+          3,
+          5,
+          6,
+          1
+        ],
+        [
+          4,
+          2,
+          2,
+          5,
+          2,
+          4
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 61,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 197,
+      "display_name": "Level 197",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          4,
+          5,
+          1,
+          1,
+          5,
+          5
+        ],
+        [
+          3,
+          1,
+          6,
+          5,
+          4,
+          4
+        ],
+        [
+          6,
+          3,
+          6,
+          4,
+          3,
+          6
+        ],
+        [
+          2,
+          2,
+          2,
+          3,
+          3,
+          3
+        ],
+        [
+          6,
+          2,
+          2,
+          5,
+          1,
+          4
+        ],
+        [
+          2,
+          4,
+          6,
+          1,
+          5,
+          1
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 66,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 198,
+      "display_name": "Level 198",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          1,
+          1,
+          6,
+          3,
+          5,
+          4
+        ],
+        [
+          1,
+          4,
+          2,
+          4,
+          4,
+          2
+        ],
+        [
+          5,
+          2,
+          5,
+          6,
+          5,
+          3
+        ],
+        [
+          2,
+          3,
+          3,
+          3,
+          5,
+          6
+        ],
+        [
+          1,
+          4,
+          4,
+          2,
+          6,
+          1
+        ],
+        [
+          3,
+          5,
+          6,
+          2,
+          1,
+          6
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 77,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 199,
+      "display_name": "Level 199",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          6,
+          1,
+          1,
+          3,
+          4,
+          5
+        ],
+        [
+          1,
+          4,
+          4,
+          6,
+          3,
+          6
+        ],
+        [
+          5,
+          3,
+          1,
+          1,
+          2,
+          6
+        ],
+        [
+          2,
+          6,
+          1,
+          2,
+          4,
+          2
+        ],
+        [
+          3,
+          5,
+          6,
+          5,
+          5,
+          3
+        ],
+        [
+          5,
+          3,
+          4,
+          4,
+          2,
+          2
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 78,
+      "added_version": "2026.06"
+    },
+    {
+      "level_id": 200,
+      "display_name": "Level 200",
+      "difficulty_tier": 5,
+      "schema_version": 1,
+      "color_count": 6,
+      "stack_depth": 6,
+      "color_stacks": [
+        [
+          5,
+          3,
+          5,
+          5,
+          6,
+          1
+        ],
+        [
+          4,
+          1,
+          2,
+          1,
+          1,
+          1
+        ],
+        [
+          2,
+          5,
+          2,
+          1,
+          4,
+          3
+        ],
+        [
+          4,
+          6,
+          4,
+          3,
+          3,
+          3
+        ],
+        [
+          2,
+          3,
+          6,
+          6,
+          4,
+          5
+        ],
+        [
+          2,
+          6,
+          4,
+          2,
+          5,
+          6
+        ]
+      ],
+      "temp_slot_count": 2,
+      "temp_slot_depth": 4,
+      "is_tutorial": false,
+      "daily_challenge_eligible": true,
+      "par_moves": 73,
       "added_version": "2026.06"
     }
   ]
