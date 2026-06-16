@@ -90,6 +90,31 @@ namespace BoltSort.Visual
         /// <summary>Multicolor wildcard ball sprite (matches any color). Phase-2 mechanic (color id 0).</summary>
         public static Sprite BallMulticolor => LoadRes("Sprites/Balls/ball_multicolor");
 
+        private static Sprite[] _ballMulticolorFrames;
+
+        /// <summary>Animation frames for the multicolor ball, loaded from ball_multicolor_sheet sprite sheet.
+        /// Falls back to single-element array of BallMulticolor when the sheet is missing or unsliced.</summary>
+        public static Sprite[] BallMulticolorFrames
+        {
+            get
+            {
+                if (_ballMulticolorFrames != null) return _ballMulticolorFrames;
+                var frames = Resources.LoadAll<Sprite>("Sprites/Balls/ball_multicolor_sheet");
+                if (frames != null && frames.Length > 1)
+                {
+                    // Sort by sprite name so frames play in authoring order
+                    System.Array.Sort(frames, (a, b) => string.Compare(a.name, b.name, System.StringComparison.Ordinal));
+                    _ballMulticolorFrames = frames;
+                }
+                else
+                {
+                    var single = BallMulticolor;
+                    _ballMulticolorFrames = single != null ? new[] { single } : System.Array.Empty<Sprite>();
+                }
+                return _ballMulticolorFrames;
+            }
+        }
+
         /// <summary>
         /// Board ball sprite for a raw token: 0 → multicolor wildcard, &lt;0 → mystery (hidden),
         /// &gt;0 → the pre-coloured ball for that color id. Central mapping used by BoardView.
