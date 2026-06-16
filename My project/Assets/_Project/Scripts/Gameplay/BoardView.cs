@@ -76,10 +76,14 @@ namespace BoltSort.Gameplay
         private bool     _winPlaying;
         private Coroutine _winCoroutine;
 
+        // ── Multicolor ball animation ──────────────────────────────────────────────
+        private const float MulticolorFps = 8f; // frames per second
+
         // ── Shared sprites ────────────────────────────────────────────────────────
         private static Sprite _shineSprite;
         private static Sprite _shadowSprite;
         private static Sprite _glowSprite;
+        private static Sprite _particleCircle;
 
         // ─────────────────────────────────────────────────────────────────────────
 
@@ -90,10 +94,11 @@ namespace BoltSort.Gameplay
             _gsm          = gsm;
             _sortMechanic = sm;
 
-            _shineSprite  = _shineSprite  ?? CreateShineSprite();
-            _shadowSprite = _shadowSprite ?? CreateShadowSprite();
-            _glowSprite   = _glowSprite   ?? CreateGlowSprite();
-            _snowSprite   = _snowSprite   ?? CreateSnowSprite();
+            _shineSprite    = _shineSprite    ?? CreateShineSprite();
+            _shadowSprite   = _shadowSprite   ?? CreateShadowSprite();
+            _glowSprite     = _glowSprite     ?? CreateGlowSprite();
+            _snowSprite     = _snowSprite     ?? CreateSnowSprite();
+            _particleCircle = _particleCircle ?? CreateParticleCircleSprite();
 
             gsm.OnLevelLoaded    += OnLevelLoaded;
             gsm.OnLevelComplete  += OnLevelComplete;
@@ -434,8 +439,8 @@ namespace BoltSort.Gameplay
             go.transform.localScale = Vector3.one * 0.12f;
 
             var sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite       = _glowSprite;
-            sr.color        = new Color(color.r, color.g, color.b, 0.6f);
+            sr.sprite       = _particleCircle;
+            sr.color        = new Color(1f, 1f, 1f, 0.6f);
             sr.sortingOrder = 11;
 
             float   rad = Mathf.Deg2Rad * angle;
@@ -448,7 +453,7 @@ namespace BoltSort.Gameplay
                 elapsed += Time.deltaTime;
                 float t = elapsed / dur;
                 go.transform.position = origin + dir * TweenUtility.EaseOutQuad(t);
-                sr.color = new Color(color.r, color.g, color.b, 0.6f * (1f - t));
+                sr.color = new Color(1f, 1f, 1f, 0.6f * (1f - t));
                 yield return null;
             }
             if (go != null) Destroy(go);
@@ -623,8 +628,8 @@ namespace BoltSort.Gameplay
             go.transform.localScale = Vector3.one * size;
 
             var sr = go.AddComponent<SpriteRenderer>();
-            sr.sprite       = _glowSprite;
-            sr.color        = color;
+            sr.sprite       = _particleCircle;
+            sr.color        = Color.white;
             sr.sortingOrder = 15;
 
             float rad     = Mathf.Deg2Rad * angle;
@@ -639,7 +644,7 @@ namespace BoltSort.Gameplay
                 vel.y          -= 2f * Time.deltaTime; // gravity
                 go.transform.position += vel * Time.deltaTime;
                 go.transform.Rotate(0f, 0f, speed * 90f * Time.deltaTime);
-                sr.color = new Color(color.r, color.g, color.b, 1f - t);
+                sr.color = new Color(1f, 1f, 1f, 1f - t);
                 yield return null;
             }
             if (go != null) Destroy(go);
@@ -1054,7 +1059,23 @@ namespace BoltSort.Gameplay
                         continue;
                     }
 
-                    boltSr.sprite = GameAssets.BallSpriteForToken(token);
+                    if (token == 0)
+                    {
+                        var frames = GameAssets.BallMulticolorFrames;
+                        if (frames != null && frames.Length > 1)
+                        {
+                            int frame = (int)(Time.time * MulticolorFps) % frames.Length;
+                            boltSr.sprite = frames[frame];
+                        }
+                        else
+                        {
+                            boltSr.sprite = GameAssets.BallMulticolor;
+                        }
+                    }
+                    else
+                    {
+                        boltSr.sprite = GameAssets.BallSpriteForToken(token);
+                    }
                     boltSr.color  = Color.white;
 
                     // Base position (slot center)
@@ -1257,6 +1278,29 @@ namespace BoltSort.Gameplay
                     float dx = (x + 0.5f - cx) / cx, dy = (y + 0.5f - cy) / cy;
                     float d  = Mathf.Sqrt(dx * dx + dy * dy);
                     float a  = Mathf.Clamp01((1f - d) * (1f - d));
+                    px[y * size + x] = new Color(1f, 1f, 1f, a);
+                }
+            }
+            tex.SetPixels(px); tex.Apply();
+            return Sprite.Create(tex, new Rect(0, 0, size, size), Vector2.one * 0.5f, size);
+        }
+
+        /// <summary>Sharp anti-aliased white filled circle for dust/win particles.</summary>
+        private static Sprite CreateParticleCircleSprite()
+        {
+            const int size = 32;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+                { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+            var px  = new Color[size * size];
+            float cx = size * 0.5f, cy = size * 0.5f, r = size * 0.46f;
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = x + 0.5f - cx, dy = y + 0.5f - cy;
+                    float d  = Mathf.Sqrt(dx * dx + dy * dy);
+                    // AA edge: 1px feather
+                    float a  = Mathf.Clamp01(r - d);
                     px[y * size + x] = new Color(1f, 1f, 1f, a);
                 }
             }
