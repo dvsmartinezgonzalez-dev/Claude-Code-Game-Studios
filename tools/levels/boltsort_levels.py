@@ -264,6 +264,24 @@ def solve_optimal(board: Board, node_cap: int = 4_000_000) -> SolveResult:
     the reachable state space without a win. capped=True means node_cap was hit
     before a conclusion (treat as 'unknown' — should not happen for authored
     moderate-band levels).
+
+    SOLVABILITY IS REACHABILITY — NOT "ARE THERE LEGAL MOVES LEFT".
+    --------------------------------------------------------------
+    A board can have legal moves forever and still be impossible to win. The
+    classic softlock is a reversible loop: e.g. a blue bolt that can hop tube
+    3 -> 4 -> 3 -> 4 ... indefinitely. ``legal_moves()`` will keep yielding
+    those moves, so any "can I still move something?" / "is the board dead-
+    ended right now?" test reports the level as PLAYABLE while no winning state
+    is reachable from it. That heuristic is a FALSE POSITIVE generator and must
+    never be used to accept a level.
+
+    The only valid solvability test is the one below: an exhaustive shortest-
+    path search that returns True ONLY when an actual winning state is popped
+    from the frontier. solvable=False here means we closed the ENTIRE reachable
+    state space (loops included, via the de-duplicating ``best_g`` closed set)
+    and never reached a win — i.e. genuinely impossible. A capped result is NOT
+    a pass: it is 'unknown' and callers must treat it as INVALID for shipping
+    (raise node_cap and re-run offline until the verdict is conclusive).
     """
     if board.is_won():
         return SolveResult(True, 0, 1)
@@ -300,6 +318,59 @@ def solve_optimal(board: Board, node_cap: int = 4_000_000) -> SolveResult:
                 heapq.heappush(open_heap, (ng + _heuristic(child), ng, next(counter), child))
 
     return SolveResult(False, None, nodes)
+
+
+def solve_path(board: Board, node_cap: int = 4_000_000) -> Tuple[Optional[List[Tuple[int, int]]], SolveResult]:
+    """Like solve_optimal but also reconstructs ONE optimal move sequence.
+
+    Returns (moves, result) where moves is a list of (src, dst) flat-index pairs
+    that wins the board in result.optimal_moves moves (None if unsolvable/capped).
+    Used by the QA solution-trace exporter; the search is identical to
+    solve_optimal so optimal_moves matches.
+    """
+    if board.is_won():
+        return [], SolveResult(True, 0, 1)
+
+    counter = itertools.count()
+    start_key = board.state_key()
+    open_heap: List[Tuple[int, int, int, Board]] = []
+    h0 = _heuristic(board)
+    heapq.heappush(open_heap, (h0, 0, next(counter), board))
+    best_g: Dict[Tuple, int] = {start_key: 0}
+    # parent[child_key] = (parent_key, (src, dst))
+    parent: Dict[Tuple, Tuple[Optional[Tuple], Optional[Tuple[int, int]]]] = {start_key: (None, None)}
+    nodes = 0
+
+    while open_heap:
+        f, g, _, st = heapq.heappop(open_heap)
+        nodes += 1
+        if nodes > node_cap:
+            return None, SolveResult(False, None, nodes, capped=True)
+        key = st.state_key()
+        if g > best_g.get(key, g):
+            continue
+        if st.is_won():
+            # walk parents back to the start
+            moves: List[Tuple[int, int]] = []
+            k = key
+            while True:
+                pk, mv = parent[k]
+                if mv is None:
+                    break
+                moves.append(mv)
+                k = pk
+            moves.reverse()
+            return moves, SolveResult(True, g, nodes)
+        ng = g + 1
+        for src, dst in st.legal_moves():
+            child = st.apply(src, dst)
+            ck = child.state_key()
+            if ng < best_g.get(ck, 1 << 30):
+                best_g[ck] = ng
+                parent[ck] = (key, (src, dst))
+                heapq.heappush(open_heap, (ng + _heuristic(child), ng, next(counter), child))
+
+    return None, SolveResult(False, None, nodes)
 
 
 def solvable_within(board: Board, max_moves: int, node_cap: int = 2_000_000) -> bool:

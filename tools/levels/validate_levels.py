@@ -14,7 +14,12 @@ fail the run unless --strict is passed.
 BLOCKING checks (a failure here ships a broken or fake-variety catalogue):
   B1  schema integrity  — bolt-count invariant, color range, column cap (<=8),
                           temp_slot_depth <= stack_depth  (mirrors runtime guards)
-  B2  solvable          — every level has an optimal solution
+  B2  solvable          — every level has an optimal solution. This is a FULL
+                          reachability search (boltsort_levels.solve_optimal),
+                          NOT a "legal moves remain" check: a level can have
+                          legal moves forever (e.g. a reversible 3<->4 bolt
+                          loop) and still be unwinnable. Only a reachable win
+                          state passes; capped == NOT proven == BLOCKING fail.
   B3  par achievable    — par_moves >= optimal (3 stars is reachable)
   B4  par sane          — par_moves <= optimal + 10 (authoring rule, ADR)
   B5  no exact dupes    — no two levels share an identical board
