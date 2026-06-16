@@ -161,7 +161,6 @@ namespace BoltSort.Gameplay
             var go  = new GameObject($"Tab_{cat}");
             go.transform.SetParent(parent.transform, false);
             var img = go.AddComponent<Image>();
-            img.type = Image.Type.Sliced;
             _tabImages[cat] = img;
 
             var btn = go.AddComponent<Button>();
@@ -239,7 +238,7 @@ namespace BoltSort.Gameplay
             foreach (var kv in _tabImages)
             {
                 bool active = kv.Key == _category;
-                var spr = active ? GameAssets.ShopTabSelected : GameAssets.ShopTabUnselected;
+                Sprite spr = GetTabSprite(kv.Key, active);
                 if (spr != null) { kv.Value.sprite = spr; kv.Value.color = Color.white; }
                 else kv.Value.color = active ? new Color(0.30f, 0.55f, 0.95f, 1f)
                                              : new Color(0.16f, 0.16f, 0.30f, 1f);
@@ -247,6 +246,14 @@ namespace BoltSort.Gameplay
                 if (lbl != null) lbl.color = active ? Color.white : new Color(1f, 1f, 1f, 0.7f);
             }
         }
+
+        private static Sprite GetTabSprite(SkinCategory cat, bool selected) => cat switch
+        {
+            SkinCategory.Tubes       => selected ? GameAssets.ShopTabTubesSelected       : GameAssets.ShopTabTubesUnselected,
+            SkinCategory.Backgrounds => selected ? GameAssets.ShopTabWallpapersSelected   : GameAssets.ShopTabWallpapersUnselected,
+            SkinCategory.Balls       => selected ? GameAssets.ShopTabBallsSelected        : GameAssets.ShopTabBallsUnselected,
+            _                        => null,
+        };
 
         private void RebuildGrid()
         {
@@ -436,7 +443,7 @@ namespace BoltSort.Gameplay
             switch (result)
             {
                 case PurchaseResult.Success:
-                    AudioMgr.Instance?.PlaySFX("button_tap");
+                    AudioMgr.Instance?.PlaySFX("extra_bonus");
                     SkinManager.EquipSkin(item);   // auto-equip on purchase
                     UpdateCoins();
                     ClosePopup();

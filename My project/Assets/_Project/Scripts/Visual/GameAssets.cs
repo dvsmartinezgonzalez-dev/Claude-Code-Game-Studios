@@ -24,8 +24,12 @@ namespace BoltSort.Visual
         public static Sprite GameBackground  => LoadRes("Sprites/game_background");
         public static Sprite VictoryBg       => LoadRes("Sprites/victory_screen");
         public static Sprite ShopPanel       => LoadRes("Sprites/shop_frame");
-        public static Sprite ShopTabSelected   => LoadFromSheet("Sprites/Shop/Selected_buttons", "tab_selected");
-        public static Sprite ShopTabUnselected => LoadFromSheet("Sprites/Shop/Selected_buttons", "tab_unselected");
+        public static Sprite ShopTabTubesSelected        => LoadRes("Sprites/Shop/selected_tubes");
+        public static Sprite ShopTabTubesUnselected      => LoadRes("Sprites/Shop/unselected_tubes");
+        public static Sprite ShopTabWallpapersSelected   => LoadRes("Sprites/Shop/selected_wallpapers");
+        public static Sprite ShopTabWallpapersUnselected => LoadRes("Sprites/Shop/unselected_wallpapers");
+        public static Sprite ShopTabBallsSelected        => LoadRes("Sprites/Shop/selected_balls");
+        public static Sprite ShopTabBallsUnselected      => LoadRes("Sprites/Shop/unselected_balls");
         public static Sprite TileLevelLocked   => LoadRes("Sprites/level_locked");
         public static Sprite TileLevelUnlocked => LoadRes("Sprites/level_unlocked");
 
@@ -88,7 +92,19 @@ namespace BoltSort.Visual
         public static Sprite BallMystery    => LoadRes("Sprites/Balls/ball_mystery");
 
         /// <summary>Multicolor wildcard ball sprite (matches any color). Phase-2 mechanic (color id 0).</summary>
-        public static Sprite BallMulticolor => LoadRes("Sprites/Balls/ball_multicolor");
+        public static Sprite BallMulticolor
+        {
+            get
+            {
+                string folder = SkinManager.ActiveBallFolder;
+                if (!string.IsNullOrEmpty(folder))
+                {
+                    var skinned = LoadRes($"Sprites/Balls/{folder}ball_multicolor");
+                    if (skinned != null) return skinned;
+                }
+                return LoadRes("Sprites/Balls/ball_multicolor");
+            }
+        }
 
         private static Sprite[] _ballMulticolorFrames;
 
@@ -98,6 +114,12 @@ namespace BoltSort.Visual
         {
             get
             {
+                string folder = SkinManager.ActiveBallFolder;
+                if (!string.IsNullOrEmpty(folder))
+                {
+                    var skinned = LoadRes($"Sprites/Balls/{folder}ball_multicolor");
+                    if (skinned != null) return new[] { skinned };
+                }
                 if (_ballMulticolorFrames != null) return _ballMulticolorFrames;
                 var frames = Resources.LoadAll<Sprite>("Sprites/Balls/ball_multicolor_sheet");
                 if (frames != null && frames.Length > 1)
