@@ -15,6 +15,13 @@ namespace BoltSort.Gameplay
     public class BoardView : MonoBehaviour
     {
         // ── Layout constants ──────────────────────────────────────────────────────
+        /// <summary>Fraction of screen height reserved at the TOP for the HUD header.</summary>
+        private const float HudReserveFrac = 0.11f;
+        /// <summary>Fraction of screen height reserved at the BOTTOM. The bottom button
+        /// bar was removed in the header redesign, so this is now only a slim safe-area
+        /// margin (was 0.20f when the bar existed); the board reclaims the difference.</summary>
+        private const float BottomReserveFrac = 0.05f;
+
         private float _colWidth;
         private float _boltStep;
         private float _boardCenterY;
@@ -765,8 +772,8 @@ namespace BoltSort.Gameplay
             float  camHalfW     = camHalfH * aspect;
 
             float totalH   = camHalfH * 2f;
-            float hudH     = totalH * 0.10f;
-            float buttonH  = totalH * 0.20f;
+            float hudH     = totalH * HudReserveFrac;
+            float buttonH  = totalH * BottomReserveFrac;
 
             float boardTop = camHalfH - hudH;
             float boardBot = -camHalfH + buttonH;

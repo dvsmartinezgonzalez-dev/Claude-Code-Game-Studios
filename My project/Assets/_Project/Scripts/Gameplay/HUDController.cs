@@ -616,6 +616,12 @@ namespace BoltSort.Gameplay
             menuRect.anchoredPosition = new Vector2(0f, btnY);
             menuRect.sizeDelta        = new Vector2(90f, 90f);
 
+            // Header redesign: the bottom button bar is hidden (not deleted). Its buttons'
+            // actions (_onReset/_onUndo/_onMenu) are relocated to the header; the GameObject
+            // and all wiring stay intact so it can be re-enabled if needed. The board layout
+            // reclaims this space via BoardView.BottomReserveFrac.
+            bottomBar.SetActive(false);
+
             // Settings button (top-left corner) — settings_button.png
             var settingsBtn = MakeIconButton(canvasGO, "SettingsButton", "",  font, 36,
                                              GameAssets.NavSettings, OnSettingsClicked);
