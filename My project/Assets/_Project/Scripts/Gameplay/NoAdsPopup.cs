@@ -54,7 +54,10 @@ namespace BoltSort.Gameplay
             // Card
             var card = new GameObject("Card");
             card.transform.SetParent(_overlay.transform, false);
-            card.AddComponent<Image>().color = new Color(0.07f, 0.07f, 0.14f, 0.98f);
+            var cardBg = card.AddComponent<Image>();
+            var popupSpr = GameAssets.MenuPopup;
+            if (popupSpr != null) { cardBg.sprite = popupSpr; cardBg.color = Color.white; cardBg.type = Image.Type.Simple; }
+            else cardBg.color = new Color(0.07f, 0.07f, 0.14f, 0.98f);
             var cardRt = card.GetComponent<RectTransform>();
             cardRt.anchorMin = cardRt.anchorMax = new Vector2(0.5f, 0.5f);
             cardRt.pivot     = new Vector2(0.5f, 0.5f);

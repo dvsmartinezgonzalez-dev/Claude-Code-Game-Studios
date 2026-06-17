@@ -166,13 +166,6 @@ namespace BoltSort.Gameplay
             var btn = go.AddComponent<Button>();
             btn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
             btn.onClick.AddListener(() => SelectCategory(cat));
-
-            var t = MakeLabel(go, "Label", label, _font, 30,
-                              TextAnchor.MiddleCenter, bold: true, shadow: true);
-            t.color = Color.white;
-            var trt = t.rectTransform;
-            trt.anchorMin = Vector2.zero; trt.anchorMax = Vector2.one;
-            trt.offsetMin = trt.offsetMax = Vector2.zero;
         }
 
         private void BuildScroll(GameObject canvasGO)

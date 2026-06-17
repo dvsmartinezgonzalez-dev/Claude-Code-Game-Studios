@@ -45,6 +45,7 @@ namespace BoltSort.Visual
         public static Sprite TitleBolt      => LoadRes("Sprites/Menu/title_bolt");
         public static Sprite TitleSort      => LoadRes("Sprites/Menu/title_sort");
         public static Sprite TitleSpark     => LoadRes("Sprites/Menu/spark");
+        public static Sprite MenuPopup      => LoadRes("Sprites/Menu/popup");
 
         /// <summary>Decorative shop diamonds (1-5). Returns null if missing.</summary>
         public static Sprite MenuDiamond(int index) => LoadRes($"Sprites/Menu/diamond_{index}");

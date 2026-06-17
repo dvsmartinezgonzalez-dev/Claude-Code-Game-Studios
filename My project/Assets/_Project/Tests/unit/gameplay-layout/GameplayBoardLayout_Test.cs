@@ -94,10 +94,12 @@ namespace BoltSort.Tests.Unit.GameplayLayout
                          + (l.RowCount - 1) * GameplayBoardLayout.RowGap;
             Assert.AreEqual(boardH, blockH, Eps, "row block must exactly fill the play band");
 
-            // Deepest tube fits inside one row slice (no row overlap).
-            int   maxDepth = Mathf.Max(depth, tempDepth);
-            float tubeH    = maxDepth * l.BoltStep + GameplayBoardLayout.BorderPad;
-            Assert.LessOrEqual(tubeH, RowHeight(l.RowCount, boardH) + Eps, "tube taller than its row");
+            // Tube sprite fits within RowFillFactor of its row slice.
+            int   maxDepth  = Mathf.Max(depth, tempDepth);
+            float aspect    = GameplayBoardLayout.TubeAspectForDepth(maxDepth);
+            float tubeSprH  = aspect * l.ColWidth;
+            float allowedH  = RowHeight(l.RowCount, boardH) * GameplayBoardLayout.RowFillFactor;
+            Assert.LessOrEqual(tubeSprH, allowedH + Eps, "tube sprite taller than its row slice");
         }
 
         private static float RowHeight(int rowCount, float boardH)

@@ -77,13 +77,13 @@ namespace BoltSort.Gameplay
             // replacing the old "BOLT SORT" text label.
             var boltImg  = MakeImage(canvasGO, "Title_Bolt",  GameAssets.TitleBolt);
             SetAnchors(boltImg.rectTransform,
-                new Vector2(0.14f, 0.72f), new Vector2(0.86f, 0.84f));
+                new Vector2(0.14f, 0.62f), new Vector2(0.86f, 0.74f));
             var sortImg  = MakeImage(canvasGO, "Title_Sort",  GameAssets.TitleSort);
             SetAnchors(sortImg.rectTransform,
-                new Vector2(0.14f, 0.60f), new Vector2(0.86f, 0.72f));
+                new Vector2(0.14f, 0.50f), new Vector2(0.86f, 0.62f));
             var sparkImg = MakeImage(canvasGO, "Title_Spark", GameAssets.TitleSpark);
             SetAnchors(sparkImg.rectTransform,
-                new Vector2(0.66f, 0.69f), new Vector2(0.86f, 0.79f));
+                new Vector2(0.66f, 0.59f), new Vector2(0.86f, 0.69f));
 
             // PLAY button — shared general_button.png base + independent text label
             var playBtn = MakeAnimatedButton(canvasGO, "PlayButton", "PLAY", font, 56, OnPlayClicked);
@@ -93,7 +93,7 @@ namespace BoltSort.Gameplay
             else
                 playImg.color = BoltSortTheme.HUDAccent;
             SetAnchors(playBtn.GetComponent<RectTransform>(),
-                new Vector2(0.08f, 0.42f), new Vector2(0.92f, 0.55f));
+                new Vector2(0.02f, 0.29f), new Vector2(0.98f, 0.44f));
 
             // MM-03: current level indicator inside PLAY button
             var mm03ss      = BoltSort.SaveSystem.SaveSystem.Instance;
@@ -124,7 +124,7 @@ namespace BoltSort.Gameplay
             else
                 levelsImg.color = new Color(0.20f, 0.40f, 0.65f, 1f);
             SetAnchors(levelsBtn.GetComponent<RectTransform>(),
-                new Vector2(0.08f, 0.28f), new Vector2(0.92f, 0.40f));
+                new Vector2(0.04f, 0.11f), new Vector2(0.47f, 0.25f));
 
             // Settings button (top-left corner) — btn_settings sprite (red gear circle)
             var settingsBtn = MakeAnimatedButton(canvasGO, "SettingsButton", "", font, 44, OnSettingsClicked);
@@ -138,7 +138,7 @@ namespace BoltSort.Gameplay
             sr.anchorMax        = new Vector2(0f, 1f);
             sr.pivot            = new Vector2(0f, 1f);
             sr.anchoredPosition = new Vector2(16f, -(16f + safeTop));
-            sr.sizeDelta        = new Vector2(110f, 110f);
+            sr.sizeDelta        = new Vector2(93.5f, 93.5f);
 
             // No Ads button (top-right corner) — no_ads.png (sound config now lives in Settings)
             var noAdsBtn = MakeAnimatedButton(canvasGO, "NoAdsButton", "", font, 32, OnNoAdsClicked);
@@ -152,7 +152,7 @@ namespace BoltSort.Gameplay
             noAdsRT.anchorMax        = new Vector2(1f, 1f);
             noAdsRT.pivot            = new Vector2(1f, 1f);
             noAdsRT.anchoredPosition = new Vector2(-16f, -(16f + safeTop));
-            noAdsRT.sizeDelta        = new Vector2(110f, 110f);
+            noAdsRT.sizeDelta        = new Vector2(93.5f, 93.5f);
 
             // SHOP button — shared general_button.png base + independent text label
             var shopBtn = MakeAnimatedButton(canvasGO, "ShopButton", "SHOP", font, 40, OnShopClicked);
@@ -162,7 +162,7 @@ namespace BoltSort.Gameplay
             else
                 shopImg.color = new Color(0.55f, 0.25f, 0.75f, 1f); // purple
             SetAnchors(shopBtn.GetComponent<RectTransform>(),
-                new Vector2(0.08f, 0.14f), new Vector2(0.92f, 0.25f));
+                new Vector2(0.53f, 0.11f), new Vector2(0.96f, 0.25f));
 
             // MM-05: diamond decorations — left icon + two small accents on the right
             MakeDiamond(shopBtn, "ShopDiamond_L", GameAssets.MenuDiamond(1),

@@ -38,17 +38,17 @@ namespace BoltSort.Gameplay
     {
         // ── Tuning knobs ──────────────────────────────────────────────────────────
         /// <summary>Horizontal world-unit margin on each side of the play area.</summary>
-        public const float SideMargin = 0.30f;
+        public const float SideMargin = 0.20f;
         /// <summary>Vertical world-unit gap between rows.</summary>
-        public const float RowGap = 0.50f;
+        public const float RowGap = 0.18f;
         /// <summary>Tube body width as a fraction of its horizontal cell.</summary>
         public const float ColWidthFactor = 0.82f;
         /// <summary>World units trimmed from the cell width to get the bolt width.</summary>
         public const float BoltInset = 0.12f;
         /// <summary>Bolt diameter as a fraction of the vertical slot step.</summary>
         public const float BoltAspect = 0.78f;
-        /// <summary>Vertical world units reserved per row for tube rim/border.</summary>
-        public const float BorderPad = 0.50f;
+        /// <summary>Fraction of a row's height the tube sprite is allowed to occupy.</summary>
+        public const float RowFillFactor = 0.92f;
         /// <summary>Lower clamp so a degenerate level never produces a zero scale.</summary>
         public const float MinBoltDiameter = 0.05f;
 
@@ -82,6 +82,16 @@ namespace BoltSort.Gameplay
         }
 
         /// <summary>
+        /// Sprite height-to-width aspect ratio for a tube of the given capacity.
+        /// Mirrors the Aspect values in <c>BoardView._tubeMetricsByTier</c>.
+        /// </summary>
+        public static float TubeAspectForDepth(int depth) =>
+            depth <= 3 ? 2.440f :
+            depth == 4 ? 2.844f :
+            depth == 5 ? 3.252f :
+            depth == 6 ? 3.944f : 5.127f;
+
+        /// <summary>
         /// Computes the full board layout for the given level shape and play area.
         /// The play area is the band between <paramref name="boardTop"/> and
         /// <paramref name="boardBot"/> (already excluding the HUD and bottom bar).
@@ -110,10 +120,12 @@ namespace BoltSort.Gameplay
             float colStepW = availW / maxColsInRow;
             float diaW     = colStepW * ColWidthFactor - BoltInset;
 
-            // Height-constrained bolt diameter (each row must fit a maxDepth tube).
-            float rowHeight = (boardH - (rowCount - 1) * RowGap) / rowCount;
-            float boltStepH = (rowHeight - BorderPad) / (maxDepth + 0.5f);
-            float diaH      = boltStepH * BoltAspect;
+            // Height-constrained bolt diameter: the full tube sprite must fit within
+            // RowFillFactor of each row's height. Using the sprite aspect ratio avoids
+            // the over-conservative boltStep formula that left large empty bands.
+            float rowHeight  = (boardH - (rowCount - 1) * RowGap) / rowCount;
+            float tubeAspect = TubeAspectForDepth(maxDepth);
+            float diaH       = rowHeight * RowFillFactor / tubeAspect - BoltInset;
 
             // Uniform diameter → bolts stay round and never deform.
             float dia = Mathf.Max(MinBoltDiameter, Mathf.Min(diaW, diaH));
