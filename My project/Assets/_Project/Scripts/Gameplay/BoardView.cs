@@ -53,6 +53,9 @@ namespace BoltSort.Gameplay
         private int _stackDepth;
         private int _tempSlotCount;
         private int _tempSlotDepth;
+        /// <summary>Temp-slot count the level shipped with. Columns at flat index
+        /// >= colorCount + this are runtime helper (extra) tubes, tinted distinctly.</summary>
+        private int _originalTempSlotCount;
 
         // ── Renderer arrays [col][slot] ───────────────────────────────────────────
         private SpriteRenderer[][] _boltRenderers;
@@ -110,6 +113,7 @@ namespace BoltSort.Gameplay
             gsm.OnLevelLoaded    += OnLevelLoaded;
             gsm.OnLevelComplete  += OnLevelComplete;
             gsm.OnMysteryRevealed += OnMysteryRevealed;
+            gsm.OnBoardShapeChanged += OnBoardShapeChanged;
             sm.OnMoveCommitted   += OnMoveCommitted;
             sm.OnMoveRejected    += OnMoveRejected;
 
@@ -123,6 +127,7 @@ namespace BoltSort.Gameplay
                 _gsm.OnLevelLoaded   -= OnLevelLoaded;
                 _gsm.OnLevelComplete -= OnLevelComplete;
                 _gsm.OnMysteryRevealed -= OnMysteryRevealed;
+                _gsm.OnBoardShapeChanged -= OnBoardShapeChanged;
             }
             SceneTransitionManager.OnTransitionOut -= OnTransitionOut;
         }
@@ -134,6 +139,7 @@ namespace BoltSort.Gameplay
             _stackDepth    = stackDepth;
             _tempSlotCount = tempSlotCount;
             _tempSlotDepth = tempSlotDepth;
+            _originalTempSlotCount = tempSlotCount; // helpers are anything appended beyond this
 
             _selYOffset  = 0f;
             _selScale    = 1f;
@@ -176,6 +182,42 @@ namespace BoltSort.Gameplay
         private void OnTransitionOut()
         {
             StartCoroutine(AnimateColumnsOut());
+        }
+
+        /// <summary>
+        /// A helper (extra) tube was added or grown. Relayout with the same algorithm (so all
+        /// tubes keep consistent scaling/row distribution) but skip the level-load drop-in
+        /// stagger; instead the affected helper column gets a quick grow tween.
+        /// </summary>
+        private void OnBoardShapeChanged()
+        {
+            if (_gsm == null) return;
+            _tempSlotCount = _gsm.TempSlotCount;
+            RebuildColumns(animateDropIn: false);
+
+            int lastHelper = _colorCount + _tempSlotCount - 1; // helpers are appended last
+            if (_columnTransforms != null && lastHelper >= 0 &&
+                lastHelper < _columnTransforms.Length && _columnTransforms[lastHelper] != null)
+                StartCoroutine(GrowHelperColumn(_columnTransforms[lastHelper]));
+        }
+
+        /// <summary>0.2s vertical grow tween for a newly added/grown helper tube column.</summary>
+        private IEnumerator GrowHelperColumn(Transform colTr)
+        {
+            if (colTr == null) yield break;
+            Vector3 target = colTr.localScale;
+            Vector3 from   = new Vector3(target.x, target.y * 0.6f, target.z);
+            colTr.localScale = from;
+            float dur = 0.20f, elapsed = 0f;
+            while (elapsed < dur)
+            {
+                if (colTr == null) yield break;
+                elapsed += Time.deltaTime;
+                float t = TweenUtility.EaseOutBack(Mathf.Clamp01(elapsed / dur));
+                colTr.localScale = Vector3.LerpUnclamped(from, target, t);
+                yield return null;
+            }
+            if (colTr != null) colTr.localScale = target;
         }
 
         // ── FSM state polling ─────────────────────────────────────────────────────
@@ -747,7 +789,7 @@ namespace BoltSort.Gameplay
 
         // ── Column construction ───────────────────────────────────────────────────
 
-        private void RebuildColumns()
+        private void RebuildColumns(bool animateDropIn = true)
         {
             foreach (Transform child in transform) Destroy(child.gameObject);
 
@@ -888,9 +930,12 @@ namespace BoltSort.Gameplay
                 tubeGO.transform.SetParent(colGO.transform, false);
                 tubeGO.transform.localPosition = new Vector3(0f, tubeBottomLoc - spriteBottomOffset, 0f);
                 tubeGO.transform.localScale    = new Vector3(tubeScale, tubeScale, 1f);
+                bool isHelper = col >= _colorCount + _originalTempSlotCount;
                 var tubeSr = tubeGO.AddComponent<SpriteRenderer>();
                 tubeSr.sprite       = tubeSpr;
-                tubeSr.color        = isTemp ? new Color(0.85f, 0.80f, 0.95f, 1f) : Color.white;
+                tubeSr.color        = isHelper ? new Color(0.55f, 0.85f, 0.98f, 1f)
+                                    : isTemp   ? new Color(0.85f, 0.80f, 0.95f, 1f)
+                                    : Color.white;
                 tubeSr.sortingOrder = -1;
                 _tubeRenderers[col]     = tubeSr;
                 _columnBgRenderers[col] = tubeSr; // reused by PlayWinCelebration's FlashColumn
@@ -976,8 +1021,8 @@ namespace BoltSort.Gameplay
                 }
             }
 
-            // Drop-in stagger animation
-            StartCoroutine(AnimateColumnsIn());
+            // Drop-in stagger animation (skipped when relayouting for a helper-tube add).
+            if (animateDropIn) StartCoroutine(AnimateColumnsIn());
         }
 
         private IEnumerator AnimateColumnsIn()
@@ -1152,9 +1197,12 @@ namespace BoltSort.Gameplay
                     }
 
                     // Phase-2 frozen tube: blue tint + snowflake/counter overlay (visible from move 0).
-                    int   frozenRem = _gsm != null ? _gsm.GetFreezeRemaining(col) : 0;
-                    bool  isTempCol = col >= _colorCount;
-                    Color baseTint  = isTempCol ? new Color(0.85f, 0.80f, 0.95f, 1f) : Color.white;
+                    int   frozenRem  = _gsm != null ? _gsm.GetFreezeRemaining(col) : 0;
+                    bool  isTempCol  = col >= _colorCount;
+                    bool  isHelperCol = col >= _colorCount + _originalTempSlotCount;
+                    Color baseTint   = isHelperCol ? new Color(0.55f, 0.85f, 0.98f, 1f)
+                                     : isTempCol   ? new Color(0.85f, 0.80f, 0.95f, 1f)
+                                     : Color.white;
                     tsr.color = frozenRem > 0 ? new Color(0.50f, 0.72f, 1f, 1f) : baseTint;
 
                     if (_frozenIcon != null && col < _frozenIcon.Length && _frozenIcon[col] != null)

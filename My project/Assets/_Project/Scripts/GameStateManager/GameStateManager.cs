@@ -78,6 +78,17 @@ namespace BoltSort.GameStateManager
         /// </summary>
         private int[] _freezeInit;
 
+        // ── Extra (helper) tubes — runtime-added columns (header Extra-Tube mechanic) ─
+
+        /// <summary>
+        /// Count of helper tubes appended at runtime via <see cref="ApplyExtraTube"/>. Helper
+        /// tubes are extra temp-slot columns added to the END of the flat namespace, so no
+        /// existing flat index shifts (undo entries stay valid) and all movement / win /
+        /// completion logic reuses them unchanged. Reset to 0 on every level load/teardown,
+        /// so retry removes them for free.
+        /// </summary>
+        private int _helperTubeCount;
+
         // ── Watchdog Timer (TR-GSM-004, WDG-01–WDG-03) ───────────────────────────
 
         private Coroutine _watchdogCoroutine;
@@ -145,6 +156,18 @@ namespace BoltSort.GameStateManager
         /// Concrete-only (not on <see cref="IGameStateManager"/>) — visual systems use the concrete GSM.
         /// </summary>
         public event Action<int, int> OnMysteryRevealed;
+
+        /// <summary>
+        /// Fired when the board's COLUMN COUNT changes at runtime: a helper (extra) tube was
+        /// added or grown via <see cref="ApplyExtraTube"/>. BoardView subscribes to relayout
+        /// the columns. NOT fired for normal moves (only the shape changed, not the contents).
+        /// Concrete-only — visual systems use the concrete GSM.
+        /// </summary>
+        public event Action OnBoardShapeChanged;
+
+        /// <summary>Number of helper (extra) tubes currently on the board (appended after the
+        /// level's own temp slots). 0 for a freshly loaded level.</summary>
+        public int HelperTubeCount => _helperTubeCount;
 
         /// <inheritdoc/>
         public int MoveCount { get; private set; }
@@ -335,6 +358,7 @@ namespace BoltSort.GameStateManager
 
             _currentSequenceId = 0;
             _moveCount         = 0;
+            _helperTubeCount   = 0; // retry/reload drops any runtime-added extra tubes
             _undoStack.Clear();
             SyncPublicCounters();
 
@@ -565,6 +589,7 @@ namespace BoltSort.GameStateManager
             TempSlotContents = null;
             _columnCapacities = null;
             _freezeInit       = null;
+            _helperTubeCount  = 0;
 
             _undoStack.Clear();
             _pendingUndo          = false;
@@ -953,6 +978,105 @@ namespace BoltSort.GameStateManager
                 col[col.Count - 1] = revealed;
                 OnMysteryRevealed?.Invoke(flatIndex, revealed);
             }
+        }
+
+        // ── Extra (helper) tube mechanic ──────────────────────────────────────────
+
+        /// <summary>
+        /// Applies one Extra-Tube use. Grows the last helper tube by one slot, or starts a new
+        /// helper tube (capacity 1) when there is no helper yet or the last one is already at
+        /// MAX capacity (= <see cref="StackDepth"/>, the level's standard tube depth). Helper
+        /// tubes are appended to the END of the flat namespace as extra temp slots, so no
+        /// existing index shifts — undo entries stay valid and movement/win/completion logic is
+        /// reused unchanged. Fires <see cref="OnBoardShapeChanged"/> so the view relayouts.
+        /// </summary>
+        /// <returns>Flat index of the affected helper tube, or -1 when GSM is not ACTIVE.</returns>
+        public int ApplyExtraTube()
+        {
+            if (_lifecycleState != GSMLifecycleState.Active) return -1;
+
+            int maxCap = Mathf.Max(1, _stackDepth);
+            EnsureColumnCapacitiesMaterialized();
+
+            int lastFlat = _colorCount + _tempSlotCount - 1;
+            bool startNew = _helperTubeCount == 0 || _columnCapacities[lastFlat] >= maxCap;
+
+            int affected;
+            if (startNew)
+            {
+                AppendHelperColumn(capacity: 1);
+                _helperTubeCount++;
+                affected = _colorCount + _tempSlotCount - 1;
+
+                if (_colorCount + _tempSlotCount > 18)
+                    Debug.LogWarning($"[GameStateManager] Extra tube added beyond the 18-column " +
+                        $"layout budget (now {_colorCount + _tempSlotCount}); tubes may render small.");
+            }
+            else
+            {
+                _columnCapacities[lastFlat] = Mathf.Min(maxCap, _columnCapacities[lastFlat] + 1);
+                affected = lastFlat;
+            }
+
+            OnBoardShapeChanged?.Invoke();
+            return affected;
+        }
+
+        /// <summary>
+        /// Materializes <see cref="_columnCapacities"/> from the uniform fallback when the level
+        /// did not ship per-tube capacities, so a helper tube can carry a capacity different from
+        /// the rest without affecting any other column.
+        /// </summary>
+        private void EnsureColumnCapacitiesMaterialized()
+        {
+            int totalCols = _colorCount + _tempSlotCount;
+            if (_columnCapacities != null && _columnCapacities.Length == totalCols) return;
+
+            var caps = new int[totalCols];
+            for (int i = 0; i < totalCols; i++)
+                caps[i] = GetColumnCapacity(i); // existing array if present, else uniform fallback
+            _columnCapacities = caps;
+        }
+
+        /// <summary>
+        /// Appends one empty helper column (a temp slot) of the given capacity to the END of the
+        /// flat namespace and re-publishes the read-only views. Assumes
+        /// <see cref="EnsureColumnCapacitiesMaterialized"/> has already run.
+        /// </summary>
+        private void AppendHelperColumn(int capacity)
+        {
+            int newTotal = _colorCount + _tempSlotCount + 1;
+            var helperList = new List<int>(Mathf.Max(1, capacity));
+
+            var newStack = new List<int>[newTotal];
+            Array.Copy(_stackContents, newStack, _stackContents.Length);
+            newStack[newTotal - 1] = helperList;
+            _stackContents = newStack;
+
+            int newTempCount = _tempSlotCount + 1;
+            var newTempBacking = new List<int>[newTempCount];
+            if (_tempSlotBacking != null)
+                Array.Copy(_tempSlotBacking, newTempBacking, _tempSlotBacking.Length);
+            newTempBacking[newTempCount - 1] = helperList;
+            _tempSlotBacking = newTempBacking;
+
+            var newCaps = new int[newTotal];
+            Array.Copy(_columnCapacities, newCaps, _columnCapacities.Length);
+            newCaps[newTotal - 1] = capacity;
+            _columnCapacities = newCaps;
+
+            if (_freezeInit != null) // helper tubes are never frozen — pad with 0
+            {
+                var newFreeze = new int[newTotal];
+                Array.Copy(_freezeInit, newFreeze, _freezeInit.Length);
+                _freezeInit = newFreeze;
+            }
+
+            _tempSlotCount = newTempCount;
+
+            // Consumers hold these references — re-publish after growing the backing arrays.
+            StackContents    = _stackContents;
+            TempSlotContents = _tempSlotBacking;
         }
 
         // ── Test Seams (internal — never call from production code) ──────────────

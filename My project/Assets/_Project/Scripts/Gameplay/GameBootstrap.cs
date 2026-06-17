@@ -88,7 +88,8 @@ namespace BoltSort.Gameplay
                 onMenu:     OnMenuClicked,
                 onReplay:   ResetLevel,
                 onLevels:   OnLevelsClicked,
-                onShop:     OnShopClicked);
+                onShop:     OnShopClicked,
+                onExtraTube: OnExtraTubeRequested);
 
             // Phase-2 mechanic tutorial trigger stubs — must subscribe to OnLevelLoaded
             // before LoadLevel so a level that introduces a mechanic shows its prompt.
@@ -121,6 +122,10 @@ namespace BoltSort.Gameplay
         }
 
         private void OnUndoClicked() => _gsm.UndoRequested();
+
+        // Header Extra-Tube tap (budget already checked/decremented by the HUD). Adds or grows
+        // a runtime helper tube; GSM fires OnBoardShapeChanged and BoardView relayouts.
+        private void OnExtraTubeRequested() => _gsm.ApplyExtraTube();
 
         private void OnMenuClicked()
         {
