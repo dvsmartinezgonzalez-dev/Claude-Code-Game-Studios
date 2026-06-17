@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 
 namespace BoltSort.Audio
@@ -28,6 +29,15 @@ namespace BoltSort.Audio
         private AudioClip _buttonTap;
         private AudioClip _bgmMain;
         private AudioClip _sceneWhoosh;
+
+        // New real-asset clips
+        private AudioClip _tubeCompleted;
+        private AudioClip _nextLevel;
+        private AudioClip _coinSfx;
+        private AudioClip _extraBonus;
+        private AudioClip _startLevel;
+        private AudioClip _buttonSound;
+        private AudioClip _boltsortTitle;
 
         private void Awake()
         {
@@ -61,13 +71,24 @@ namespace BoltSort.Audio
 
         private void LoadClips()
         {
-            _boltPick    = Resources.Load<AudioClip>("Audio/bolt_pick");
-            _boltPlace   = Resources.Load<AudioClip>("Audio/bolt_place");
-            _boltInvalid = Resources.Load<AudioClip>("Audio/bolt_invalid");
-            _levelWin    = Resources.Load<AudioClip>("Audio/level_win");
-            _buttonTap   = Resources.Load<AudioClip>("Audio/button_tap");
-            _bgmMain     = GenerateBGM();
-            _sceneWhoosh = Resources.Load<AudioClip>("Audio/scene_whoosh") ?? GenerateWhoosh();
+            _boltPick       = Resources.Load<AudioClip>("Audio/bolt_pick");
+            _boltPlace      = Resources.Load<AudioClip>("Audio/bolt_place");
+            _boltInvalid    = Resources.Load<AudioClip>("Audio/bolt_invalid");
+            _levelWin       = Resources.Load<AudioClip>("Audio/level_win");
+            _sceneWhoosh    = Resources.Load<AudioClip>("Audio/scene_whoosh") ?? GenerateWhoosh();
+
+            _tubeCompleted  = Resources.Load<AudioClip>("Audio/tube_completed");
+            _nextLevel      = Resources.Load<AudioClip>("Audio/next_level");
+            _coinSfx        = Resources.Load<AudioClip>("Audio/coin");
+            _extraBonus     = Resources.Load<AudioClip>("Audio/extra_bonus");
+            _startLevel     = Resources.Load<AudioClip>("Audio/start_level");
+            _buttonSound    = Resources.Load<AudioClip>("Audio/button_sound_2");
+            _boltsortTitle  = Resources.Load<AudioClip>("Audio/boltsort_title");
+
+            // Real music loop replaces procedural fallback
+            _bgmMain        = Resources.Load<AudioClip>("Audio/music_loop") ?? GenerateBGM();
+            // button_tap is now button_sound_2; keep old name working
+            _buttonTap      = _buttonSound ?? Resources.Load<AudioClip>("Audio/button_tap");
         }
 
         // ── Public API ────────────────────────────────────────────────────────────
@@ -81,17 +102,24 @@ namespace BoltSort.Audio
         public void PlaySFX(string clipName)
         {
             if (!_sfxEnabled) return;
-            AudioClip clip = clipName switch
+            (AudioClip clip, float vol) = clipName switch
             {
-                "bolt_pick"    => _boltPick,
-                "bolt_place"   => _boltPlace,
-                "bolt_invalid" => _boltInvalid,
-                "level_win"    => _levelWin,
-                "button_tap"   => _buttonTap,
-                "scene_whoosh" => _sceneWhoosh,
-                _              => null,
+                "bolt_pick"       => (_boltPick,      1.00f),
+                "bolt_place"      => (_boltPlace,     1.00f),
+                "bolt_invalid"    => (_boltInvalid,   1.00f),
+                "level_win"       => (_levelWin,      1.00f),
+                "button_tap"      => (_buttonTap,     1.00f),
+                "scene_whoosh"    => (_sceneWhoosh,   1.00f),
+                "tube_completed"  => (_tubeCompleted, 1.00f),
+                "next_level"      => (_nextLevel,     1.00f),
+                "coin"            => (_coinSfx,       1.00f),
+                "extra_bonus"     => (_extraBonus,    1.00f),
+                "start_level"     => (_startLevel,    0.82f),
+                "button_sound"    => (_buttonSound,   1.00f),
+                "boltsort_title"  => (_boltsortTitle, 1.00f),
+                _                 => (null,           1.00f),
             };
-            if (clip != null) _sfxSource.PlayOneShot(clip);
+            if (clip != null) _sfxSource.PlayOneShot(clip, vol);
         }
 
         public void PlayMusic(AudioClip clip = null)
@@ -120,6 +148,28 @@ namespace BoltSort.Audio
         }
 
         public void SetSFXEnabled(bool enabled) => _sfxEnabled = enabled;
+
+        /// <summary>Plays next_level after 0.75s (avoids overlap), then coin after 80% of next_level's duration.</summary>
+        public void PlayVictorySequence()
+        {
+            if (!_sfxEnabled) return;
+            const float startDelay = 0.75f;
+            StartCoroutine(PlayDelayedScaled(_nextLevel, startDelay, 1.3f));
+            float coinDelay = startDelay + (_nextLevel != null ? _nextLevel.length * 0.80f : 1.0f);
+            StartCoroutine(PlayDelayed(_coinSfx, coinDelay));
+        }
+
+        private IEnumerator PlayDelayed(AudioClip clip, float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            if (_sfxEnabled && clip != null) _sfxSource.PlayOneShot(clip);
+        }
+
+        private IEnumerator PlayDelayedScaled(AudioClip clip, float delay, float volumeScale)
+        {
+            yield return new WaitForSeconds(delay);
+            if (_sfxEnabled && clip != null) _sfxSource.PlayOneShot(clip, volumeScale);
+        }
 
         // Procedural BGM: soft ambient pad using layered sine waves in C major (8-second loop)
         private static AudioClip GenerateBGM()

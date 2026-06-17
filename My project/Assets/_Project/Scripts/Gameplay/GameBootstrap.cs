@@ -51,6 +51,7 @@ namespace BoltSort.Gameplay
             _sortMechanic.OnMoveRejected += (_, _, _, _) => AudioMgr.Instance?.PlaySFX("bolt_invalid");
 
             _gsm.OnLevelComplete += HandleLevelComplete;
+            _gsm.OnLevelLoaded   += (_, _, _, _, _, _) => AudioMgr.Instance?.PlaySFX("start_level");
 
             // GP-01: wire pause event here — SortMechanic cannot reference BoltSort.Gameplay directly.
             SettingsPanel.OnGamePaused += _sortMechanic.SetGamePaused;

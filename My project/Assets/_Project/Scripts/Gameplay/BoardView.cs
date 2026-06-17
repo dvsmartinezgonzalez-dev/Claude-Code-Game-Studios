@@ -420,6 +420,10 @@ namespace BoltSort.Gameplay
             _hideDstCol  = -1;
             _hideDstSlot = -1;
 
+            // Play tube-completed SFX if the destination tube is now full and uniform-color
+            if (IsTubeComplete(dst))
+                AudioMgr.Instance?.PlaySFX("tube_completed");
+
             _sortMechanic.OnAnimationComplete(seqId);
         }
 
@@ -541,7 +545,7 @@ namespace BoltSort.Gameplay
             if (_columnBgRenderers == null) yield break;
 
             // Step 1: Column completion flash — staggered white flash
-            AudioMgr.Instance?.PlaySFX("level_win");
+            AudioMgr.Instance?.PlayVictorySequence();
             int colCount = _columnBgRenderers.Length;
             for (int i = 0; i < colCount; i++)
             {
@@ -682,6 +686,24 @@ namespace BoltSort.Gameplay
                 colTr.localPosition = Vector3.LerpUnclamped(baseLoc, target, t);
                 yield return null;
             }
+        }
+
+        // ── Tube completion check ─────────────────────────────────────────────────
+
+        private bool IsTubeComplete(int col)
+        {
+            if (_gsm == null || _colCap == null || col < 0 || col >= _colCap.Length) return false;
+            int cap = _colCap[col];
+            IReadOnlyList<int> column = col < _colorCount
+                ? (_gsm.StackContents  != null && col < _gsm.StackContents.Length  ? _gsm.StackContents[col]  : null)
+                : (_gsm.TempSlotContents != null && (col - _colorCount) < _gsm.TempSlotContents.Length
+                       ? _gsm.TempSlotContents[col - _colorCount] : null);
+            if (column == null || column.Count != cap || cap == 0) return false;
+            int first = column[0];
+            if (first <= 0) return false; // mystery or empty
+            for (int i = 1; i < column.Count; i++)
+                if (column[i] != first) return false;
+            return true;
         }
 
         // ── Tube sprite geometry ──────────────────────────────────────────────────

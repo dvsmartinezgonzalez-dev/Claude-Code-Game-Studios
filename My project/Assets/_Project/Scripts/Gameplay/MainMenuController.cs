@@ -211,6 +211,7 @@ namespace BoltSort.Gameplay
         /// <summary>Slides UI elements in from below with stagger delay. D.3-C.</summary>
         private IEnumerator StaggerEntrance(params (RectTransform rt, float delay)[] items)
         {
+            AudioMgr.Instance?.PlaySFX("boltsort_title");
             foreach (var (rt, delay) in items)
             {
                 if (delay > 0f) yield return new WaitForSeconds(delay);
