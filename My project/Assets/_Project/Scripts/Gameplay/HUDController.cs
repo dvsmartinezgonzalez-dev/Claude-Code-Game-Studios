@@ -26,12 +26,27 @@ namespace BoltSort.Gameplay
         private Action _onMenu;
         private Action _onReplay;
         private Action _onLevels;
+        private Action _onShop;
+        private Action _onExtraTube;
+
+        // ── Header counters (Phase 2/3) ───────────────────────────────────────────
+        /// <summary>Undo uses granted per level. The undo system itself is unlimited; this
+        /// caps it. Reset on every level load/retry. Configurable.</summary>
+        private const int MaxUndosPerLevel = 3;
+        /// <summary>Extra-tube uses granted per level. Reset on every level load/retry. Configurable.</summary>
+        private const int MaxExtraTubeUses = 3;
+
+        private Text  _undoCountText;
+        private Image _undoButtonImg;
+        private int   _undoRemaining = MaxUndosPerLevel;
+        private Text  _extraTubeCountText;
+        private Image _extraTubeButtonImg;
+        private int   _extraTubeRemaining = MaxExtraTubeUses;
 
         // ── Live UI refs ──────────────────────────────────────────────────────────
         private Text        _levelText;
         private Text        _movesText;
         private RectTransform _movesRT;
-        private Text        _coinPillText;
         private Text        _deadlockText;
         private GameObject  _winOverlay;
         private RectTransform _winCardRT;
@@ -79,10 +94,12 @@ namespace BoltSort.Gameplay
             BoltSort.SortMechanic.SortMechanic sm,
             Action onReset,
             Action onNextLevel,
-            Action onUndo   = null,
-            Action onMenu   = null,
-            Action onReplay = null,
-            Action onLevels = null)
+            Action onUndo     = null,
+            Action onMenu     = null,
+            Action onReplay   = null,
+            Action onLevels   = null,
+            Action onShop     = null,
+            Action onExtraTube = null)
         {
             _gsm         = gsm;
             _onReset     = onReset;
@@ -91,6 +108,8 @@ namespace BoltSort.Gameplay
             _onMenu      = onMenu;
             _onReplay    = onReplay;
             _onLevels    = onLevels;
+            _onShop      = onShop;
+            _onExtraTube = onExtraTube;
 
             _onLevelLoadedHandler = (id, cc, sd, tsc, tsd, seqId) =>
             {
@@ -98,6 +117,11 @@ namespace BoltSort.Gameplay
                 _levelComplete = false;
                 _deadlock      = false;
                 _lastMoveCount = 0;
+                // Reset per-level header budgets (undo + extra tube) on load/retry.
+                _undoRemaining      = MaxUndosPerLevel;
+                _extraTubeRemaining = MaxExtraTubeUses;
+                RefreshUndoBadge();
+                RefreshExtraTubeBadge();
                 RefreshDeadlock();
                 if (_winOverlay != null) _winOverlay.SetActive(false);
                 if (_confettiLoop != null) { StopCoroutine(_confettiLoop); _confettiLoop = null; }
@@ -110,10 +134,6 @@ namespace BoltSort.Gameplay
                 _levelComplete = true;
                 if (_winMovesText != null) _winMovesText.text = $"Moves: {moves}";
                 if (_winOverlay   != null) StartCoroutine(ShowWinOverlay(moves));
-                // D.3-B: refresh coin pill balance after level complete
-                var pillSS = BoltSort.SaveSystem.SaveSystem.Instance;
-                if (_coinPillText != null && pillSS != null && pillSS.IsReady)
-                    _coinPillText.text = pillSS.GetCoinBalance().ToString();
             };
             gsm.OnLevelComplete += _onLevelCompleteHandler;
 
@@ -472,6 +492,86 @@ namespace BoltSort.Gameplay
         /// <summary>Closes the settings panel if it is open. GP-02: called by GameBootstrap on back gesture.</summary>
         public void CloseSettings() => _settingsPanel?.Toggle();
 
+        // ── Header undo / extra-tube buttons ──────────────────────────────────────
+
+        /// <summary>Header Undo tap. Gated by a per-level budget (<see cref="MaxUndosPerLevel"/>);
+        /// a tap is only consumed when an undo can actually be performed.</summary>
+        private void OnUndoButtonTapped()
+        {
+            if (_undoRemaining <= 0) return;
+            if (_gsm != null && !_gsm.CanUndo) return; // nothing to revert — don't spend a use
+            _undoRemaining--;
+            RefreshUndoBadge();
+            _onUndo?.Invoke();
+        }
+
+        /// <summary>Header Extra-Tube tap. Gated by a per-level budget
+        /// (<see cref="MaxExtraTubeUses"/>). The mechanic itself is supplied via the
+        /// <c>onExtraTube</c> callback (Phase 3); without it the button is inert.</summary>
+        private void OnExtraTubeButtonTapped()
+        {
+            if (_extraTubeRemaining <= 0) return;
+            if (_onExtraTube == null) return;
+            _extraTubeRemaining--;
+            RefreshExtraTubeBadge();
+            _onExtraTube.Invoke();
+        }
+
+        private void RefreshUndoBadge()
+        {
+            if (_undoCountText != null) _undoCountText.text = _undoRemaining.ToString();
+            SetButtonDimmed(_undoButtonImg, _undoRemaining <= 0);
+        }
+
+        private void RefreshExtraTubeBadge()
+        {
+            if (_extraTubeCountText != null) _extraTubeCountText.text = _extraTubeRemaining.ToString();
+            SetButtonDimmed(_extraTubeButtonImg, _extraTubeRemaining <= 0);
+        }
+
+        /// <summary>Greys a button (alpha) and disables interaction when its budget is spent.</summary>
+        private static void SetButtonDimmed(Image img, bool dimmed)
+        {
+            if (img == null) return;
+            var c = img.color; c.a = dimmed ? 0.40f : 1f; img.color = c;
+            var btn = img.GetComponent<Button>();
+            if (btn != null) btn.interactable = !dimmed;
+        }
+
+        /// <summary>Small count badge pinned to the top-right corner of a header button.</summary>
+        private Text AddCountBadge(GameObject buttonGO, Font font, string initial)
+        {
+            var badge = new GameObject("CountBadge");
+            badge.transform.SetParent(buttonGO.transform, false);
+            var bg = badge.AddComponent<Image>();
+            bg.color = new Color(0f, 0f, 0f, 0.78f);
+            bg.raycastTarget = false;
+            var brt = badge.GetComponent<RectTransform>();
+            brt.anchorMin = brt.anchorMax = new Vector2(1f, 1f);
+            brt.pivot     = new Vector2(0.5f, 0.5f);
+            brt.anchoredPosition = new Vector2(-4f, -4f);
+            brt.sizeDelta        = new Vector2(38f, 38f);
+
+            var t = MakeLabel(badge, "Count", initial, font, 24,
+                              TextAnchor.MiddleCenter, bold: true, shadow: false);
+            t.color = Color.white;
+            t.raycastTarget = false;
+            var trt = t.rectTransform;
+            trt.anchorMin = Vector2.zero; trt.anchorMax = Vector2.one;
+            trt.offsetMin = trt.offsetMax = Vector2.zero;
+            return t;
+        }
+
+        /// <summary>Anchors a header button at a horizontal fraction of the bar, bottom-pivoted
+        /// at <paramref name="yBottom"/> so it sits clear of the safe-area notch.</summary>
+        private static void PlaceHeaderButton(RectTransform rt, float anchorX, float yBottom, float size)
+        {
+            rt.anchorMin = rt.anchorMax = new Vector2(anchorX, 0f);
+            rt.pivot     = new Vector2(0.5f, 0f);
+            rt.anchoredPosition = new Vector2(0f, yBottom);
+            rt.sizeDelta = new Vector2(size, size);
+        }
+
         // ── UI construction ───────────────────────────────────────────────────────
 
         private void BuildUI()
@@ -503,9 +603,13 @@ namespace BoltSort.Gameplay
             scaler.matchWidthOrHeight  = 1f;
             canvasGO.AddComponent<GraphicRaycaster>();
 
-            // ── Top bar ──────────────────────────────────────────────────────────
-            const float topBarH = 110f;
-            var topBar  = MakePanel(canvasGO, "TopBar", BoltSortTheme.HUDBackground);
+            // ── Header (redesign) ────────────────────────────────────────────────
+            // L→R: [Settings][Retry] | Level X (+moves) | [Undo+count][ExtraTube+count]
+            // The old semi-transparent panel + border line are removed: the bar is now a
+            // fully transparent layout anchor. Height bumped to fit four buttons.
+            const float topBarH = 140f;
+            var topBar  = MakePanel(canvasGO, "TopBar", new Color(0f, 0f, 0f, 0f));
+            topBar.GetComponent<Image>().raycastTarget = false;
             var topRect = topBar.GetComponent<RectTransform>();
             topRect.anchorMin = new Vector2(0f, 1f);
             topRect.anchorMax = new Vector2(1f, 1f);
@@ -513,58 +617,57 @@ namespace BoltSort.Gameplay
             topRect.offsetMin = new Vector2(0f, -(topBarH + safeTop));
             topRect.offsetMax = new Vector2(0f, 0f);
 
-            // Thin border line at bottom of top bar
-            var barLine = new GameObject("BarBorder");
-            barLine.transform.SetParent(topBar.transform, false);
-            var blImg = barLine.AddComponent<Image>();
-            blImg.color = BoltSortTheme.TubeRim;
-            var blRT = barLine.GetComponent<RectTransform>();
-            blRT.anchorMin = new Vector2(0f, 0f); blRT.anchorMax = new Vector2(1f, 0f);
-            blRT.pivot     = new Vector2(0.5f, 1f);
-            blRT.sizeDelta = new Vector2(0f, 2f);
+            const float hBtn  = 84f;                  // header button size
+            float       hBtnY = (topBarH - hBtn) * 0.5f; // vertical-center in the visible band
 
-            // GP-06: clean header layout — Level centered & small, Moves small top-right,
-            // score/coin pill stacked directly below Moves. Nothing overlaps.
-            // Level title — centered horizontally at top, small GummyPop label.
-            _levelText = MakeLabel(topBar, "LevelText", "Level —", font, 34,
+            // ── Left group: Settings, Retry (symmetric with the right group) ──────
+            var settingsBtn = MakeIconButton(topBar, "SettingsButton", "⚙", font, 36,
+                                             GameAssets.NavSettings, OnSettingsClicked);
+            if (GameAssets.NavSettings == null)
+                settingsBtn.GetComponent<Image>().color = new Color(0.12f, 0.12f, 0.22f, 0.85f);
+            PlaceHeaderButton(settingsBtn.GetComponent<RectTransform>(), 0.075f, hBtnY, hBtn);
+
+            var retryBtn = MakeIconButton(topBar, "RetryHeaderButton", "↺", font, 38,
+                                          GameAssets.BtnRetryAction, _onReset);
+            PlaceHeaderButton(retryBtn.GetComponent<RectTransform>(), 0.225f, hBtnY, hBtn);
+
+            // ── Center: Level title + small moves line beneath ────────────────────
+            _levelText = MakeLabel(topBar, "LevelText", "Level —", font, 38,
                                    TextAnchor.MiddleCenter, bold: true, shadow: true);
             _levelText.color = BoltSortTheme.HUDText;
-            SetAnchors(_levelText.rectTransform,
-                anchorMin: new Vector2(0.25f, 0f), anchorMax: new Vector2(0.75f, 1f),
-                offsetMin: new Vector2(0f, 0f), offsetMax: new Vector2(0f, -safeTop));
+            var lrt = _levelText.rectTransform;
+            lrt.anchorMin = lrt.anchorMax = new Vector2(0.5f, 0f);
+            lrt.pivot     = new Vector2(0.5f, 0f);
+            lrt.anchoredPosition = new Vector2(0f, hBtnY + 30f);
+            lrt.sizeDelta        = new Vector2(320f, 54f);
 
-            // Moves — small, top-right, upper half of the bar.
-            _movesText = MakeLabel(topBar, "MovesText", "Moves: 0", font, 26,
-                                   TextAnchor.UpperRight, bold: true, shadow: true);
+            _movesText = MakeLabel(topBar, "MovesText", "Moves: 0", font, 24,
+                                   TextAnchor.MiddleCenter, bold: true, shadow: true);
             _movesText.color = BoltSortTheme.HUDText;
-            SetAnchors(_movesText.rectTransform,
-                anchorMin: new Vector2(0.6f, 0.5f), anchorMax: new Vector2(1f, 1f),
-                offsetMin: new Vector2(0f, 0f), offsetMax: new Vector2(-14f, -(safeTop + 8f)));
+            var mrt = _movesText.GetComponent<RectTransform>();
+            mrt.anchorMin = mrt.anchorMax = new Vector2(0.5f, 0f);
+            mrt.pivot     = new Vector2(0.5f, 0f);
+            mrt.anchoredPosition = new Vector2(0f, hBtnY - 4f);
+            mrt.sizeDelta        = new Vector2(280f, 32f);
             _movesRT = _movesText.GetComponent<RectTransform>();
 
-            // ── Coin/score pill — directly BELOW Moves (lower half, right) ───────
-            var pillGO  = new GameObject("CoinPill");
-            pillGO.transform.SetParent(topBar.transform, false);
-            var pillImg = pillGO.AddComponent<Image>();
-            pillImg.color = new Color(0f, 0f, 0f, 0.35f);
-            var pillRt  = pillGO.GetComponent<RectTransform>();
-            pillRt.anchorMin        = new Vector2(1f, 0f);
-            pillRt.anchorMax        = new Vector2(1f, 0f);
-            pillRt.pivot            = new Vector2(1f, 0f);
-            pillRt.anchoredPosition = new Vector2(-14f, 14f);
-            pillRt.sizeDelta        = new Vector2(96f, 32f);
+            // ── Right group: Undo (+count), Extra Tube (+count) ───────────────────
+            var undoBtn = MakeIconButton(topBar, "UndoHeaderButton", "↩", font, 38,
+                                         GameAssets.BtnUndoAction, OnUndoButtonTapped);
+            _undoButtonImg = undoBtn.GetComponent<Image>();
+            _undoCountText = AddCountBadge(undoBtn, font, MaxUndosPerLevel.ToString());
+            PlaceHeaderButton(undoBtn.GetComponent<RectTransform>(), 0.775f, hBtnY, hBtn);
 
-            _coinPillText = MakeLabel(pillGO, "CoinText", "0", font, 22,
-                TextAnchor.MiddleCenter, bold: true, shadow: false);
-            _coinPillText.color = BoltSortTheme.WinGold;
-            var pillTextRt = _coinPillText.rectTransform;
-            pillTextRt.anchorMin = Vector2.zero; pillTextRt.anchorMax = Vector2.one;
-            pillTextRt.offsetMin = new Vector2(6f, 0f); pillTextRt.offsetMax = new Vector2(-6f, 0f);
+            // Extra Tube — NEW. No sprite yet → placeholder blue "+" square.
+            var extraBtn = MakeIconButton(topBar, "ExtraTubeButton", "+", font, 48,
+                                          null, OnExtraTubeButtonTapped);
+            _extraTubeButtonImg = extraBtn.GetComponent<Image>();
+            _extraTubeButtonImg.color = new Color(0.20f, 0.62f, 0.86f, 1f);
+            _extraTubeCountText = AddCountBadge(extraBtn, font, _extraTubeRemaining.ToString());
+            PlaceHeaderButton(extraBtn.GetComponent<RectTransform>(), 0.925f, hBtnY, hBtn);
 
-            // Seed coin display
-            var coinSS = BoltSort.SaveSystem.SaveSystem.Instance;
-            if (coinSS != null && coinSS.IsReady)
-                _coinPillText.text = coinSS.GetCoinBalance().ToString();
+            RefreshUndoBadge();
+            RefreshExtraTubeBadge();
 
             // ── Deadlock banner ──────────────────────────────────────────────────
             _deadlockText = MakeLabel(canvasGO, "DeadlockBanner",
@@ -599,9 +702,9 @@ namespace BoltSort.Gameplay
             resetRect.sizeDelta        = new Vector2(90f, 90f);
 
             // Undo button (center) — undo_button.png
-            var undoBtn  = MakeIconButton(bottomBar, "UndoButton", "↩", font, 42,
+            var undoBtnBottom = MakeIconButton(bottomBar, "UndoButton", "↩", font, 42,
                                           GameAssets.BtnUndoAction, _onUndo);
-            var undoRect = undoBtn.GetComponent<RectTransform>();
+            var undoRect = undoBtnBottom.GetComponent<RectTransform>();
             undoRect.anchorMin = undoRect.anchorMax = new Vector2(0.5f, 0f);
             undoRect.pivot     = new Vector2(0.5f, 0f);
             undoRect.anchoredPosition = new Vector2(0f, btnY);
@@ -622,22 +725,12 @@ namespace BoltSort.Gameplay
             // reclaims this space via BoardView.BottomReserveFrac.
             bottomBar.SetActive(false);
 
-            // Settings button (top-left corner) — settings_button.png
-            var settingsBtn = MakeIconButton(canvasGO, "SettingsButton", "",  font, 36,
-                                             GameAssets.NavSettings, OnSettingsClicked);
-            var settingsImg = settingsBtn.GetComponent<Image>();
-            if (GameAssets.NavSettings == null)
-                settingsImg.color = new Color(0.12f, 0.12f, 0.22f, 0.85f);
-            var sgr = settingsBtn.GetComponent<RectTransform>();
-            sgr.anchorMin = sgr.anchorMax = new Vector2(0f, 1f);
-            sgr.pivot     = new Vector2(0f, 1f);
-            sgr.anchoredPosition = new Vector2(12f, -(safeTop + 12f));
-            sgr.sizeDelta        = new Vector2(88f, 88f);
-
+            // Settings panel host (the Settings button itself now lives in the header
+            // left group above). New options "Go to Shop" / "Go to Levels" are injected.
             var spHost = new GameObject("SettingsPanelHost");
             spHost.transform.SetParent(canvasGO.transform, false);
             _settingsPanel = spHost.AddComponent<SettingsPanel>();
-            _settingsPanel.Initialize(font, canvasGO.transform);
+            _settingsPanel.Initialize(font, canvasGO.transform, _onShop, _onLevels);
 
             // ── Win overlay ──────────────────────────────────────────────────────
             // Layering (back→front): dim background (WinOverlay's own Image, full

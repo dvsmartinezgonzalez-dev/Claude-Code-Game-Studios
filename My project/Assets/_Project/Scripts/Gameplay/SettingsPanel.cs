@@ -19,6 +19,8 @@ namespace BoltSort.Gameplay
         private GameObject _langPanel;
         private NoAdsPopup _noAdsPopup;
         private Font       _font;
+        private Action     _onGoShop;
+        private Action     _onGoLevels;
 
         private static readonly string[] Languages =
             { "English", "Español", "Français", "Deutsch", "Italiano", "Português" };
@@ -33,8 +35,11 @@ namespace BoltSort.Gameplay
         /// <summary>True when the settings overlay is currently visible.</summary>
         public bool IsOpen => _overlay != null && _overlay.activeSelf;
 
-        public void Initialize(Font font, Transform canvasRoot)
+        public void Initialize(Font font, Transform canvasRoot,
+                               Action onGoShop = null, Action onGoLevels = null)
         {
+            _onGoShop   = onGoShop;
+            _onGoLevels = onGoLevels;
             BuildOverlay(font, canvasRoot);
             _overlay.SetActive(false);
         }
@@ -79,7 +84,7 @@ namespace BoltSort.Gameplay
             cardRt.anchorMax        = new Vector2(0.5f, 0.5f);
             cardRt.pivot            = new Vector2(0.5f, 0.5f);
             cardRt.anchoredPosition = Vector2.zero;
-            cardRt.sizeDelta        = new Vector2(520f, 760f);
+            cardRt.sizeDelta        = new Vector2(520f, 820f);
 
             // Consume taps on the card so they don't fall through to the dim closer.
             var cardBtn = card.AddComponent<Button>();
@@ -126,7 +131,22 @@ namespace BoltSort.Gameplay
             // Language button — general_button.png; opens a scrollable language list.
             AddImageButton(card, "Language", GameAssets.MenuButton, null, y, 380f, 64f,
                            () => { if (_langPanel != null) _langPanel.SetActive(!_langPanel.activeSelf); });
-            y -= 84f;
+            y -= 80f;
+
+            // Go to Shop / Go to Levels — in-game navigation (header redesign). Only shown
+            // when wired (gameplay HUD); the main-menu settings popup leaves these unset.
+            if (_onGoShop != null)
+            {
+                AddImageButton(card, "Go to Shop", GameAssets.MenuButton, null, y, 380f, 64f,
+                               () => _onGoShop.Invoke());
+                y -= 72f;
+            }
+            if (_onGoLevels != null)
+            {
+                AddImageButton(card, "Go to Levels", GameAssets.MenuButton, null, y, 380f, 64f,
+                               () => _onGoLevels.Invoke());
+                y -= 80f;
+            }
 
             // No Ads button — general_button.png + no_ads icon + label; opens the popup.
             AddImageButton(card, "No Ads", GameAssets.MenuButton, GameAssets.MenuNoAds, y, 380f, 70f,

@@ -149,6 +149,14 @@ namespace BoltSort.GameStateManager
         /// <inheritdoc/>
         public int MoveCount { get; private set; }
 
+        /// <summary>
+        /// True when an undo can currently be performed: GSM is ACTIVE and the undo stack is
+        /// non-empty. Additive read-only helper used by the HUD to gate its per-level undo
+        /// budget (a tap is only spent when an undo will actually occur). Does not alter undo
+        /// behaviour. Concrete-only — not on <see cref="IGameStateManager"/>.
+        /// </summary>
+        public bool CanUndo => _lifecycleState == GSMLifecycleState.Active && _undoStack.Count > 0;
+
         /// <inheritdoc/>
         public long CurrentSequenceId { get; private set; }
 

@@ -87,7 +87,8 @@ namespace BoltSort.Gameplay
                 onUndo:     OnUndoClicked,
                 onMenu:     OnMenuClicked,
                 onReplay:   ResetLevel,
-                onLevels:   OnLevelsClicked);
+                onLevels:   OnLevelsClicked,
+                onShop:     OnShopClicked);
 
             // Phase-2 mechanic tutorial trigger stubs — must subscribe to OnLevelLoaded
             // before LoadLevel so a level that introduces a mechanic shows its prompt.
@@ -134,6 +135,14 @@ namespace BoltSort.Gameplay
             var tm = SceneTransitionManager.Instance;
             if (tm != null) tm.TransitionTo("LevelSelect");
             else UnityEngine.SceneManagement.SceneManager.LoadScene("LevelSelect");
+        }
+
+        // Navigate to Shop from the settings popup "Go to Shop" option.
+        private void OnShopClicked()
+        {
+            var tm = SceneTransitionManager.Instance;
+            if (tm != null) tm.TransitionTo("Shop");
+            else UnityEngine.SceneManagement.SceneManager.LoadScene("Shop");
         }
 
         // ── Android back button (GP-02) ───────────────────────────────────────────
