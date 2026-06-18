@@ -52,6 +52,7 @@ on an easy board first (room well above the brittleness threshold). Mystery defe
 | L14 | multicolor wildcard | 19 | 24 | 884 | teaching |
 | L23 | multicolor | 24 | 29 | 216 | reinforce |
 | L37 | multicolor | 30 | 35 | 561 | reinforce |
+| L66 | multicolor | 42 | 47 | 14218 | relief inside restricted-buffer band |
 | L93 | multicolor | 34 | 39 | 2650 | relief inside hard band |
 | L24 | asymmetric — cap-6 tall buffer | 30 | 35 | 848 | teaching (extra-large tube) |
 | L38 | asymmetric — cap-7 tall buffer | 38 | 43 | 2984 | reinforce |
@@ -59,14 +60,12 @@ on an easy board first (room well above the brittleness threshold). Mystery defe
 | L152 | asymmetric — mixed color tubes | 25 | 30 | 130 | reinforce |
 | L29 | frozen tube (3-turn) | 30 | 35 | 105 | teaching |
 | L46 | frozen tube | 31 | 36 | 185 | reinforce |
+| L134 | frozen tube (buffer, 2-turn) | 54 | 59 | 2977 | combination |
 
-**2 planned slots deferred** (no fair variant within the fail-fast solve budget; both remain their
-original v1 levels — nothing broken):
-- L66 multicolor (restricted-buffer band too tight to keep room ≥ 10 with a wildcard added)
-- L134 frozen (deep c6d6 board became too hard once a tube was frozen)
-
-Each mechanic still ships with a teaching + at least one reinforcement level, so the deferrals do
-not break the progression.
+**All 12 slots landed.** L66 and L134 were initially skipped by the fail-fast search (their heavier
+bands need > 120k nodes just to *prove* a roomy solution optimal) and were recovered by
+`chase_deferred.py` at a 1.5M-node cap. Both are solver-proven solvable with 0 extra tubes, par
+sane, and runtime-guard clean.
 
 ### Why the mixed-capacity introduction is now correct
 The exact "4 tubes cap 5 / 2 tubes cap 4" layout that felt impossible is now **L114** — but it is

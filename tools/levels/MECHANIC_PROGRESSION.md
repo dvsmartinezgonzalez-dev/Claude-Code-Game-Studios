@@ -47,16 +47,17 @@ board before any harder reuse — the opposite of the old buffer cliff.
 
 ## Verification — as-shipped result (2026-06-18)
 
-10 of 12 planned conversions landed (all solver-proven, 0 extra tubes, room ≥ 10). See
+**All 12 planned conversions landed** (all solver-proven, 0 extra tubes, room ≥ 10). See
 `REBALANCE_REPORT.md` Part B for the per-level opt/par/room table. Summary:
 
-- multicolor: **L14** (teach), L23, L37, L93 ✅
+- multicolor: **L14** (teach), L23, L37, L66, L93 ✅
 - asymmetric tall buffer: **L24** (teach, cap-6), L38 (cap-7) ✅
 - asymmetric mixed color tubes: **L114** (4×cap5/2×cap4), L152 ✅
-- frozen: **L29** (teach), L46 ✅
-- **Deferred (no fair variant in budget; left as original v1):** L66 multicolor, L134 frozen.
+- frozen: **L29** (teach), L46, L134 ✅
 - mystery: not authored (blocked on L-1).
 
-Every mechanic retains a teaching + reinforcement level, so the two deferrals do not break the
-progression. Any target that cannot be made solvable-with-good-room with 0 extra tubes is dropped
-rather than shipped — correctness over coverage.
+L66 and L134 were initially skipped by `rebalance_phase2.py`'s fail-fast search (their heavier
+bands needed > 120k nodes just to *prove* a roomy solution optimal) and were then recovered by
+`chase_deferred.py` at a 1.5M-node cap — L66 multicolor room 14218, L134 frozen (buffer tube,
+2-turn freeze) room 2977. Any target that cannot be made solvable-with-good-room with 0 extra tubes
+is dropped rather than shipped — correctness over coverage.

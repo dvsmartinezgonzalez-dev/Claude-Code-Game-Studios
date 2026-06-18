@@ -3342,12 +3342,12 @@
       "level_id": 66,
       "display_name": "Level 66",
       "difficulty_tier": 3,
-      "schema_version": 1,
+      "schema_version": 2,
       "color_count": 6,
       "stack_depth": 5,
       "color_stacks": [
         [
-          5,
+          0,
           5,
           6,
           2,
@@ -3394,7 +3394,8 @@
       "is_tutorial": false,
       "daily_challenge_eligible": true,
       "par_moves": 47,
-      "added_version": "2026.06"
+      "added_version": "2026.06",
+      "has_multicolor": true
     },
     {
       "level_id": 67,
@@ -7627,7 +7628,7 @@
       "level_id": 134,
       "display_name": "Level 134",
       "difficulty_tier": 4,
-      "schema_version": 1,
+      "schema_version": 2,
       "color_count": 6,
       "stack_depth": 6,
       "color_stacks": [
@@ -7685,7 +7686,13 @@
       "is_tutorial": false,
       "daily_challenge_eligible": true,
       "par_moves": 59,
-      "added_version": "2026.06"
+      "added_version": "2026.06",
+      "frozen_tubes": [
+        {
+          "tube_index": 6,
+          "turns": 2
+        }
+      ]
     },
     {
       "level_id": 135,

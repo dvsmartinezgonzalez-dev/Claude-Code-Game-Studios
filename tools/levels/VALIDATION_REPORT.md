@@ -18,8 +18,12 @@ rules, with **zero extra tubes**.
 | B6 no equivalents | no two share a canonical signature (relabel/reorder) | ✅ |
 
 **Every shipped level is provably beatable with 0 extra tubes, 0 mechanics-it-doesn't-declare, and
-only legal player moves.** This includes the 10 new schema_version-2 mechanic levels (each also
+only legal player moves.** This includes the **12** new schema_version-2 mechanic levels (each also
 re-solved independently during authoring) and the 30 buffer-fixed levels.
+
+> Re-run after the L66/L134 recovery (`chase_deferred.py`): both recovered levels independently
+> re-solved (solvable, par sane, runtime-guard clean), and this full B1–B6 pass confirms no exact
+> or structural duplicate was introduced by converting them to schema_version 2.
 
 ## Advisory (5, non-blocking — all intentional)
 
