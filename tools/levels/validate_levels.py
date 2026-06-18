@@ -42,7 +42,7 @@ from boltsort_levels import (
 )
 
 DEFAULT_PATH = "../../My project/Assets/Resources/levels.json"
-MAX_COLUMNS = 8          # ADR-0013
+MAX_COLUMNS = 18         # ADR-0014 (supersedes ADR-0013's flat cap of 8); matches SortMechanic.MaxColumnCount
 PAR_SLACK_MAX = 10       # authoring rule: par in [optimal, optimal+10]
 SAWTOOTH_DROP_FRAC = 0.30  # advisory: >30% score drop between adjacent non-breathers
 
@@ -60,12 +60,21 @@ class Report:
 
 
 def schema_ok(lv: dict, rep: Report) -> bool:
+    """Structural schema check. Branches on schema_version to MIRROR the runtime guards:
+      v1 → GSM.RunInvariantChecks / LevelRecordValidator.ValidateColorStacksV1
+           (total == color_count*stack_depth; each color appears exactly stack_depth times)
+      v2 → GSM.RunInvariantChecksV2 / LevelRecordValidator.ValidateColorStacksV2
+           (total == sum of color-stack capacities; tokens are wildcard 0 or |id| in 1..cc;
+            per-color frequency NOT enforced; max 1 wildcard). The offline solver remains the
+            authoritative solvability gate for v2 (asymmetric/wildcard make freq non-trivial)."""
     lid = lv.get("level_id", "?")
     cc, sd = lv["color_count"], lv["stack_depth"]
     tc, td = lv["temp_slot_count"], lv["temp_slot_depth"]
     stacks = lv["color_stacks"]
+    sv = lv.get("schema_version", 1)
     ok = True
 
+    # ── shared structural guards (both schema versions) ──
     if cc + tc > MAX_COLUMNS:
         rep.block(f"L{lid}: column cap exceeded ({cc}+{tc} > {MAX_COLUMNS}).")
         ok = False
@@ -75,24 +84,51 @@ def schema_ok(lv: dict, rep: Report) -> bool:
     if len(stacks) != cc:
         rep.block(f"L{lid}: color_stacks has {len(stacks)} stacks, expected color_count={cc}.")
         ok = False
-    total = sum(len(s) for s in stacks)
-    if total != cc * sd:
-        rep.block(f"L{lid}: bolt-count invariant broken (sum={total}, expected {cc*sd}).")
-        ok = False
-    freq = {}
-    for s in stacks:
-        for c in s:
-            if c < 1 or c > cc:
-                rep.block(f"L{lid}: phantom color id {c} (domain 1..{cc}).")
-                ok = False
-            freq[c] = freq.get(c, 0) + 1
-    for c in range(1, cc + 1):
-        if freq.get(c, 0) != sd:
-            rep.block(f"L{lid}: color {c} appears {freq.get(c,0)}x, expected {sd}.")
-            ok = False
     if lv["par_moves"] < 1:
         rep.block(f"L{lid}: par_moves must be >= 1.")
         ok = False
+
+    total = sum(len(s) for s in stacks)
+
+    if sv >= 2:
+        # capacity-sum invariant (tube_capacities override color-stack depths)
+        tcap = lv.get("tube_capacities")
+        if tcap and len(tcap) == cc + tc:
+            cap_sum = sum(tcap[:cc])
+        else:
+            cap_sum = cc * sd
+        if total != cap_sum:
+            rep.block(f"L{lid}: v2 bolt-count invariant broken (sum={total}, expected color-stack "
+                      f"capacity sum {cap_sum}).")
+            ok = False
+        wildcards = 0
+        for s in stacks:
+            for c in s:
+                if c == 0:
+                    wildcards += 1
+                    continue
+                if abs(c) < 1 or abs(c) > cc:  # mystery hides abs; domain 1..cc
+                    rep.block(f"L{lid}: phantom color id {c} (domain ±1..{cc}, or 0 wildcard).")
+                    ok = False
+        if wildcards > 1:
+            rep.block(f"L{lid}: more than one multicolor wildcard ({wildcards}); authoring rule = max 1.")
+            ok = False
+    else:
+        # v1 classic: strict bolt count + per-color frequency
+        if total != cc * sd:
+            rep.block(f"L{lid}: bolt-count invariant broken (sum={total}, expected {cc*sd}).")
+            ok = False
+        freq = {}
+        for s in stacks:
+            for c in s:
+                if c < 1 or c > cc:
+                    rep.block(f"L{lid}: phantom color id {c} (domain 1..{cc}).")
+                    ok = False
+                freq[c] = freq.get(c, 0) + 1
+        for c in range(1, cc + 1):
+            if freq.get(c, 0) != sd:
+                rep.block(f"L{lid}: color {c} appears {freq.get(c,0)}x, expected {sd}.")
+                ok = False
     return ok
 
 
