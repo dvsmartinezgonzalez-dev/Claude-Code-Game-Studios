@@ -38,6 +38,7 @@ namespace BoltSort.Audio
         private AudioClip _startLevel;
         private AudioClip _buttonSound;
         private AudioClip _boltsortTitle;
+        private AudioClip _thunder;        // Undo thunder effect SFX
 
         private void Awake()
         {
@@ -84,6 +85,7 @@ namespace BoltSort.Audio
             _startLevel     = Resources.Load<AudioClip>("Audio/start_level");
             _buttonSound    = Resources.Load<AudioClip>("Audio/button_sound_2");
             _boltsortTitle  = Resources.Load<AudioClip>("Audio/boltsort_title");
+            _thunder        = Resources.Load<AudioClip>("Audio/thunder");
 
             // Real music loop replaces procedural fallback
             _bgmMain        = Resources.Load<AudioClip>("Audio/music_loop") ?? GenerateBGM();
@@ -117,6 +119,7 @@ namespace BoltSort.Audio
                 "start_level"     => (_startLevel,    0.82f),
                 "button_sound"    => (_buttonSound,   1.00f),
                 "boltsort_title"  => (_boltsortTitle, 1.00f),
+                "thunder"         => (_thunder,       1.00f),
                 _                 => (null,           1.00f),
             };
             if (clip != null) _sfxSource.PlayOneShot(clip, vol);

@@ -60,6 +60,21 @@ namespace BoltSort.Visual
         public static Sprite BtnHomeAction  => LoadRes("Sprites/Buttons/home_button");
         public static Sprite BtnExit        => LoadRes("Sprites/Buttons/exit_button");
 
+        // Gameplay header replacements (assets_admin/Levels → Resources/Sprites/Buttons/)
+        public static Sprite BtnMenuSettings  => LoadRes("Sprites/Buttons/menu_settings");
+        public static Sprite BtnRestartLevel  => LoadRes("Sprites/Buttons/restart_level");
+        public static Sprite BtnUndoNew       => LoadRes("Sprites/Buttons/undo_new");
+        public static Sprite BtnExtraTube     => LoadRes("Sprites/Buttons/plus1tube");
+
+        // Level select navigation (assets_admin/Levels → Resources/Sprites/Levels/)
+        public static Sprite LevelArrowLeft   => LoadRes("Sprites/Levels/left_arrow");
+        public static Sprite LevelArrowRight  => LoadRes("Sprites/Levels/right_arrow");
+        public static Sprite LevelGoButton    => LoadRes("Sprites/Levels/go_button");
+
+        // Shop coin UI (assets_admin/Shop/Shop_elements → Resources/Sprites/Shop/)
+        public static Sprite ShopCoinIcon     => LoadRes("Sprites/Shop/coin");
+        public static Sprite ShopMoreCoins    => LoadRes("Sprites/Shop/more_coins");
+
         // Level select tiles (assets_admin/Levels → Resources/Sprites/Levels/)
         public static Sprite LevelBackground => LoadRes("Sprites/Levels/level_background");
         public static Sprite LevelLock       => LoadRes("Sprites/Levels/lock");

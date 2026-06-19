@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 28adf90d207864843a71d08a8072c2b7
+guid: b3fbca398f140ec479636362bee5139f
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -48,7 +48,7 @@ TextureImporter:
   spriteMeshType: 0
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 128
+  spritePixelsToUnits: 100
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 1
   alphaUsage: 1
@@ -110,13 +110,13 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: ball_multicolor_00
+      name: thunder_00
       rect:
         serializedVersion: 2
         x: 0
-        y: 384
-        width: 128
-        height: 128
+        y: 512
+        width: 192
+        height: 512
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -124,20 +124,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: f5fa3e3adf34f06e0800000000000000
-      internalID: 6478843491873877110
+      spriteID: 8bc790952eb0ae690800000000000000
+      internalID: 3787667023846626321
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ball_multicolor_01
+      name: thunder_01
       rect:
         serializedVersion: 2
-        x: 128
-        y: 384
-        width: 128
-        height: 128
+        x: 192
+        y: 512
+        width: 192
+        height: 512
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -145,41 +145,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 5993eba663dbc67a0800000000000000
-      internalID: -11288593944391344
+      spriteID: 53b70275e870f44e0800000000000000
+      internalID: 2108615861431470046
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ball_multicolor_02
-      rect:
-        serializedVersion: 2
-        x: 256
-        y: 384
-        width: 128
-        height: 128
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 11e1384ae51a9b000800000000000000
-      internalID: 5806660086957592163
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: ball_multicolor_03
+      name: thunder_02
       rect:
         serializedVersion: 2
         x: 384
-        y: 384
-        width: 128
-        height: 128
+        y: 512
+        width: 192
+        height: 512
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -187,20 +166,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: ea7bdb5570b6378e0800000000000000
-      internalID: -3635417313259139965
+      spriteID: ac46909f0c2f192a0800000000000000
+      internalID: 7186864528851983829
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ball_multicolor_04
+      name: thunder_03
       rect:
         serializedVersion: 2
-        x: 0
-        y: 256
-        width: 128
-        height: 128
+        x: 576
+        y: 512
+        width: 192
+        height: 512
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -208,20 +187,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: f13193695fb9f64d0800000000000000
-      internalID: -2487930503620700743
+      spriteID: ce77435bb38f71bf0800000000000000
+      internalID: 6803846982857702959
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ball_multicolor_05
+      name: thunder_04
       rect:
         serializedVersion: 2
-        x: 128
-        y: 256
-        width: 128
-        height: 128
+        x: 768
+        y: 512
+        width: 192
+        height: 512
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -229,20 +208,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 86607f0adca9df5c0800000000000000
-      internalID: 9155806758238112131
+      spriteID: 708a554302c606ff0800000000000000
+      internalID: -8956706133864183366
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ball_multicolor_06
+      name: thunder_05
       rect:
         serializedVersion: 2
-        x: 256
-        y: 256
-        width: 128
-        height: 128
+        x: 960
+        y: 512
+        width: 192
+        height: 512
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -250,20 +229,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 7e8980974a0668230800000000000000
-      internalID: -668911925317501337
+      spriteID: 67400aa8323ec9950800000000000000
+      internalID: 2475942630425481631
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ball_multicolor_07
+      name: thunder_06
       rect:
         serializedVersion: 2
-        x: 384
-        y: 256
-        width: 128
-        height: 128
+        x: 1152
+        y: 512
+        width: 192
+        height: 512
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -271,20 +250,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 6a6f2fb938f4ca730800000000000000
-      internalID: 1427060745942166400
+      spriteID: 5d08b9eb44b44a770800000000000000
+      internalID: -8338667488593017426
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ball_multicolor_08
+      name: thunder_07
       rect:
         serializedVersion: 2
-        x: 0
-        y: 128
-        width: 128
-        height: 128
+        x: 1344
+        y: 512
+        width: 192
+        height: 512
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -292,83 +271,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 66d6d4f027073fd30800000000000000
-      internalID: -1995543304601690664
+      spriteID: 413307c6714abf350800000000000000
+      internalID: 2055146419486695888
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ball_multicolor_09
-      rect:
-        serializedVersion: 2
-        x: 128
-        y: 128
-        width: 128
-        height: 128
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: b06e105ec56b93260800000000000000
-      internalID: -4341569302496494435
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: ball_multicolor_10
-      rect:
-        serializedVersion: 2
-        x: 256
-        y: 128
-        width: 128
-        height: 128
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 584998bd5e1224790800000000000000
-      internalID: -3070815667921134554
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: ball_multicolor_11
-      rect:
-        serializedVersion: 2
-        x: 384
-        y: 128
-        width: 128
-        height: 128
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: ff631c3d05a5bfdb0800000000000000
-      internalID: 1682991532197725479
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: ball_multicolor_12
+      name: thunder_08
       rect:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 128
-        height: 128
+        width: 192
+        height: 512
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -376,20 +292,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: c406c11cbe8485500800000000000000
-      internalID: 448492768541766661
+      spriteID: 8625766da2b049b40800000000000000
+      internalID: -4533873935121039290
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ball_multicolor_13
+      name: thunder_09
       rect:
         serializedVersion: 2
-        x: 128
+        x: 192
         y: 0
-        width: 128
-        height: 128
+        width: 192
+        height: 512
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -397,41 +313,20 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: c8d6f91849366f7f0800000000000000
-      internalID: 3449417731197911325
+      spriteID: 16f5b4e9981b42780800000000000000
+      internalID: 177548393940264345
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ball_multicolor_14
-      rect:
-        serializedVersion: 2
-        x: 256
-        y: 0
-        width: 128
-        height: 128
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: fc199b322242138c0800000000000000
-      internalID: -7794614033322579842
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: ball_multicolor_15
+      name: thunder_10
       rect:
         serializedVersion: 2
         x: 384
         y: 0
-        width: 128
-        height: 128
+        width: 192
+        height: 512
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -439,8 +334,113 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: c0fc031651ee99340800000000000000
-      internalID: 8031052066982461879
+      spriteID: adb5d37f76c1ec880800000000000000
+      internalID: 8989170836132373852
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: thunder_11
+      rect:
+        serializedVersion: 2
+        x: 576
+        y: 0
+        width: 192
+        height: 512
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5258a119493ec5b50800000000000000
+      internalID: 3855834654452650782
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: thunder_12
+      rect:
+        serializedVersion: 2
+        x: 768
+        y: 0
+        width: 192
+        height: 512
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4b5e83278e80e4990800000000000000
+      internalID: 2587314077307148466
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: thunder_13
+      rect:
+        serializedVersion: 2
+        x: 960
+        y: 0
+        width: 192
+        height: 512
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 66aabbf8e620bde30800000000000000
+      internalID: 460425875217854601
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: thunder_14
+      rect:
+        serializedVersion: 2
+        x: 1152
+        y: 0
+        width: 192
+        height: 512
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a3579b5735139cdb0800000000000000
+      internalID: 2260064343061070858
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: thunder_15
+      rect:
+        serializedVersion: 2
+        x: 1344
+        y: 0
+        width: 192
+        height: 512
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b40adda5cb1606900800000000000000
+      internalID: 7258210507970170062
       vertices: []
       indices: 
       edges: []
@@ -448,7 +448,7 @@ TextureImporter:
     outline: []
     physicsShape: []
     bones: []
-    spriteID: 9ea1dc27cb58af9b0800000000000000
+    spriteID: d6ffda94591365a70800000000000000
     internalID: 0
     vertices: []
     indices: 
@@ -456,22 +456,22 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      ball_multicolor_00: 6478843491873877110
-      ball_multicolor_01: -11288593944391344
-      ball_multicolor_02: 5806660086957592163
-      ball_multicolor_03: -3635417313259139965
-      ball_multicolor_04: -2487930503620700743
-      ball_multicolor_05: 9155806758238112131
-      ball_multicolor_06: -668911925317501337
-      ball_multicolor_07: 1427060745942166400
-      ball_multicolor_08: -1995543304601690664
-      ball_multicolor_09: -4341569302496494435
-      ball_multicolor_10: -3070815667921134554
-      ball_multicolor_11: 1682991532197725479
-      ball_multicolor_12: 448492768541766661
-      ball_multicolor_13: 3449417731197911325
-      ball_multicolor_14: -7794614033322579842
-      ball_multicolor_15: 8031052066982461879
+      thunder_00: 3787667023846626321
+      thunder_01: 2108615861431470046
+      thunder_02: 7186864528851983829
+      thunder_03: 6803846982857702959
+      thunder_04: -8956706133864183366
+      thunder_05: 2475942630425481631
+      thunder_06: -8338667488593017426
+      thunder_07: 2055146419486695888
+      thunder_08: -4533873935121039290
+      thunder_09: 177548393940264345
+      thunder_10: 8989170836132373852
+      thunder_11: 3855834654452650782
+      thunder_12: 2587314077307148466
+      thunder_13: 460425875217854601
+      thunder_14: 2260064343061070858
+      thunder_15: 7258210507970170062
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

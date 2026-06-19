@@ -70,10 +70,13 @@ namespace BoltSort.Gameplay
             cbc.normalColor = cbc.highlightedColor = cbc.pressedColor = cbc.selectedColor = Color.white;
             cardBtn.colors = cbc;
 
-            // Title
+            // Change 7A: title moved slightly lower + black outline for readability
             var title = AddLabel(card, "Title", "Eliminar anuncios", 44,
-                                 new Vector2(0f, 0.82f), new Vector2(1f, 0.96f));
+                                 new Vector2(0f, 0.76f), new Vector2(1f, 0.90f));
             title.color = BoltSortTheme.WinGold;
+            var titleOl = title.gameObject.AddComponent<Outline>();
+            titleOl.effectColor    = new Color(0f, 0f, 0f, 0.9f);
+            titleOl.effectDistance = new Vector2(1.5f, -1.5f);
 
             // Animated no_ads icon
             var iconGO = new GameObject("NoAdsIcon");
@@ -90,10 +93,10 @@ namespace BoltSort.Gameplay
             _iconRt.anchoredPosition = Vector2.zero;
             _iconRt.sizeDelta        = new Vector2(150f, 150f);
 
-            // Description
+            // Change 7B: description font size increased ~25% (26 → 33); wrapping already enabled
             var desc = AddLabel(card, "Desc",
                 "¡Di adiós a los anuncios emergentes y banners forzados para siempre!",
-                26, new Vector2(0.06f, 0.34f), new Vector2(0.94f, 0.5f));
+                33, new Vector2(0.06f, 0.30f), new Vector2(0.94f, 0.52f));
             desc.color = new Color(1f, 1f, 1f, 0.9f);
 
             // Buy button — general_button.png + "4,99€"

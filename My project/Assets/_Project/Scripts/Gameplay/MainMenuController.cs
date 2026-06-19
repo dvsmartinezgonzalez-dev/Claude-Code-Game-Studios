@@ -94,8 +94,22 @@ namespace BoltSort.Gameplay
                 playImg.color = BoltSortTheme.HUDAccent;
             SetAnchors(playBtn.GetComponent<RectTransform>(),
                 new Vector2(0.02f, 0.29f), new Vector2(0.98f, 0.44f));
+            // PLAY label occupies the upper half of the button
+            var playLabel = playBtn.transform.Find("Label")?.GetComponent<Text>();
+            if (playLabel != null)
+            {
+                // The 56pt label is taller than its anchored band; legacy Text's default
+                // Truncate vertical-overflow drops the whole line, making "PLAY" invisible.
+                // Overflow always renders it. Centered in the upper half of the button.
+                playLabel.horizontalOverflow = HorizontalWrapMode.Overflow;
+                playLabel.verticalOverflow   = VerticalWrapMode.Overflow;
+                var playLabelRt = playLabel.rectTransform;
+                playLabelRt.anchorMin = new Vector2(0f, 0.50f);
+                playLabelRt.anchorMax = new Vector2(1f, 0.92f);
+                playLabelRt.offsetMin = playLabelRt.offsetMax = Vector2.zero;
+            }
 
-            // MM-03: current level indicator inside PLAY button
+            // MM-03: "Level X" subtitle — sits directly below PLAY in the lower half
             var mm03ss      = BoltSort.SaveSystem.SaveSystem.Instance;
             int nextLevelId = (mm03ss != null && mm03ss.IsReady)
                 ? mm03ss.GetCurrentLevelId()
@@ -105,15 +119,16 @@ namespace BoltSort.Gameplay
             var lvlLabelT = lvlLabelGO.AddComponent<Text>();
             lvlLabelT.text             = $"Level {nextLevelId}";
             lvlLabelT.font             = font;
-            lvlLabelT.fontSize         = 28;
+            lvlLabelT.fontSize         = 31; // +10%
             lvlLabelT.fontStyle        = FontStyle.Bold;
-            lvlLabelT.alignment        = TextAnchor.LowerCenter;
+            lvlLabelT.alignment        = TextAnchor.MiddleCenter;
             lvlLabelT.color            = new Color(1f, 1f, 1f, 0.75f);
             lvlLabelT.supportRichText  = false;
             lvlLabelT.raycastTarget    = false;
             var lvlLabelRT = lvlLabelGO.GetComponent<RectTransform>();
-            lvlLabelRT.anchorMin = new Vector2(0f, 0f);
-            lvlLabelRT.anchorMax = new Vector2(1f, 0.45f);
+            // Sits just below PLAY (band tops out at 0.50) with a small ~8px gap.
+            lvlLabelRT.anchorMin = new Vector2(0f, 0.18f);
+            lvlLabelRT.anchorMax = new Vector2(1f, 0.46f);
             lvlLabelRT.offsetMin = lvlLabelRT.offsetMax = Vector2.zero;
 
             // LEVELS button — shared general_button.png base + independent text label
@@ -164,16 +179,16 @@ namespace BoltSort.Gameplay
             SetAnchors(shopBtn.GetComponent<RectTransform>(),
                 new Vector2(0.53f, 0.11f), new Vector2(0.96f, 0.25f));
 
-            // MM-05: diamond decorations — left icon + two small accents on the right
+            // MM-05: diamond decorations — ~18% larger with slight overflow beyond button edges
             MakeDiamond(shopBtn, "ShopDiamond_L", GameAssets.MenuDiamond(1),
-                new Vector2(0f, 0.18f), new Vector2(0f, 0.82f),
-                new Vector2(14f, 0f),  new Vector2(70f, 0f));
+                new Vector2(0f, 0.10f), new Vector2(0f, 0.90f),
+                new Vector2(-10f, 0f), new Vector2(80f, 0f));
             MakeDiamond(shopBtn, "ShopDiamond_R1", GameAssets.MenuDiamond(2),
-                new Vector2(1f, 0.45f), new Vector2(1f, 0.95f),
-                new Vector2(-60f, 0f), new Vector2(-22f, 0f));
+                new Vector2(1f, 0.38f), new Vector2(1f, 1.02f),
+                new Vector2(-72f, 0f), new Vector2(10f, 0f));
             MakeDiamond(shopBtn, "ShopDiamond_R2", GameAssets.MenuDiamond(3),
-                new Vector2(1f, 0.08f), new Vector2(1f, 0.52f),
-                new Vector2(-46f, 0f), new Vector2(-14f, 0f));
+                new Vector2(1f, 0.00f), new Vector2(1f, 0.60f),
+                new Vector2(-58f, 0f), new Vector2(8f, 0f));
 
             var spHost = new GameObject("SettingsPanelHost");
             spHost.transform.SetParent(canvasGO.transform, false);

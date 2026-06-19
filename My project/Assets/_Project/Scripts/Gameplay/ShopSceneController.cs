@@ -123,15 +123,68 @@ namespace BoltSort.Gameplay
             bbr.pivot     = new Vector2(0f, 0.5f);
             bbr.offsetMin = new Vector2(10f, 12f); bbr.offsetMax = new Vector2(98f, -(12f + _safeTop));
 
-            // Coin balance (top-right)
-            _coinsLabel = MakeLabel(header, "Coins", "", _font, 34,
-                                    TextAnchor.MiddleRight, bold: true, shadow: true);
-            _coinsLabel.color = CoinGold;
-            var crt = _coinsLabel.rectTransform;
-            crt.anchorMin = new Vector2(1f, 0f); crt.anchorMax = new Vector2(1f, 1f);
-            crt.pivot     = new Vector2(1f, 0.5f);
-            crt.sizeDelta = new Vector2(240f, 0f);
-            crt.anchoredPosition = new Vector2(-20f, -_safeTop * 0.5f);
+            // Coin display (top-right): right-anchored HLG → [CoinIcon][Number][+]
+            // The group auto-sizes to fit its content and expands leftward from the right edge.
+            var coinRow = new GameObject("CoinRow");
+            coinRow.transform.SetParent(header.transform, false);
+            var coinRowRt = coinRow.GetComponent<RectTransform>();
+            if (coinRowRt == null) coinRowRt = coinRow.AddComponent<RectTransform>();
+            coinRowRt.anchorMin = new Vector2(1f, 0f); coinRowRt.anchorMax = new Vector2(1f, 1f);
+            coinRowRt.pivot     = new Vector2(1f, 0.5f);
+            coinRowRt.anchoredPosition = new Vector2(-8f, -_safeTop * 0.5f);
+            coinRowRt.sizeDelta = new Vector2(0f, 0f); // width auto-set by ContentSizeFitter
+
+            var hlg = coinRow.AddComponent<HorizontalLayoutGroup>();
+            hlg.childAlignment = TextAnchor.MiddleCenter;
+            hlg.spacing = 6f;
+            hlg.padding = new RectOffset(0, 0, 0, 0);
+            hlg.childControlWidth = false; hlg.childControlHeight = false;
+            hlg.childForceExpandWidth = false; hlg.childForceExpandHeight = false;
+
+            var rowFitter = coinRow.AddComponent<ContentSizeFitter>();
+            rowFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            rowFitter.verticalFit   = ContentSizeFitter.FitMode.Unconstrained;
+
+            // CoinIcon
+            var coinIconGO = new GameObject("CoinIcon");
+            coinIconGO.transform.SetParent(coinRow.transform, false);
+            var coinIconImg = coinIconGO.AddComponent<Image>();
+            GameAssets.Apply(coinIconImg, GameAssets.ShopCoinIcon, preserveAspect: true);
+            if (GameAssets.ShopCoinIcon == null) coinIconImg.color = CoinGold;
+            coinIconImg.raycastTarget = false;
+            var coinIconLe = coinIconGO.AddComponent<LayoutElement>();
+            coinIconLe.preferredWidth = 18f; coinIconLe.preferredHeight = 18f; // 50% of 36px baseline
+
+            // Coin number label — ContentSizeFitter so it grows with text
+            var coinsGO = new GameObject("Coins");
+            coinsGO.transform.SetParent(coinRow.transform, false);
+            _coinsLabel = coinsGO.AddComponent<Text>();
+            _coinsLabel.font = _font; _coinsLabel.fontSize = 32;
+            _coinsLabel.fontStyle = FontStyle.Bold; _coinsLabel.alignment = TextAnchor.MiddleCenter;
+            _coinsLabel.color = Color.white; _coinsLabel.supportRichText = false;
+            _coinsLabel.horizontalOverflow = HorizontalWrapMode.Overflow;
+            _coinsLabel.verticalOverflow   = VerticalWrapMode.Overflow;
+            var coinsSh = coinsGO.AddComponent<Shadow>();
+            coinsSh.effectColor = new Color(0f, 0f, 0f, 0.8f);
+            coinsSh.effectDistance = new Vector2(1f, -1f);
+            var coinsLe = coinsGO.AddComponent<LayoutElement>();
+            coinsLe.preferredHeight = 40f;
+            var coinsCsf = coinsGO.AddComponent<ContentSizeFitter>();
+            coinsCsf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            coinsCsf.verticalFit   = ContentSizeFitter.FitMode.Unconstrained;
+
+            // More coins button — fixed width, rightmost element
+            var moreCoinsBtnGO = new GameObject("MoreCoinsButton");
+            moreCoinsBtnGO.transform.SetParent(coinRow.transform, false);
+            var moreCoinsImg = moreCoinsBtnGO.AddComponent<Image>();
+            GameAssets.Apply(moreCoinsImg, GameAssets.ShopMoreCoins, preserveAspect: true);
+            if (GameAssets.ShopMoreCoins == null) moreCoinsImg.color = new Color(0.20f, 0.65f, 0.30f, 1f);
+            var moreCoinsBtn = moreCoinsBtnGO.AddComponent<Button>();
+            moreCoinsBtn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
+            moreCoinsBtn.onClick.AddListener(ShowMoreCoinsPopup);
+            var moreCoinsBtnLe = moreCoinsBtnGO.AddComponent<LayoutElement>();
+            moreCoinsBtnLe.preferredWidth = 20f; moreCoinsBtnLe.preferredHeight = 20f; // 50% of 40px baseline
+
             UpdateCoins();
         }
 
@@ -461,7 +514,123 @@ namespace BoltSort.Gameplay
 
         private void UpdateCoins()
         {
-            if (_coinsLabel != null) _coinsLabel.text = $"Coins: {SkinManager.GetCoins()}";
+            if (_coinsLabel != null) _coinsLabel.text = FormatCoins(SkinManager.GetCoins());
+        }
+
+        /// <summary>Spanish-locale number format: dots as thousands separators (e.g. 1.234.567).</summary>
+        private static string FormatCoins(int coins)
+        {
+            if (coins < 1000) return coins.ToString();
+            // Build from right: groups of 3, separated by dots.
+            var s = coins.ToString();
+            var result = new System.Text.StringBuilder();
+            int mod = s.Length % 3;
+            for (int i = 0; i < s.Length; i++)
+            {
+                if (i > 0 && (i - mod) % 3 == 0 && mod != 0) result.Append('.');
+                else if (i > 0 && mod == 0 && i % 3 == 0)    result.Append('.');
+                result.Append(s[i]);
+            }
+            return result.ToString();
+        }
+
+        private void ShowMoreCoinsPopup()
+        {
+            ClosePopup();
+
+            _popup = new GameObject("MoreCoinsPopup");
+            _popup.transform.SetParent(_canvas.transform, false);
+            var dim = _popup.AddComponent<Image>();
+            dim.color = new Color(0f, 0f, 0f, 0.75f);
+            Stretch(_popup.GetComponent<RectTransform>());
+            var dimBtn = _popup.AddComponent<Button>();
+            dimBtn.onClick.AddListener(ClosePopup);
+
+            var card = new GameObject("Card");
+            card.transform.SetParent(_popup.transform, false);
+            var cardImg = card.AddComponent<Image>();
+            var popupSpr = GameAssets.MenuPopup;
+            if (popupSpr != null) { cardImg.sprite = popupSpr; cardImg.color = Color.white; cardImg.type = Image.Type.Simple; }
+            else cardImg.color = new Color(0.07f, 0.07f, 0.14f, 0.98f);
+            var cardBtn = card.AddComponent<Button>();
+            var cbc = cardBtn.colors;
+            cbc.normalColor = cbc.highlightedColor = cbc.pressedColor = cbc.selectedColor = Color.white;
+            cardBtn.colors = cbc;
+            var cr = card.GetComponent<RectTransform>();
+            cr.anchorMin = cr.anchorMax = new Vector2(0.5f, 0.5f);
+            cr.pivot = new Vector2(0.5f, 0.5f);
+            cr.sizeDelta = new Vector2(520f, 620f);
+
+            // Title centered within the top header area of the popup background
+            AddCardLabel(card, "Comprar monedas", 38, new Vector2(0.05f, 0.82f), new Vector2(0.95f, 0.94f), CoinGold);
+
+            // Fix 5A: offer buttons — fixed pixel sizes, evenly stacked, well-contained in the popup
+            // Card is 520×620. Use fixed-height rows centered in the lower portion.
+            (int coins, string price)[] offers =
+            {
+                (500,    "0,99€"),
+                (1200,   "1,99€"),
+                (2500,   "3,99€"),
+                (6000,   "7,99€"),
+                (14000,  "14,99€"),
+            };
+
+            const float offerBtnW = 440f, offerBtnH = 68f, offerGap = 10f;
+            // Stack from y=350 downward (center of card=310, title takes top portion)
+            float offerStartY = 330f;
+            for (int i = 0; i < offers.Length; i++)
+            {
+                var (offerCoins, offerPrice) = offers[i];
+                float btnY = offerStartY - i * (offerBtnH + offerGap);
+
+                var rowGO = new GameObject($"Offer_{i}");
+                rowGO.transform.SetParent(card.transform, false);
+                var rowImg = rowGO.AddComponent<Image>();
+                // Sliced (9-slice) so the button keeps its border shape at the fixed
+                // row dimensions instead of stretching/deforming the source sprite.
+                if (GameAssets.MenuButton != null) { rowImg.sprite = GameAssets.MenuButton; rowImg.type = Image.Type.Sliced; rowImg.preserveAspect = false; rowImg.color = Color.white; }
+                else rowImg.color = new Color(0.18f, 0.18f, 0.32f, 1f);
+                var offerCaptured = offerCoins;
+                var offerPriceCap = offerPrice;
+                var rowBtn = rowGO.AddComponent<Button>();
+                rowBtn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
+                rowBtn.onClick.AddListener(() =>
+                {
+                    Debug.Log($"[Shop] Purchase selected: {offerCaptured} coins ({offerPriceCap})");
+                    ClosePopup();
+                });
+                var rowRt = rowGO.GetComponent<RectTransform>();
+                rowRt.anchorMin = rowRt.anchorMax = new Vector2(0.5f, 1f);
+                rowRt.pivot     = new Vector2(0.5f, 1f);
+                rowRt.anchoredPosition = new Vector2(0f, -btnY);
+                rowRt.sizeDelta        = new Vector2(offerBtnW, offerBtnH);
+
+                var rowLabel = MakeLabel(rowGO, "Label",
+                                         $"{FormatCoins(offerCoins)} monedas  —  {offerPrice}",
+                                         _font, 26, TextAnchor.MiddleCenter, bold: true, shadow: true);
+                rowLabel.color = Color.white; rowLabel.raycastTarget = false;
+                var llr = rowLabel.rectTransform;
+                llr.anchorMin = Vector2.zero; llr.anchorMax = Vector2.one;
+                llr.offsetMin = llr.offsetMax = Vector2.zero;
+            }
+
+            // Close button
+            var closeGO = new GameObject("CloseButton");
+            closeGO.transform.SetParent(card.transform, false);
+            var closeImg = closeGO.AddComponent<Image>();
+            if (GameAssets.BtnExit != null) GameAssets.Apply(closeImg, GameAssets.BtnExit, true);
+            else closeImg.color = new Color(0.7f, 0.2f, 0.2f, 1f);
+            var closeBtn = closeGO.AddComponent<Button>();
+            closeBtn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
+            closeBtn.onClick.AddListener(ClosePopup);
+            var closeRt = closeGO.GetComponent<RectTransform>();
+            closeRt.anchorMin = closeRt.anchorMax = new Vector2(1f, 1f);
+            closeRt.pivot = new Vector2(1f, 1f);
+            closeRt.anchoredPosition = new Vector2(-12f, -12f);
+            closeRt.sizeDelta = new Vector2(60f, 60f);
+
+            cr.localScale = Vector3.zero;
+            StartCoroutine(TweenUtility.LerpRectScale(cr, Vector3.one, 0.22f, TweenUtility.EaseOutBack));
         }
 
         // ── Feedback / animation ──────────────────────────────────────────────────────

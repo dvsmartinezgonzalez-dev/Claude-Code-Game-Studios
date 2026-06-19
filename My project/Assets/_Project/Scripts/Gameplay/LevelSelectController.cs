@@ -120,6 +120,7 @@ namespace BoltSort.Gameplay
                                       TextAnchor.MiddleCenter, bold: true, shadow: true);
             titleText.color = BoltSortTheme.HUDText;
             Stretch(titleText.GetComponent<RectTransform>());
+            StartCoroutine(AnimateTitle(titleText.rectTransform));
 
             var backBtn = MakeAnimatedButton(header, "BackButton", "", _font, 36, OnBackClicked);
             var backImg = backBtn.GetComponent<Image>();
@@ -196,17 +197,20 @@ namespace BoltSort.Gameplay
 
         private void BuildNavBar(GameObject parent)
         {
-            var nav = MakePanel(parent, "NavBar", BoltSortTheme.HUDBackground);
+            // Change 3D: transparent nav bar (no dark semi-transparent background)
+            var nav = new GameObject("NavBar", typeof(RectTransform));
+            nav.transform.SetParent(parent.transform, false);
             var nr = nav.GetComponent<RectTransform>();
             nr.anchorMin = new Vector2(0f, 0f); nr.anchorMax = new Vector2(1f, 0f);
             nr.pivot = new Vector2(0.5f, 0f);
             nr.offsetMin = new Vector2(8f, 8f); nr.offsetMax = new Vector2(-8f, 150f);
 
-            // Prev
-            _prevBtn = MakeTextButton(nav, "Prev", "‹‹", () => GoToPage(_currentPage - 1));
+            // Change 3A: Prev arrow with left.png sprite
+            _prevBtn = MakeIconNavButton(nav, "Prev", "‹‹", GameAssets.LevelArrowLeft,
+                                         () => GoToPage(_currentPage - 1));
             var pr = _prevBtn.GetComponent<RectTransform>();
             pr.anchorMin = new Vector2(0f, 0.5f); pr.anchorMax = new Vector2(0f, 0.5f);
-            pr.pivot = new Vector2(0f, 0.5f); pr.sizeDelta = new Vector2(120f, 80f);
+            pr.pivot = new Vector2(0f, 0.5f); pr.sizeDelta = new Vector2(80f, 80f);
             pr.anchoredPosition = new Vector2(8f, 35f);
 
             // Page label
@@ -217,25 +221,83 @@ namespace BoltSort.Gameplay
             plr.pivot = new Vector2(0.5f, 0.5f); plr.sizeDelta = new Vector2(240f, 80f);
             plr.anchoredPosition = new Vector2(0f, 35f);
 
-            // Next
-            _nextBtn = MakeTextButton(nav, "Next", "››", () => GoToPage(_currentPage + 1));
+            // Change 3A: Next arrow with right.png sprite
+            _nextBtn = MakeIconNavButton(nav, "Next", "››", GameAssets.LevelArrowRight,
+                                         () => GoToPage(_currentPage + 1));
             var ntr = _nextBtn.GetComponent<RectTransform>();
             ntr.anchorMin = new Vector2(1f, 0.5f); ntr.anchorMax = new Vector2(1f, 0.5f);
-            ntr.pivot = new Vector2(1f, 0.5f); ntr.sizeDelta = new Vector2(120f, 80f);
+            ntr.pivot = new Vector2(1f, 0.5f); ntr.sizeDelta = new Vector2(80f, 80f);
             ntr.anchoredPosition = new Vector2(-8f, 35f);
 
-            // Go-to input + GO button (bottom row of the nav bar)
+            // Change 3C: input field — plain white rounded background (no action-button sprite)
             _gotoInput = MakeIntInput(nav, "GotoInput", "Go to…");
+            var gotoInputImg = _gotoInput.GetComponent<Image>();
+            // White rounded background matching the game's button border style.
+            if (GameAssets.MenuButton != null)
+            {
+                gotoInputImg.sprite        = GameAssets.MenuButton;
+                gotoInputImg.type          = Image.Type.Sliced;
+                gotoInputImg.preserveAspect = false;
+                gotoInputImg.color         = Color.white;
+            }
+            else gotoInputImg.color = new Color(1f, 1f, 1f, 0.95f);
             var gir = _gotoInput.GetComponent<RectTransform>();
             gir.anchorMin = new Vector2(0.5f, 0f); gir.anchorMax = new Vector2(0.5f, 0f);
             gir.pivot = new Vector2(1f, 0f); gir.sizeDelta = new Vector2(200f, 56f);
             gir.anchoredPosition = new Vector2(60f, 6f);
 
-            var goBtn = MakeTextButton(nav, "Go", "GO", OnGotoSubmit);
+            // Change 3B: GO button with go_button.png sprite + "GO" text on top
+            var goBtn = MakeIconNavButton(nav, "Go", "GO", GameAssets.LevelGoButton, OnGotoSubmit);
             var gbr = goBtn.GetComponent<RectTransform>();
             gbr.anchorMin = new Vector2(0.5f, 0f); gbr.anchorMax = new Vector2(0.5f, 0f);
-            gbr.pivot = new Vector2(0f, 0f); gbr.sizeDelta = new Vector2(96f, 56f);
-            gbr.anchoredPosition = new Vector2(72f, 6f);
+            gbr.pivot = new Vector2(0.5f, 0.5f); gbr.sizeDelta = new Vector2(96f, 56f);
+            gbr.anchoredPosition = new Vector2(120f, 34f);
+            // Add "GO" label on top of the sprite (MakeIconNavButton only shows sprite when sprite != null)
+            if (GameAssets.LevelGoButton != null)
+            {
+                var goLabelGO = new GameObject("GoLabel");
+                goLabelGO.transform.SetParent(goBtn.transform, false);
+                var goLabelT = goLabelGO.AddComponent<Text>();
+                goLabelT.text = "GO"; goLabelT.font = _font; goLabelT.fontSize = 30;
+                goLabelT.fontStyle = FontStyle.Bold; goLabelT.alignment = TextAnchor.MiddleCenter;
+                goLabelT.color = Color.white; goLabelT.supportRichText = false;
+                goLabelT.raycastTarget = false;
+                var goLabelSh = goLabelGO.AddComponent<Shadow>();
+                goLabelSh.effectColor = new Color(0f, 0f, 0f, 0.8f);
+                goLabelSh.effectDistance = new Vector2(1f, -1f);
+                var goLabelRt = goLabelGO.GetComponent<RectTransform>();
+                goLabelRt.anchorMin = Vector2.zero; goLabelRt.anchorMax = Vector2.one;
+                goLabelRt.offsetMin = goLabelRt.offsetMax = Vector2.zero;
+            }
+        }
+
+        /// <summary>Navigation button: uses sprite when available, falls back to text-on-colored-rect.</summary>
+        private Button MakeIconNavButton(GameObject parent, string name, string fallbackLabel,
+                                         Sprite icon, Action onClick)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(parent.transform, false);
+            var img = go.AddComponent<Image>();
+            if (icon != null)
+            {
+                img.sprite = icon; img.color = Color.white; img.preserveAspect = true;
+            }
+            else
+            {
+                img.color = new Color(0.16f, 0.16f, 0.28f, 0.95f);
+                var lbl = MakeLabel(go, "Label", fallbackLabel, _font, 34,
+                                    TextAnchor.MiddleCenter, true, true);
+                Stretch(lbl.GetComponent<RectTransform>());
+            }
+            var btn = go.AddComponent<Button>();
+            btn.onClick.AddListener(() =>
+            {
+                var rt = go.GetComponent<RectTransform>();
+                if (rt != null) StartCoroutine(TweenUtility.LerpRectScale(
+                    rt, new Vector3(0.92f, 0.92f, 1f), 0.06f, TweenUtility.EaseInQuad));
+                onClick?.Invoke();
+            });
+            return btn;
         }
 
         private void OnGotoSubmit()
@@ -449,6 +511,20 @@ namespace BoltSort.Gameplay
         }
 
         // ── Animations (unchanged from the single-scroll build) ───────────────────
+
+        /// <summary>Subtle idle "breathe" on the LEVELS title: a gentle scale pulse
+        /// (0.98 → 1.02) on a ~2s period. Loops for the lifetime of the screen.</summary>
+        private IEnumerator AnimateTitle(RectTransform rt)
+        {
+            const float period = 2f;
+            while (rt != null)
+            {
+                float t = (Mathf.Sin(Time.time * (2f * Mathf.PI / period)) + 1f) * 0.5f;
+                float s = Mathf.Lerp(0.98f, 1.02f, t);
+                rt.localScale = new Vector3(s, s, 1f);
+                yield return null;
+            }
+        }
 
         private IEnumerator TapBounce(RectTransform rt)
         {

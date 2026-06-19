@@ -39,6 +39,13 @@ namespace BoltSort.Gameplay
         private Text  _undoCountText;
         private Image _undoButtonImg;
         private int   _undoRemaining = MaxUndosPerLevel;
+
+        // ── Thunder Undo effect (additive visual wrapper around the existing undo) ──
+        /// <summary>Plays a thunder flourish then runs the existing undo at the impact frame.
+        /// Null only if construction failed — in which case Undo runs plainly (failsafe).</summary>
+        private ThunderUndoEffect _thunderEffect;
+        /// <summary>True while the thunder effect is mid-play; blocks re-presses (no duplicate undo).</summary>
+        private bool _thunderPlaying;
         private Text  _extraTubeCountText;
         private Image _extraTubeButtonImg;
         private int   _extraTubeRemaining = MaxExtraTubeUses;
@@ -63,11 +70,14 @@ namespace BoltSort.Gameplay
         private float[]     _confettiBaseAlphas;
         private Sprite[]    _confettiSprites;
         private Coroutine   _confettiLoop;
-        private Image       _trophyImg;
+        private Image         _trophyImg;
         private RectTransform _trophyRT;
         private RectTransform _winTitleRT;
         private RectTransform[] _winButtonRects;
         private Coroutine   _winIdleAnim;
+        private Coroutine   _nextJuiceAnim;
+        private RectTransform _nextShineRt;
+        private Image         _nextShineImg;
         private SettingsPanel _settingsPanel;
 
         // Confetti rain layout, in the 720×1280 logical-pixel space (see class doc).
@@ -120,12 +130,14 @@ namespace BoltSort.Gameplay
                 // Reset per-level header budgets (undo + extra tube) on load/retry.
                 _undoRemaining      = MaxUndosPerLevel;
                 _extraTubeRemaining = MaxExtraTubeUses;
+                _thunderPlaying     = false; // clear in case a reload interrupted the effect
                 RefreshUndoBadge();
                 RefreshExtraTubeBadge();
                 RefreshDeadlock();
                 if (_winOverlay != null) _winOverlay.SetActive(false);
                 if (_confettiLoop != null) { StopCoroutine(_confettiLoop); _confettiLoop = null; }
                 if (_winIdleAnim != null) { StopCoroutine(_winIdleAnim); _winIdleAnim = null; }
+                if (_nextJuiceAnim != null) { StopCoroutine(_nextJuiceAnim); _nextJuiceAnim = null; }
             };
             gsm.OnLevelLoaded += _onLevelLoadedHandler;
 
@@ -281,16 +293,54 @@ namespace BoltSort.Gameplay
             }
         }
 
-        /// <summary>Subtle continuous brightness shimmer for an earned star.</summary>
+        /// <summary>Primary-action "juice" for the Next Level button: a persistent gentle
+        /// scale pulse (1.0→1.05) combined with a ±2° sine-wave rotation, plus a bright
+        /// inner-shine streak that sweeps across the button periodically.</summary>
+        private IEnumerator NextLevelJuice(RectTransform rt)
+        {
+            if (rt == null) yield break;
+            const float pulsePeriod = 1.1f, rotPeriod = 1.6f, shinePeriod = 2.6f, shineSweep = 0.55f;
+            float shineTimer = 0f;
+            while (_winOverlay != null && _winOverlay.activeSelf && rt != null)
+            {
+                float t = (Mathf.Sin(Time.time * (2f * Mathf.PI / pulsePeriod)) + 1f) * 0.5f;
+                float s = Mathf.Lerp(1f, 1.05f, t);
+                rt.localScale    = new Vector3(s, s, 1f);
+                rt.localRotation = Quaternion.Euler(0f, 0f,
+                    Mathf.Sin(Time.time * (2f * Mathf.PI / rotPeriod)) * 2f);
+
+                if (_nextShineRt != null && _nextShineImg != null)
+                {
+                    shineTimer += Time.deltaTime;
+                    float ph = shineTimer % shinePeriod;
+                    if (ph < shineSweep)
+                    {
+                        float u     = ph / shineSweep;
+                        float halfW = rt.rect.width * 0.5f + 60f;
+                        _nextShineRt.anchoredPosition = new Vector2(Mathf.Lerp(-halfW, halfW, u), 0f);
+                        // Fade in then out across the sweep for a soft glint.
+                        float a = Mathf.Sin(u * Mathf.PI) * 0.35f;
+                        _nextShineImg.color = new Color(1f, 1f, 1f, a);
+                    }
+                    else _nextShineImg.color = new Color(1f, 1f, 1f, 0f);
+                }
+                yield return null;
+            }
+            if (rt != null) { rt.localScale = Vector3.one; rt.localRotation = Quaternion.identity; }
+        }
+
+        /// <summary>Gentle scale pulse idle animation for earned stars.</summary>
         private IEnumerator StarTwinkle(Image star)
         {
+            if (star == null) yield break;
+            var rt = star.GetComponent<RectTransform>();
+            if (rt == null) yield break;
             yield return new WaitForSeconds(UnityEngine.Random.Range(0f, 0.5f));
-            while (_winOverlay != null && _winOverlay.activeSelf && star != null)
+            while (_winOverlay != null && _winOverlay.activeSelf && rt != null)
             {
-                float t = (Mathf.Sin(Time.time * 2.2f) + 1f) * 0.5f;
-                var c = star.color;
-                c.a = Mathf.Lerp(0.75f, 1f, t);
-                star.color = c;
+                float t = (Mathf.Sin(Time.time * (2f * Mathf.PI / 1.5f)) + 1f) * 0.5f;
+                float s = Mathf.Lerp(0.97f, 1.03f, t);
+                rt.localScale = new Vector3(s, s, 1f);
                 yield return null;
             }
         }
@@ -398,6 +448,14 @@ namespace BoltSort.Gameplay
                 for (int i = 0; i < _winButtonRects.Length; i++)
                     StartCoroutine(ButtonEntrance(_winButtonRects[i], 0.05f * i));
 
+            // Next Level "juice": persistent pulse + gentle sine rotation + periodic shine sweep,
+            // marking it as the primary action.
+            if (_winButtonRects != null && _winButtonRects[1] != null)
+            {
+                if (_nextJuiceAnim != null) StopCoroutine(_nextJuiceAnim);
+                _nextJuiceAnim = StartCoroutine(NextLevelJuice(_winButtonRects[1]));
+            }
+
             // Count up moves text
             if (_winMovesText != null)
             {
@@ -498,11 +556,24 @@ namespace BoltSort.Gameplay
         /// a tap is only consumed when an undo can actually be performed.</summary>
         private void OnUndoButtonTapped()
         {
+            if (_thunderPlaying) return;               // mid-effect — block re-press (no duplicate undo)
             if (_undoRemaining <= 0) return;
-            if (_gsm != null && !_gsm.CanUndo) return; // nothing to revert — don't spend a use
+            if (_gsm != null && !_gsm.CanUndo) return; // nothing to revert — don't spend a use (no thunder)
             _undoRemaining--;
             RefreshUndoBadge();
-            _onUndo?.Invoke();
+
+            // Failsafe: if the effect couldn't be built, run the existing undo directly.
+            if (_thunderEffect == null)
+            {
+                _onUndo?.Invoke();
+                return;
+            }
+
+            // Play the thunder flourish, then run the EXISTING undo at the impact frame.
+            _thunderPlaying = true;
+            _thunderEffect.Play(
+                onImpact:   () => _onUndo?.Invoke(),
+                onComplete: () => _thunderPlaying = false);
         }
 
         /// <summary>Header Extra-Tube tap. Gated by a per-level budget
@@ -538,24 +609,24 @@ namespace BoltSort.Gameplay
             if (btn != null) btn.interactable = !dimmed;
         }
 
-        /// <summary>Small count badge pinned to the top-right corner of a header button.</summary>
+        /// <summary>Small count badge pinned to the top-right corner of a header button.
+        /// No background panel — uses text outline for readability over any background.</summary>
         private Text AddCountBadge(GameObject buttonGO, Font font, string initial)
         {
             var badge = new GameObject("CountBadge");
             badge.transform.SetParent(buttonGO.transform, false);
-            var bg = badge.AddComponent<Image>();
-            bg.color = new Color(0f, 0f, 0f, 0.78f);
-            bg.raycastTarget = false;
             var brt = badge.GetComponent<RectTransform>();
+            if (brt == null) brt = badge.AddComponent<RectTransform>();
             brt.anchorMin = brt.anchorMax = new Vector2(1f, 1f);
             brt.pivot     = new Vector2(0.5f, 0.5f);
-            brt.anchoredPosition = new Vector2(-4f, -4f);
-            brt.sizeDelta        = new Vector2(38f, 38f);
+            brt.anchoredPosition = new Vector2(-8f, -8f);
+            brt.sizeDelta        = new Vector2(40f, 40f);
 
-            var t = MakeLabel(badge, "Count", initial, font, 24,
+            var t = MakeLabel(badge, "Count", initial, font, 26,
                               TextAnchor.MiddleCenter, bold: true, shadow: false);
             t.color = Color.white;
             t.raycastTarget = false;
+            AddOutline(t, new Color(0f, 0f, 0f, 1f), 1.5f);
             var trt = t.rectTransform;
             trt.anchorMin = Vector2.zero; trt.anchorMax = Vector2.one;
             trt.offsetMin = trt.offsetMax = Vector2.zero;
@@ -603,6 +674,11 @@ namespace BoltSort.Gameplay
             scaler.matchWidthOrHeight  = 1f;
             canvasGO.AddComponent<GraphicRaycaster>();
 
+            // Thunder Undo effect — its own overlay canvas (sortingOrder 150) above this HUD.
+            // Created once; null-safe so a build failure never breaks Undo.
+            if (_thunderEffect == null)
+                _thunderEffect = ThunderUndoEffect.Create(transform);
+
             // ── Header (redesign) ────────────────────────────────────────────────
             // L→R: [Settings][Retry] | Level X (+moves) | [Undo+count][ExtraTube+count]
             // The old semi-transparent panel + border line are removed: the bar is now a
@@ -622,23 +698,28 @@ namespace BoltSort.Gameplay
 
             // ── Left group: Settings, Retry (symmetric with the right group) ──────
             var settingsBtn = MakeIconButton(topBar, "SettingsButton", "⚙", font, 36,
-                                             GameAssets.NavSettings, OnSettingsClicked);
-            if (GameAssets.NavSettings == null)
+                                             GameAssets.BtnMenuSettings ?? GameAssets.NavSettings, OnSettingsClicked);
+            if (GameAssets.BtnMenuSettings == null && GameAssets.NavSettings == null)
                 settingsBtn.GetComponent<Image>().color = new Color(0.12f, 0.12f, 0.22f, 0.85f);
             PlaceHeaderButton(settingsBtn.GetComponent<RectTransform>(), 0.075f, hBtnY, hBtn);
 
             var retryBtn = MakeIconButton(topBar, "RetryHeaderButton", "↺", font, 38,
-                                          GameAssets.BtnRetryAction, _onReset);
+                                          GameAssets.BtnRestartLevel ?? GameAssets.BtnRetryAction, _onReset);
             PlaceHeaderButton(retryBtn.GetComponent<RectTransform>(), 0.225f, hBtnY, hBtn);
 
             // ── Center: Level title + small moves line beneath ────────────────────
-            _levelText = MakeLabel(topBar, "LevelText", "Level —", font, 38,
+            _levelText = MakeLabel(topBar, "LevelText", "Level —", font, 42, // +10%
                                    TextAnchor.MiddleCenter, bold: true, shadow: true);
             _levelText.color = BoltSortTheme.HUDText;
+            // 42pt exceeds the 54px box height → default Truncate hides the line. Overflow
+            // guarantees the text renders (still centered on the buttons' center-line).
+            _levelText.horizontalOverflow = HorizontalWrapMode.Overflow;
+            _levelText.verticalOverflow   = VerticalWrapMode.Overflow;
             var lrt = _levelText.rectTransform;
             lrt.anchorMin = lrt.anchorMax = new Vector2(0.5f, 0f);
-            lrt.pivot     = new Vector2(0.5f, 0f);
-            lrt.anchoredPosition = new Vector2(0f, hBtnY + 30f);
+            lrt.pivot     = new Vector2(0.5f, 0.5f);
+            // Vertically centered on the side buttons' center-line (hBtnY + hBtn/2).
+            lrt.anchoredPosition = new Vector2(0f, hBtnY + hBtn * 0.5f);
             lrt.sizeDelta        = new Vector2(320f, 54f);
 
             _movesText = MakeLabel(topBar, "MovesText", "Moves: 0", font, 24,
@@ -647,22 +728,22 @@ namespace BoltSort.Gameplay
             var mrt = _movesText.GetComponent<RectTransform>();
             mrt.anchorMin = mrt.anchorMax = new Vector2(0.5f, 0f);
             mrt.pivot     = new Vector2(0.5f, 0f);
-            mrt.anchoredPosition = new Vector2(0f, hBtnY - 4f);
+            mrt.anchoredPosition = new Vector2(0f, hBtnY - 30f); // clear the lowered Level label
             mrt.sizeDelta        = new Vector2(280f, 32f);
             _movesRT = _movesText.GetComponent<RectTransform>();
 
             // ── Right group: Undo (+count), Extra Tube (+count) ───────────────────
             var undoBtn = MakeIconButton(topBar, "UndoHeaderButton", "↩", font, 38,
-                                         GameAssets.BtnUndoAction, OnUndoButtonTapped);
+                                         GameAssets.BtnUndoNew ?? GameAssets.BtnUndoAction, OnUndoButtonTapped);
             _undoButtonImg = undoBtn.GetComponent<Image>();
             _undoCountText = AddCountBadge(undoBtn, font, MaxUndosPerLevel.ToString());
             PlaceHeaderButton(undoBtn.GetComponent<RectTransform>(), 0.775f, hBtnY, hBtn);
 
-            // Extra Tube — NEW. No sprite yet → placeholder blue "+" square.
             var extraBtn = MakeIconButton(topBar, "ExtraTubeButton", "+", font, 48,
-                                          null, OnExtraTubeButtonTapped);
+                                          GameAssets.BtnExtraTube, OnExtraTubeButtonTapped);
             _extraTubeButtonImg = extraBtn.GetComponent<Image>();
-            _extraTubeButtonImg.color = new Color(0.20f, 0.62f, 0.86f, 1f);
+            if (GameAssets.BtnExtraTube == null)
+                _extraTubeButtonImg.color = new Color(0.20f, 0.62f, 0.86f, 1f);
             _extraTubeCountText = AddCountBadge(extraBtn, font, _extraTubeRemaining.ToString());
             PlaceHeaderButton(extraBtn.GetComponent<RectTransform>(), 0.925f, hBtnY, hBtn);
 
@@ -815,7 +896,7 @@ namespace BoltSort.Gameplay
                 _winStarImages[i]     = starImg;
             }
 
-            // Trophy — centered in the card, below the stars (no overlap)
+            // Trophy — restored to original position (previous lowering reverted)
             var trophyGO = new GameObject("Trophy");
             trophyGO.transform.SetParent(winCard.transform, false);
             _trophyImg = trophyGO.AddComponent<Image>();
@@ -847,7 +928,7 @@ namespace BoltSort.Gameplay
             var wcRect = _winCoinsText.GetComponent<RectTransform>();
             wcRect.anchorMin = wcRect.anchorMax = new Vector2(0.5f, 1f);
             wcRect.pivot     = new Vector2(0.5f, 1f);
-            wcRect.anchoredPosition = new Vector2(0f, -550f);
+            wcRect.anchoredPosition = new Vector2(0f, -510f);
             wcRect.sizeDelta        = new Vector2(320f, 70f);
 
             // More-levels fallback — between the coins label and the button row
@@ -861,49 +942,94 @@ namespace BoltSort.Gameplay
             mlRect.sizeDelta        = new Vector2(560f, 70f);
             _moreLevelsText.gameObject.SetActive(false);
 
-            // Buttons — bottom row of the card
+            // Buttons — Next Level (large, top) + Retry & Home (smaller, side-by-side below)
             _winButtonRects = new RectTransform[3];
 
-            // Replay button (left) — retry.png sprite; "↩" fallback label (WIN-06)
-            var replayBtn = MakeIconButton(winCard, "ReplayButton", "↩", font, 28,
-                                           GameAssets.VictoryRetry, _onReplay ?? _onReset);
-            if (GameAssets.VictoryRetry == null)
-                replayBtn.GetComponent<Image>().color = new Color(0.22f, 0.22f, 0.36f, 1f);
-            var rpRect = replayBtn.GetComponent<RectTransform>();
-            rpRect.anchorMin = rpRect.anchorMax = new Vector2(0.5f, 0f);
-            rpRect.pivot     = new Vector2(0.5f, 0f);
-            rpRect.anchoredPosition = new Vector2(-130f, 20f);
-            rpRect.sizeDelta        = new Vector2(110f, 110f);
-            _winButtonRects[0] = rpRect;
-
-            // Next Level button (center) — next_button.png sprite
-            var nextBtn = MakeIconButton(winCard, "NextLevelButton", "NEXT", font, 34,
-                                         GameAssets.VictoryNext, _onNextLevel);
-            if (GameAssets.VictoryNext == null)
+            // Next Level button — hero action; uses general_button.png
+            const float nextW = 540f, nextH = 150f;
+            var nextBtn = MakeIconButton(winCard, "NextLevelButton", "", font, 34,
+                                         GameAssets.MenuButton ?? GameAssets.VictoryNext, _onNextLevel);
+            if (GameAssets.MenuButton == null && GameAssets.VictoryNext == null)
                 nextBtn.GetComponent<Image>().color = BoltSortTheme.HUDAccent;
+            // Add "Next Level" text label over the button sprite
+            var nextLabelGO = new GameObject("Label");
+            nextLabelGO.transform.SetParent(nextBtn.transform, false);
+            var nextLabelT = nextLabelGO.AddComponent<Text>();
+            nextLabelT.text = "Next Level"; nextLabelT.font = font; nextLabelT.fontSize = 40;
+            nextLabelT.fontStyle = FontStyle.Bold; nextLabelT.alignment = TextAnchor.MiddleCenter;
+            nextLabelT.color = Color.white; nextLabelT.supportRichText = false;
+            nextLabelT.raycastTarget = false;
+            AddOutline(nextLabelT, new Color(0f, 0f, 0f, 0.8f), 2f);
+            var nextLabelRt = nextLabelGO.GetComponent<RectTransform>();
+            nextLabelRt.anchorMin = Vector2.zero; nextLabelRt.anchorMax = Vector2.one;
+            nextLabelRt.offsetMin = nextLabelRt.offsetMax = Vector2.zero;
             var nbRect = nextBtn.GetComponent<RectTransform>();
             nbRect.anchorMin = nbRect.anchorMax = new Vector2(0.5f, 0f);
             nbRect.pivot     = new Vector2(0.5f, 0f);
-            nbRect.anchoredPosition = new Vector2(0f, 20f);
-            nbRect.sizeDelta        = new Vector2(110f, 110f);
+            nbRect.anchoredPosition = new Vector2(0f, 128f);
+            nbRect.sizeDelta        = new Vector2(nextW, nextH);
             _winButtonRects[1] = nbRect;
 
-            // Home button (right) — home_button.png sprite (WIN-02)
-            var homeBtn = MakeIconButton(winCard, "HomeButton", "HOME", font, 28,
-                                         GameAssets.BtnHomeAction, _onMenu);
-            if (GameAssets.BtnHomeAction == null)
+            // Inner-shine sweep: a tilted bright streak clipped to the button bounds,
+            // swept across periodically by NextLevelJuice. Mask keeps it inside the button.
+            nextBtn.AddComponent<RectMask2D>();
+            var shineGO = new GameObject("Shine");
+            shineGO.transform.SetParent(nextBtn.transform, false);
+            _nextShineImg = shineGO.AddComponent<Image>();
+            _nextShineImg.color = new Color(1f, 1f, 1f, 0f);
+            _nextShineImg.raycastTarget = false;
+            _nextShineRt = shineGO.GetComponent<RectTransform>();
+            _nextShineRt.anchorMin = new Vector2(0.5f, 0f);
+            _nextShineRt.anchorMax = new Vector2(0.5f, 1f);
+            _nextShineRt.pivot     = new Vector2(0.5f, 0.5f);
+            _nextShineRt.sizeDelta = new Vector2(64f, 80f); // extra height so the tilt covers corners
+            _nextShineRt.localRotation = Quaternion.Euler(0f, 0f, 18f);
+
+            // Replay / Retry button (bottom-left) — general_button.png + "Retry" text
+            var replayBtn = MakeIconButton(winCard, "ReplayButton", "", font, 28,
+                                           GameAssets.MenuButton, _onReplay ?? _onReset);
+            if (GameAssets.MenuButton == null)
+                replayBtn.GetComponent<Image>().color = new Color(0.22f, 0.22f, 0.36f, 1f);
+            AddTextLabel(replayBtn, "Retry", font, 30);
+            var rpRect = replayBtn.GetComponent<RectTransform>();
+            rpRect.anchorMin = rpRect.anchorMax = new Vector2(0.5f, 0f);
+            rpRect.pivot     = new Vector2(0.5f, 0f);
+            rpRect.anchoredPosition = new Vector2(-130f, 24f);
+            rpRect.sizeDelta        = new Vector2(240f, 96f);
+            _winButtonRects[0] = rpRect;
+
+            // Home button (bottom-right) — general_button.png + "Home" text
+            var homeBtn = MakeIconButton(winCard, "HomeButton", "", font, 28,
+                                         GameAssets.MenuButton, _onMenu);
+            if (GameAssets.MenuButton == null)
                 homeBtn.GetComponent<Image>().color = new Color(0.22f, 0.36f, 0.22f, 1f);
+            AddTextLabel(homeBtn, "Home", font, 30);
             var hbRect = homeBtn.GetComponent<RectTransform>();
             hbRect.anchorMin = hbRect.anchorMax = new Vector2(0.5f, 0f);
             hbRect.pivot     = new Vector2(0.5f, 0f);
-            hbRect.anchoredPosition = new Vector2(130f, 20f);
-            hbRect.sizeDelta        = new Vector2(110f, 110f);
+            hbRect.anchoredPosition = new Vector2(130f, 24f);
+            hbRect.sizeDelta        = new Vector2(240f, 96f);
             _winButtonRects[2] = hbRect;
 
             _winOverlay.SetActive(false);
         }
 
         // ── UI helpers ────────────────────────────────────────────────────────────
+
+        /// <summary>Adds a centered text label as a direct child of a button GameObject.</summary>
+        private static void AddTextLabel(GameObject btnGO, string text, Font font, int fontSize)
+        {
+            var lgo = new GameObject("Label");
+            lgo.transform.SetParent(btnGO.transform, false);
+            var t = lgo.AddComponent<Text>();
+            t.text = text; t.font = font; t.fontSize = fontSize;
+            t.fontStyle = FontStyle.Bold; t.alignment = TextAnchor.MiddleCenter;
+            t.color = Color.white; t.supportRichText = false; t.raycastTarget = false;
+            AddOutline(t, new Color(0f, 0f, 0f, 0.8f), 1.5f);
+            var lr = lgo.GetComponent<RectTransform>();
+            lr.anchorMin = Vector2.zero; lr.anchorMax = Vector2.one;
+            lr.offsetMin = lr.offsetMax = Vector2.zero;
+        }
 
         private static GameObject MakePanel(GameObject parent, string name, Color color)
         {
