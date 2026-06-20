@@ -8,12 +8,17 @@ namespace BoltSort.Gameplay
 {
     /// <summary>
     /// Modal settings overlay. Call Initialize() once after the parent Canvas is created,
-    /// then Toggle() to show/hide. Stores music and SFX prefs in PlayerPrefs.
+    /// then Toggle() to show/hide. Music and SFX are 0–8 volume steps persisted to
+    /// PlayerPrefs ("MusicVolume" / "SFXVolume"); language to "Language" + index "bs.language".
     /// </summary>
     public class SettingsPanel : MonoBehaviour
     {
-        private const string MusicKey = "bs.music_on";
-        private const string SfxKey   = "bs.sfx_on";
+        private const string MusicVolKey = "MusicVolume";
+        private const string SfxVolKey   = "SFXVolume";
+        private const string LangIdxKey  = "bs.language";
+        private const string LangNameKey = "Language";
+        private const int    MaxStep     = 8;
+        private const int    BarCount    = 8;
 
         private GameObject _overlay;
         private GameObject _langPanel;
@@ -21,9 +26,11 @@ namespace BoltSort.Gameplay
         private Font       _font;
         private Action     _onGoShop;
         private Action     _onGoLevels;
+        private Text       _langButtonLabel;
 
         private static readonly string[] Languages =
-            { "English", "Español", "Français", "Deutsch", "Italiano", "Português" };
+            { "English", "Spanish", "French", "German", "Italian",
+              "Portuguese", "Japanese", "Korean", "Chinese" };
 
         /// <summary>
         /// Fired before the overlay's active state changes.
@@ -40,8 +47,21 @@ namespace BoltSort.Gameplay
         {
             _onGoShop   = onGoShop;
             _onGoLevels = onGoLevels;
-            BuildOverlay(font, canvasRoot);
-            _overlay.SetActive(false);
+            // Never let a Settings build failure interrupt the host screen's UI
+            // construction (MainMenu / LevelSelect / Gameplay), and always leave the
+            // overlay hidden so it can never appear automatically.
+            try
+            {
+                BuildOverlay(font, canvasRoot);
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[SettingsPanel] Build failed; overlay disabled. {e}");
+            }
+            finally
+            {
+                if (_overlay != null) _overlay.SetActive(false);
+            }
         }
 
         /// <summary>
@@ -63,28 +83,24 @@ namespace BoltSort.Gameplay
             // Full-screen dim background
             _overlay = new GameObject("SettingsOverlay");
             _overlay.transform.SetParent(canvasRoot, false);
-
             var dimImg = _overlay.AddComponent<Image>();
             dimImg.color = new Color(0f, 0f, 0f, 0.7f);
             Stretch(_overlay.GetComponent<RectTransform>());
 
-            // Block raycasts so dim background is tappable (closes panel)
-            var btn = _overlay.AddComponent<Button>();
-            btn.onClick.AddListener(() => Toggle());
+            // Tap dim background to close
+            _overlay.AddComponent<Button>().onClick.AddListener(Toggle);
 
-            // Card
+            // Card — background_large.png (aspect 600x805)
             var card = new GameObject("Card");
             card.transform.SetParent(_overlay.transform, false);
             var cardBg = card.AddComponent<Image>();
-            var popupSpr = GameAssets.MenuPopup;
-            if (popupSpr != null) { cardBg.sprite = popupSpr; cardBg.color = Color.white; cardBg.type = Image.Type.Simple; }
+            var bgSpr = GameAssets.SettingsBackground;
+            if (bgSpr != null) { cardBg.sprite = bgSpr; cardBg.color = Color.white; cardBg.type = Image.Type.Simple; }
             else cardBg.color = new Color(0.07f, 0.07f, 0.14f, 0.98f);
             var cardRt = card.GetComponent<RectTransform>();
-            cardRt.anchorMin        = new Vector2(0.5f, 0.5f);
-            cardRt.anchorMax        = new Vector2(0.5f, 0.5f);
-            cardRt.pivot            = new Vector2(0.5f, 0.5f);
+            cardRt.anchorMin = cardRt.anchorMax = cardRt.pivot = new Vector2(0.5f, 0.5f);
             cardRt.anchoredPosition = Vector2.zero;
-            cardRt.sizeDelta        = new Vector2(520f, 820f);
+            cardRt.sizeDelta        = new Vector2(560f, 751f);
 
             // Consume taps on the card so they don't fall through to the dim closer.
             var cardBtn = card.AddComponent<Button>();
@@ -92,69 +108,60 @@ namespace BoltSort.Gameplay
             cbc.normalColor = cbc.highlightedColor = cbc.pressedColor = cbc.selectedColor = Color.white;
             cardBtn.colors = cbc;
 
-            float y = 300f;
-
-            // Title
-            AddLabel(card, "Title", "Settings", font, 50, TextAnchor.MiddleCenter, Color.white, y);
+            // Title "SETTINGS" on the blue banner (top-centre)
+            var title = AddLabel(card, "Title", "SETTINGS", font, 34, TextAnchor.MiddleCenter, Color.white, 0f);
+            var trt = title.GetComponent<RectTransform>();
+            trt.anchorMin = new Vector2(0.5f, 1f); trt.anchorMax = new Vector2(0.5f, 1f);
+            trt.pivot = new Vector2(0.5f, 1f);
+            trt.anchoredPosition = new Vector2(0f, -14f);
+            trt.sizeDelta = new Vector2(220f, 56f);
 
             // Close button — exit_button.png, top-right corner of card.
             var closeBtn = CreateButton(card, "CloseBtn", "", font, 36,
-                                        new Color(0.290f, 0.565f, 0.851f, 1f),
-                                        () => Toggle());
+                                        new Color(0.290f, 0.565f, 0.851f, 1f), Toggle);
             GameAssets.Apply(closeBtn.GetComponent<Image>(), GameAssets.BtnExit, preserveAspect: true);
             var cr = closeBtn.GetComponent<RectTransform>();
-            cr.anchorMin = new Vector2(1f, 1f); cr.anchorMax = new Vector2(1f, 1f);
-            cr.pivot     = new Vector2(1f, 1f);
-            cr.anchoredPosition = new Vector2(-12f, -12f);
-            cr.sizeDelta        = new Vector2(68f, 68f);
+            cr.anchorMin = cr.anchorMax = cr.pivot = new Vector2(1f, 1f);
+            cr.anchoredPosition = new Vector2(-10f, -10f);
+            cr.sizeDelta        = new Vector2(64f, 64f);
 
-            y -= 90f;
+            // ── Content area (vertical layout, inset to the cream region) ──
+            var content = new GameObject("Content", typeof(RectTransform));
+            content.transform.SetParent(card.transform, false);
+            var crt = content.GetComponent<RectTransform>();
+            crt.anchorMin = new Vector2(0.12f, 0.06f);
+            crt.anchorMax = new Vector2(0.88f, 0.82f);
+            crt.offsetMin = crt.offsetMax = Vector2.zero;
+            var vlg = content.AddComponent<VerticalLayoutGroup>();
+            vlg.spacing = 10f;
+            vlg.padding = new RectOffset(0, 0, 4, 4);
+            vlg.childAlignment = TextAnchor.MiddleCenter;
+            vlg.childControlWidth = true;  vlg.childForceExpandWidth = true;
+            vlg.childControlHeight = true; vlg.childForceExpandHeight = false;
 
-            // Music toggle
-            AddToggleRow(card, font, "Music", MusicKey, y, newVal =>
-            {
-                PlayerPrefs.SetInt(MusicKey, newVal ? 1 : 0);
-                PlayerPrefs.Save();
-                AudioMgr.Instance?.SetMusicEnabled(newVal);
-            });
-            y -= 78f;
+            // Music + SFX volume rows
+            BuildVolumeRow(content, GameAssets.SettingsSoundOn, GameAssets.SettingsSoundOff,
+                           MusicVolKey, step => AudioMgr.Instance?.SetMusicVolume(step));
+            BuildVolumeRow(content, GameAssets.SettingsSfxOn, GameAssets.SettingsSfxOff,
+                           SfxVolKey, step => AudioMgr.Instance?.SetSFXVolume(step));
 
-            // SFX toggle
-            AddToggleRow(card, font, "SFX", SfxKey, y, newVal =>
-            {
-                PlayerPrefs.SetInt(SfxKey, newVal ? 1 : 0);
-                PlayerPrefs.Save();
-                AudioMgr.Instance?.SetSFXEnabled(newVal);
-            });
-            y -= 84f;
+            // Language row
+            BuildLanguageRow(content, font);
 
-            // Language button — general_button.png; opens a scrollable language list.
-            AddImageButton(card, "Language", GameAssets.MenuButton, null, y, 380f, 64f,
-                           () => { if (_langPanel != null) _langPanel.SetActive(!_langPanel.activeSelf); });
-            y -= 80f;
-
-            // Go to Shop / Go to Levels — in-game navigation (header redesign). Only shown
-            // when wired (gameplay HUD); the main-menu settings popup leaves these unset.
+            // In-game navigation (gameplay HUD only)
             if (_onGoShop != null)
-            {
-                AddImageButton(card, "Go to Shop", GameAssets.MenuButton, null, y, 380f, 64f,
-                               () => _onGoShop.Invoke());
-                y -= 72f;
-            }
+                BuildWideButton(content, GameAssets.MenuButton, null, "Go to Shop", 58f, Color.white,
+                                () => _onGoShop.Invoke());
             if (_onGoLevels != null)
-            {
-                AddImageButton(card, "Go to Levels", GameAssets.MenuButton, null, y, 380f, 64f,
-                               () => _onGoLevels.Invoke());
-                y -= 80f;
-            }
+                BuildWideButton(content, GameAssets.MenuButton, null, "Go to Levels", 58f, Color.white,
+                                () => _onGoLevels.Invoke());
 
-            // No Ads button — general_button.png + no_ads icon + label; opens the popup.
-            AddImageButton(card, "No Ads", GameAssets.MenuButton, GameAssets.MenuNoAds, y, 380f, 70f,
-                           () => _noAdsPopup?.Open());
-            y -= 80f;
+            // No Ads row — no_ads icon + white_button
+            BuildNoAdsRow(content, font);
 
-            // Rate button — SET-01: open store page instead of no-op
-            AddActionButton(card, font, "Rate the Game ★", y, () =>
+            // Rate / Privacy — full-width buttons (rate_game_privacy_button.png)
+            BuildWideButton(content, GameAssets.SettingsWideButton, GameAssets.SettingsStar,
+                            "Rate the game", 58f, Color.white, () =>
             {
 #if UNITY_IOS
                 Application.OpenURL("itms-apps://itunes.apple.com/app/id0000000000");
@@ -162,16 +169,9 @@ namespace BoltSort.Gameplay
                 Application.OpenURL("https://play.google.com/store/apps/details?id=com.dvsstudio.boltsort");
 #endif
             });
-            y -= 64f;
-
-            // Privacy Policy button
-            AddActionButton(card, font, "Privacy Policy", y,
-                () => Application.OpenURL("https://dvsstudio.github.io/boltsort/privacy"));
-            y -= 56f;
-
-            // Version
-            AddLabel(card, "Version", $"v{Application.version}", font, 24,
-                     TextAnchor.MiddleCenter, new Color(0.6f, 0.6f, 0.7f, 1f), y);
+            BuildWideButton(content, GameAssets.SettingsWideButton, GameAssets.SettingsShield,
+                            "Privacy Policy", 58f, Color.white,
+                            () => Application.OpenURL("https://dvsstudio.github.io/boltsort/privacy"));
 
             // Scrollable language list (hidden until Language is tapped)
             BuildLanguageList(card, font);
@@ -183,26 +183,231 @@ namespace BoltSort.Gameplay
             _noAdsPopup.Initialize(font, canvasRoot);
         }
 
-        // Scrollable list of selectable language placeholders. Selection is persisted
-        // to PlayerPrefs for future localization but does not change strings yet.
+        // ── Volume row: [icon] [-] [8 bars] [+] ──────────────────────────────────────
+
+        private sealed class VolumeRow
+        {
+            public Image   Icon;
+            public Sprite  IconOn, IconOff;
+            public Image[] Bars;
+            public int     Step;
+
+            public void Refresh()
+            {
+                for (int i = 0; i < Bars.Length; i++)
+                    GameAssets.Apply(Bars[i], i < Step ? GameAssets.SettingsBarOn : GameAssets.SettingsBarOff);
+                GameAssets.Apply(Icon, Step > 0 ? IconOn : IconOff, preserveAspect: true);
+            }
+        }
+
+        private void BuildVolumeRow(GameObject parent, Sprite iconOn, Sprite iconOff,
+                                    string prefKey, Action<int> apply)
+        {
+            var state = new VolumeRow { IconOn = iconOn, IconOff = iconOff, Bars = new Image[BarCount] };
+            state.Step = Mathf.Clamp(PlayerPrefs.GetInt(prefKey, MaxStep), 0, MaxStep);
+
+            var row = new GameObject("VolumeRow", typeof(RectTransform));
+            row.transform.SetParent(parent.transform, false);
+            var le = row.AddComponent<LayoutElement>(); le.preferredHeight = 66f;
+            var hlg = row.AddComponent<HorizontalLayoutGroup>();
+            hlg.spacing = 8f; hlg.childAlignment = TextAnchor.MiddleCenter;
+            hlg.childControlWidth = true; hlg.childForceExpandWidth = false;
+            hlg.childControlHeight = true; hlg.childForceExpandHeight = true;
+
+            // Icon
+            var iconGo = new GameObject("Icon");
+            iconGo.transform.SetParent(row.transform, false);
+            state.Icon = iconGo.AddComponent<Image>();
+            state.Icon.raycastTarget = false;
+            var iconLe = iconGo.AddComponent<LayoutElement>();
+            iconLe.preferredWidth = 56f; iconLe.flexibleWidth = 0f;
+
+            // Minus button
+            CreateRowButton(row, "Minus", GameAssets.SettingsMinus, 52f, () =>
+            {
+                if (state.Step <= 0) return;
+                state.Step--; PersistAndApply(prefKey, state.Step, apply); state.Refresh();
+            });
+
+            // Bars container (takes remaining width)
+            var barsGo = new GameObject("Bars", typeof(RectTransform));
+            barsGo.transform.SetParent(row.transform, false);
+            var barsLe = barsGo.AddComponent<LayoutElement>(); barsLe.flexibleWidth = 1f;
+            var barsRt = barsGo.GetComponent<RectTransform>();
+            for (int i = 0; i < BarCount; i++)
+            {
+                var bar = new GameObject($"Bar_{i}");
+                bar.transform.SetParent(barsRt, false);
+                var img = bar.AddComponent<Image>();
+                img.raycastTarget = false; img.type = Image.Type.Simple; img.preserveAspect = false;
+                state.Bars[i] = img;
+                float heightFrac = 0.4f + 0.6f * (i / (float)(BarCount - 1));
+                float xc = (i + 0.5f) / BarCount;
+                var brt = bar.GetComponent<RectTransform>();
+                brt.anchorMin = new Vector2(xc, 0f);
+                brt.anchorMax = new Vector2(xc, heightFrac);
+                brt.pivot = new Vector2(0.5f, 0f);
+                brt.sizeDelta = new Vector2(14f, 0f);
+                brt.anchoredPosition = Vector2.zero;
+            }
+
+            // Plus button
+            CreateRowButton(row, "Plus", GameAssets.SettingsPlus, 52f, () =>
+            {
+                if (state.Step >= MaxStep) return;
+                state.Step++; PersistAndApply(prefKey, state.Step, apply); state.Refresh();
+            });
+
+            state.Refresh();
+        }
+
+        private static void PersistAndApply(string prefKey, int step, Action<int> apply)
+        {
+            PlayerPrefs.SetInt(prefKey, step);
+            PlayerPrefs.Save();
+            AudioMgr.Instance?.PlaySFX("button_tap");
+            apply?.Invoke(step);
+        }
+
+        private static void CreateRowButton(GameObject row, string name, Sprite sprite,
+                                            float width, Action onClick)
+        {
+            var go = new GameObject(name);
+            go.transform.SetParent(row.transform, false);
+            var img = go.AddComponent<Image>();
+            if (sprite != null) GameAssets.Apply(img, sprite, preserveAspect: true);
+            else img.color = new Color(0.20f, 0.40f, 0.65f, 1f);
+            go.AddComponent<Button>().onClick.AddListener(() => onClick?.Invoke());
+            var le = go.AddComponent<LayoutElement>();
+            le.preferredWidth = width; le.flexibleWidth = 0f;
+        }
+
+        // ── Language row ─────────────────────────────────────────────────────────────
+
+        private void BuildLanguageRow(GameObject parent, Font font)
+        {
+            var row = new GameObject("LanguageRow", typeof(RectTransform));
+            row.transform.SetParent(parent.transform, false);
+            var le = row.AddComponent<LayoutElement>(); le.preferredHeight = 66f;
+            var hlg = row.AddComponent<HorizontalLayoutGroup>();
+            hlg.spacing = 10f; hlg.childAlignment = TextAnchor.MiddleCenter;
+            hlg.childControlWidth = true; hlg.childForceExpandWidth = false;
+            hlg.childControlHeight = true; hlg.childForceExpandHeight = true;
+
+            var lbl = AddLabel(row, "Label", "Language", font, 30, TextAnchor.MiddleLeft, new Color(0.30f, 0.25f, 0.10f), 0f);
+            lbl.raycastTarget = false;
+            var lblLe = lbl.gameObject.AddComponent<LayoutElement>(); lblLe.flexibleWidth = 1f;
+
+            int idx = Mathf.Clamp(PlayerPrefs.GetInt(LangIdxKey, 0), 0, Languages.Length - 1);
+            var btnGo = new GameObject("LanguageButton");
+            btnGo.transform.SetParent(row.transform, false);
+            var btnImg = btnGo.AddComponent<Image>();
+            if (GameAssets.SettingsLanguageBtn != null) GameAssets.Apply(btnImg, GameAssets.SettingsLanguageBtn, preserveAspect: true);
+            else btnImg.color = new Color(0.20f, 0.40f, 0.65f, 1f);
+            btnGo.AddComponent<Button>().onClick.AddListener(() =>
+            {
+                AudioMgr.Instance?.PlaySFX("button_tap");
+                if (_langPanel != null) _langPanel.SetActive(!_langPanel.activeSelf);
+            });
+            var btnLe = btnGo.AddComponent<LayoutElement>();
+            btnLe.preferredWidth = 180f; btnLe.preferredHeight = 60f; btnLe.flexibleWidth = 0f;
+
+            _langButtonLabel = AddLabel(btnGo, "Label", Languages[idx].ToUpper(), font, 26,
+                                        TextAnchor.MiddleCenter, Color.white, 0f);
+            _langButtonLabel.raycastTarget = false;
+            var llr = _langButtonLabel.GetComponent<RectTransform>();
+            llr.anchorMin = Vector2.zero; llr.anchorMax = Vector2.one; llr.offsetMin = llr.offsetMax = Vector2.zero;
+        }
+
+        // ── No Ads row ───────────────────────────────────────────────────────────────
+
+        private void BuildNoAdsRow(GameObject parent, Font font)
+        {
+            var row = new GameObject("NoAdsRow", typeof(RectTransform));
+            row.transform.SetParent(parent.transform, false);
+            var le = row.AddComponent<LayoutElement>(); le.preferredHeight = 72f;
+            var hlg = row.AddComponent<HorizontalLayoutGroup>();
+            hlg.spacing = 12f; hlg.childAlignment = TextAnchor.MiddleCenter;
+            hlg.childControlWidth = true; hlg.childForceExpandWidth = false;
+            hlg.childControlHeight = true; hlg.childForceExpandHeight = true;
+
+            var iconGo = new GameObject("Icon");
+            iconGo.transform.SetParent(row.transform, false);
+            var icon = iconGo.AddComponent<Image>();
+            icon.raycastTarget = false;
+            GameAssets.Apply(icon, GameAssets.MenuNoAds, preserveAspect: true);
+            var iconLe = iconGo.AddComponent<LayoutElement>(); iconLe.preferredWidth = 72f; iconLe.flexibleWidth = 0f;
+
+            var btnGo = new GameObject("NoAdsButton");
+            btnGo.transform.SetParent(row.transform, false);
+            var btnImg = btnGo.AddComponent<Image>();
+            if (GameAssets.WhiteButton != null) { btnImg.sprite = GameAssets.WhiteButton; btnImg.color = Color.white; }
+            else btnImg.color = Color.white;
+            btnGo.AddComponent<Button>().onClick.AddListener(() =>
+            {
+                AudioMgr.Instance?.PlaySFX("button_tap");
+                _noAdsPopup?.Open();
+            });
+            var btnLe = btnGo.AddComponent<LayoutElement>(); btnLe.flexibleWidth = 1f;
+
+            var t = AddLabel(btnGo, "Label", "No Ads", font, 30, TextAnchor.MiddleCenter, new Color(0.20f, 0.18f, 0.10f), 0f);
+            t.raycastTarget = false;
+            var lr = t.GetComponent<RectTransform>();
+            lr.anchorMin = Vector2.zero; lr.anchorMax = Vector2.one; lr.offsetMin = lr.offsetMax = Vector2.zero;
+        }
+
+        // ── Generic full-width button (bg sprite + optional leading icon + centred text) ──
+
+        private void BuildWideButton(GameObject parent, Sprite bg, Sprite icon, string label,
+                                     float height, Color textColor, Action onClick)
+        {
+            var go = new GameObject($"{label}Button");
+            go.transform.SetParent(parent.transform, false);
+            var img = go.AddComponent<Image>();
+            if (bg != null) { img.sprite = bg; img.color = Color.white; img.type = Image.Type.Simple; }
+            else img.color = new Color(0.20f, 0.40f, 0.65f, 1f);
+            var b = go.AddComponent<Button>();
+            b.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
+            b.onClick.AddListener(() => onClick?.Invoke());
+            var le = go.AddComponent<LayoutElement>(); le.preferredHeight = height;
+
+            if (icon != null)
+            {
+                var icGo = new GameObject("Icon");
+                icGo.transform.SetParent(go.transform, false);
+                var icImg = icGo.AddComponent<Image>();
+                GameAssets.Apply(icImg, icon, preserveAspect: true);
+                icImg.raycastTarget = false;
+                var icrt = icGo.GetComponent<RectTransform>();
+                icrt.anchorMin = new Vector2(0f, 0.5f); icrt.anchorMax = new Vector2(0f, 0.5f);
+                icrt.pivot = new Vector2(0f, 0.5f);
+                icrt.anchoredPosition = new Vector2(28f, 0f);
+                icrt.sizeDelta = new Vector2(height * 0.6f, height * 0.6f);
+            }
+
+            var t = AddLabel(go, "Label", label, _font, 30, TextAnchor.MiddleCenter, textColor, 0f);
+            t.raycastTarget = false;
+            var lr = t.GetComponent<RectTransform>();
+            lr.anchorMin = Vector2.zero; lr.anchorMax = Vector2.one; lr.offsetMin = lr.offsetMax = Vector2.zero;
+        }
+
+        // ── Scrollable language list (hidden until Language is tapped) ────────────────
+
         private void BuildLanguageList(GameObject card, Font font)
         {
             _langPanel = new GameObject("LanguagePanel");
             _langPanel.transform.SetParent(card.transform, false);
             _langPanel.AddComponent<Image>().color = new Color(0.04f, 0.04f, 0.09f, 0.99f);
-            // Tapping the panel background (outside the rows) closes it.
             _langPanel.AddComponent<Button>().onClick.AddListener(() => _langPanel.SetActive(false));
             var pr = _langPanel.GetComponent<RectTransform>();
-            pr.anchorMin = new Vector2(0.5f, 0.5f); pr.anchorMax = new Vector2(0.5f, 0.5f);
-            pr.pivot = new Vector2(0.5f, 0.5f);
-            pr.anchoredPosition = new Vector2(0f, 0f);
-            pr.sizeDelta = new Vector2(420f, 420f);
+            pr.anchorMin = pr.anchorMax = pr.pivot = new Vector2(0.5f, 0.5f);
+            pr.anchoredPosition = Vector2.zero;
+            pr.sizeDelta = new Vector2(420f, 460f);
 
             var hdr = AddLabel(_langPanel, "LangTitle", "Language", font, 36,
-                               TextAnchor.MiddleCenter, Color.white, 175f);
+                               TextAnchor.MiddleCenter, Color.white, 195f);
             hdr.raycastTarget = false;
 
-            // ScrollRect + viewport + content
             var scrollGO = new GameObject("Scroll");
             scrollGO.transform.SetParent(_langPanel.transform, false);
             var scroll = scrollGO.AddComponent<ScrollRect>();
@@ -231,7 +436,7 @@ namespace BoltSort.Gameplay
             var fit = content.AddComponent<ContentSizeFitter>();
             fit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            int selected = PlayerPrefs.GetInt("bs.language", 0);
+            int selected = PlayerPrefs.GetInt(LangIdxKey, 0);
             for (int i = 0; i < Languages.Length; i++)
             {
                 int idx = i;
@@ -241,11 +446,13 @@ namespace BoltSort.Gameplay
                 rowImg.color = i == selected ? new Color(0.20f, 0.55f, 0.30f, 1f)
                                              : new Color(0.15f, 0.15f, 0.28f, 1f);
                 var le = rowGo.AddComponent<LayoutElement>(); le.minHeight = 56f;
-                var rowBtn = rowGo.AddComponent<Button>();
-                rowBtn.onClick.AddListener(() =>
+                rowGo.AddComponent<Button>().onClick.AddListener(() =>
                 {
                     AudioMgr.Instance?.PlaySFX("button_tap");
-                    PlayerPrefs.SetInt("bs.language", idx); PlayerPrefs.Save();
+                    PlayerPrefs.SetInt(LangIdxKey, idx);
+                    PlayerPrefs.SetString(LangNameKey, Languages[idx]);
+                    PlayerPrefs.Save();
+                    if (_langButtonLabel != null) _langButtonLabel.text = Languages[idx].ToUpper();
                     _langPanel.SetActive(false);
                 });
                 var lbl = AddLabel(rowGo, "Label", Languages[i], font, 30,
@@ -259,44 +466,7 @@ namespace BoltSort.Gameplay
             _langPanel.SetActive(false);
         }
 
-        // general_button.png-backed button with optional leading icon + text label.
-        private void AddImageButton(GameObject parent, string label, Sprite bg, Sprite icon,
-                                    float y, float w, float h, Action onClick)
-        {
-            var go = new GameObject($"{label}Button");
-            go.transform.SetParent(parent.transform, false);
-            var img = go.AddComponent<Image>();
-            if (bg != null) GameAssets.Apply(img, bg, preserveAspect: true);
-            else img.color = new Color(0.20f, 0.40f, 0.65f, 1f);
-            var b = go.AddComponent<Button>();
-            b.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
-            b.onClick.AddListener(() => onClick?.Invoke());
-            var rt = go.GetComponent<RectTransform>();
-            rt.anchorMin = new Vector2(0.5f, 0.5f); rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = new Vector2(0f, y);
-            rt.sizeDelta = new Vector2(w, h);
-
-            if (icon != null)
-            {
-                var icGo = new GameObject("Icon");
-                icGo.transform.SetParent(go.transform, false);
-                var icImg = icGo.AddComponent<Image>();
-                GameAssets.Apply(icImg, icon, preserveAspect: true);
-                icImg.raycastTarget = false;
-                var icrt = icGo.GetComponent<RectTransform>();
-                icrt.anchorMin = new Vector2(0f, 0.5f); icrt.anchorMax = new Vector2(0f, 0.5f);
-                icrt.pivot = new Vector2(0f, 0.5f);
-                icrt.anchoredPosition = new Vector2(18f, 0f);
-                icrt.sizeDelta = new Vector2(h * 0.7f, h * 0.7f);
-            }
-
-            var t = AddLabel(go, "Label", label, _font, 32, TextAnchor.MiddleCenter, Color.white, 0f);
-            t.raycastTarget = false;
-            var lr = t.GetComponent<RectTransform>();
-            lr.anchorMin = Vector2.zero; lr.anchorMax = Vector2.one;
-            lr.anchoredPosition = Vector2.zero; lr.sizeDelta = Vector2.zero;
-        }
+        // ── Shared helpers ───────────────────────────────────────────────────────────
 
         private static Text AddLabel(GameObject parent, string name, string text, Font font,
                                      int size, TextAnchor anchor, Color color, float y)
@@ -307,73 +477,14 @@ namespace BoltSort.Gameplay
             t.text = text; t.font = font; t.fontSize = size;
             t.fontStyle = FontStyle.Bold; t.alignment = anchor;
             t.color = color; t.supportRichText = false;
+            t.horizontalOverflow = HorizontalWrapMode.Overflow;
+            t.verticalOverflow = VerticalWrapMode.Overflow;
             var rt = go.GetComponent<RectTransform>();
             rt.anchorMin = new Vector2(0f, 0.5f); rt.anchorMax = new Vector2(1f, 0.5f);
             rt.pivot     = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = new Vector2(0f, y);
             rt.sizeDelta        = new Vector2(0f, 50f);
             return t;
-        }
-
-        private static void AddToggleRow(GameObject parent, Font font, string label,
-                                         string prefKey, float y, Action<bool> onChange)
-        {
-            bool current = PlayerPrefs.GetInt(prefKey, 1) == 1;
-
-            // Label
-            var lgo = new GameObject($"{label}Label");
-            lgo.transform.SetParent(parent.transform, false);
-            var lt = lgo.AddComponent<Text>();
-            lt.text = label; lt.font = font; lt.fontSize = 36;
-            lt.fontStyle = FontStyle.Bold; lt.alignment = TextAnchor.MiddleLeft;
-            lt.color = Color.white; lt.supportRichText = false;
-            var lr = lgo.GetComponent<RectTransform>();
-            lr.anchorMin = new Vector2(0f, 0.5f); lr.anchorMax = new Vector2(0.6f, 0.5f);
-            lr.pivot     = new Vector2(0f, 0.5f);
-            lr.anchoredPosition = new Vector2(24f, y);
-            lr.sizeDelta        = new Vector2(0f, 50f);
-
-            // Toggle button (ON/OFF)
-            var tgo = new GameObject($"{label}Toggle");
-            tgo.transform.SetParent(parent.transform, false);
-            var tImg = tgo.AddComponent<Image>();
-            tImg.color = current ? new Color(0.20f, 0.65f, 0.30f) : new Color(0.50f, 0.20f, 0.20f);
-            var tr = tgo.GetComponent<RectTransform>();
-            tr.anchorMin = new Vector2(1f, 0.5f); tr.anchorMax = new Vector2(1f, 0.5f);
-            tr.pivot     = new Vector2(1f, 0.5f);
-            tr.anchoredPosition = new Vector2(-24f, y);
-            tr.sizeDelta        = new Vector2(110f, 50f);
-
-            var tLabel = new GameObject("Label");
-            tLabel.transform.SetParent(tgo.transform, false);
-            var tlt = tLabel.AddComponent<Text>();
-            tlt.text = current ? "ON" : "OFF"; tlt.font = font; tlt.fontSize = 30;
-            tlt.fontStyle = FontStyle.Bold; tlt.alignment = TextAnchor.MiddleCenter;
-            tlt.color = Color.white; tlt.supportRichText = false;
-            var tlr = tLabel.GetComponent<RectTransform>();
-            tlr.anchorMin = Vector2.zero; tlr.anchorMax = Vector2.one;
-            tlr.offsetMin = tlr.offsetMax = Vector2.zero;
-
-            var tBtn = tgo.AddComponent<Button>();
-            tBtn.onClick.AddListener(() =>
-            {
-                bool next = PlayerPrefs.GetInt(prefKey, 1) != 1;
-                onChange(next);
-                tImg.color = next ? new Color(0.20f, 0.65f, 0.30f) : new Color(0.50f, 0.20f, 0.20f);
-                tlt.text   = next ? "ON" : "OFF";
-            });
-        }
-
-        private static void AddActionButton(GameObject parent, Font font, string label,
-                                            float y, Action onClick)
-        {
-            var btn = CreateButton(parent, label, label, font, 30,
-                                   new Color(0.15f, 0.15f, 0.28f, 1f), onClick);
-            var r = btn.GetComponent<RectTransform>();
-            r.anchorMin = new Vector2(0.5f, 0.5f); r.anchorMax = new Vector2(0.5f, 0.5f);
-            r.pivot     = new Vector2(0.5f, 0.5f);
-            r.anchoredPosition = new Vector2(0f, y);
-            r.sizeDelta        = new Vector2(360f, 54f);
         }
 
         private static GameObject CreateButton(GameObject parent, string name, string label,

@@ -1,0 +1,7 @@
+PULL-ONLY stack-pull validation, all 200 levels  (997s)
+unsolvable: NONE
+capped(unverified): NONE
+pull_optimal < par : 200/200
+pull_optimal <=par/2: 65/200
+mean(pull/par)=0.58  min=0.36  max=0.86
+levels with pull_optimal >= par (NOT trivialised): NONE

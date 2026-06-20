@@ -440,5 +440,61 @@ namespace BoltSort.Tests.Unit.SortMechanic
                 "TR-SORT-003: temp slots must be excluded from win check; won color stacks must still trigger win.");
             Assert.AreEqual(SortMechState.Win, _sm.CurrentStateForTesting);
         }
+
+        // ── Fix 4: runtime EXTRA / helper tubes are excluded from completion ───────
+        // The level's own tubes keep their win semantics (par is authored against them);
+        // a runtime helper tube (a temp slot appended after the level's own temp slots,
+        // captured at init as _originalTempSlotCount) must be EMPTY to win, so balls parked
+        // in a scratch tube can never trigger a false win.
+
+        [Test]
+        public void AnimationComplete_BallParkedInExtraTube_NotWon()
+        {
+            // Level ships 1 temp slot; a runtime helper tube is then added and left holding a
+            // ball. Even with both color stacks full+mono, the helper must be cleared to win.
+            _gsm.SetColorStacks(new[] { 1, 1, 1 }, new[] { 2, 2, 2 }); // ColorCount=2, both full+mono
+            _gsm.StackDepth    = 3;
+            _gsm.TempSlotDepth = 3;
+            _gsm.SetTempSlots(new int[0]);   // 1 shipped temp slot (empty) → TempSlotCount=1
+            _sm.InjectForTesting(_gsm);
+            _sm.InitializeBoard();           // captures _originalTempSlotCount = 1
+            _spy = new EventSpy();
+            _spy.Subscribe(_sm);
+
+            // Add-tube mechanic appends a helper temp slot (index 1) that still holds a ball.
+            _gsm.SetTempSlots(new int[0], new[] { 1 }); // TempSlotCount=2; helper[1] = {1}
+            _sm.ForceEnterMoveExecutingForTesting(0, 1, 1L);
+
+            _sm.OnAnimationComplete(1L);
+
+            Assert.AreEqual(0, _spy.PuzzleSolvedCount,
+                "Fix 4: a ball parked in a runtime extra tube must NOT trigger a win.");
+            Assert.AreEqual(SortMechState.Idle, _sm.CurrentStateForTesting,
+                "Fix 4: an occupied extra tube must keep the level unsolved.");
+        }
+
+        [Test]
+        public void AnimationComplete_ExtraTubeEmpty_StillWins()
+        {
+            // Same level + helper tube, but the helper is empty: the win fires normally,
+            // proving the helper gate does not block legitimate completions.
+            _gsm.SetColorStacks(new[] { 1, 1, 1 }, new[] { 2, 2, 2 });
+            _gsm.StackDepth    = 3;
+            _gsm.TempSlotDepth = 3;
+            _gsm.SetTempSlots(new int[0]);   // TempSlotCount=1
+            _sm.InjectForTesting(_gsm);
+            _sm.InitializeBoard();           // _originalTempSlotCount = 1
+            _spy = new EventSpy();
+            _spy.Subscribe(_sm);
+
+            _gsm.SetTempSlots(new int[0], new int[0]); // helper added but EMPTY → TempSlotCount=2
+            _sm.ForceEnterMoveExecutingForTesting(0, 1, 1L);
+
+            _sm.OnAnimationComplete(1L);
+
+            Assert.AreEqual(1, _spy.PuzzleSolvedCount,
+                "Fix 4: full primaries + an EMPTY extra tube must still win.");
+            Assert.AreEqual(SortMechState.Win, _sm.CurrentStateForTesting);
+        }
     }
 }

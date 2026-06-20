@@ -32,9 +32,11 @@ namespace BoltSort.Visual
 
         private void BuildOverlay()
         {
-            var canvasGO = new GameObject("TransitionOverlayCanvas");
+            // Child of this (already-DDOL root) manager, so it persists across scenes
+            // automatically. DontDestroyOnLoad must only be called on the root manager
+            // GameObject (see Awake) — calling it on this child warns and is a no-op.
+            var canvasGO = new GameObject("TransitionOverlayCanvas", typeof(RectTransform));
             canvasGO.transform.SetParent(transform, false);
-            DontDestroyOnLoad(canvasGO);
 
             var canvas = canvasGO.AddComponent<Canvas>();
             canvas.renderMode   = RenderMode.ScreenSpaceOverlay;

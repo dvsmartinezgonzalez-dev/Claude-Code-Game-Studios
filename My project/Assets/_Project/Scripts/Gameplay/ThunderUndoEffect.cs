@@ -31,18 +31,21 @@ namespace BoltSort.Gameplay
     /// </summary>
     public sealed class ThunderUndoEffect : MonoBehaviour
     {
-        // ── Tuning (kept inside the 0.4–0.8s responsiveness budget) ───────────────
-        private const float OverlayFadeInSec  = 0.14f;  // STEP 2: dark overlay fade-in
-        private const float OverlayHoldAlpha  = 0.45f;  // 45% dark over the scene
-        private const float FrameSec          = 0.033f; // per thunder frame (~30fps, one frame at a time)
-        private const float ImpactFraction    = 0.45f;  // brightest/strike frame ≈ 45% through
-        private const float OverlayFadeOutSec = 0.10f;  // STEP 7: fade back to normal
-        private const float FlashSec          = 0.07f;  // STEP 5: brief white flash
+        // ── Tuning ────────────────────────────────────────────────────────────────
+        private const float OverlayFadeInSec  = 0.10f;       // dark overlay fade-in
+        private const float OverlayHoldAlpha  = 0.45f;       // 45% dark over the scene
+        private const float FrameSec          = 1f / 24f;    // 24 fps, one PNG frame at a time
+        private const float ImpactFraction    = 0.69f;       // strike frame ≈ frame 12 of 16 (SFX + flash)
+        private const float FlashSec          = 0.07f;       // brief white flash at the strike
         private const float FlashPeakAlpha    = 0.55f;
-        private const int   SortingOrder      = 150;    // above HUD(100), below popups(200)
+        private const int   SortingOrder      = 150;         // above HUD(100), below popups(200)
 
-        private const string ThunderSheetPath = "Sprites/Effects/thunder_sheet";
+        /// <summary>Folder under Resources holding the 16 individual full-screen thunder PNGs
+        /// (named 1..16). Imported as single sprites, NOT a sprite sheet.</summary>
+        private const string ThunderFramesDir = "Sprites/Effects/Thunder";
         private const string ThunderSfxName   = "thunder";
+
+        private static readonly int[] FrameOrder = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16 };
 
         private Canvas   _canvas;
         private Image    _overlay;   // dark dim
@@ -77,14 +80,20 @@ namespace BoltSort.Gameplay
 
         private void Build()
         {
-            _frames = Resources.LoadAll<Sprite>(ThunderSheetPath);
-            if (_frames != null && _frames.Length > 1)
-                Array.Sort(_frames, (a, b) => string.Compare(a.name, b.name, StringComparison.Ordinal));
+            // Load the 16 individual full-screen PNGs in sequential order (1..16).
+            // Each is its own single sprite under Resources.
+            var frames = new System.Collections.Generic.List<Sprite>(FrameOrder.Length);
+            foreach (int n in FrameOrder)
+            {
+                var spr = Resources.Load<Sprite>($"{ThunderFramesDir}/{n}");
+                if (spr != null) frames.Add(spr);
+            }
+            _frames = frames.ToArray();
 #if UNITY_EDITOR
-            if (_frames == null || _frames.Length < 2)
-                Debug.LogWarning($"[ThunderUndoEffect] Resources.LoadAll<Sprite>(\"{ThunderSheetPath}\") returned " +
-                                 $"{( _frames?.Length ?? 0)} frame(s). Run BoltSort > Import Thunder Sheet to slice it. " +
-                                 "Until then, Undo falls back to no-effect (still works).");
+            if (_frames == null || _frames.Length < FrameOrder.Length)
+                Debug.LogWarning($"[ThunderUndoEffect] Loaded {_frames?.Length ?? 0}/{FrameOrder.Length} thunder " +
+                                 $"frame(s) from Resources/{ThunderFramesDir}/. Until all are present, Undo falls " +
+                                 "back to no-effect (still works).");
 #endif
 
             // Own overlay canvas, above the HUD and below the settings popup.
@@ -154,10 +163,11 @@ namespace BoltSort.Gameplay
                 SetAlpha(_overlay, 0f);
                 SetAlpha(_flash, 0f);
 
-                // STEP 2: dim the scene.
+                // Dim the scene behind the (transparent-background) frames.
                 yield return FadeOverlay(0f, OverlayHoldAlpha, OverlayFadeInSec);
 
-                // STEP 3/4/6: play frames; at the impact frame fire sound + flash + the real undo.
+                // Play every frame at 24 fps. The thunder SFX + flash fire on the strike
+                // frame (unchanged); the real undo runs AFTER the last frame.
                 int impactIdx = Mathf.Clamp(Mathf.RoundToInt(_frames.Length * ImpactFraction),
                                             0, _frames.Length - 1);
                 for (int i = 0; i < _frames.Length; i++)
@@ -165,24 +175,22 @@ namespace BoltSort.Gameplay
                     _thunder.sprite = _frames[i];
                     if (i == impactIdx)
                     {
-                        PlayThunderSfx();              // STEP 4 (failsafe-wrapped)
-                        StartCoroutine(FlashRoutine()); // STEP 5
-                        FireImpactOnce();               // STEP 6: existing undo at impact
+                        PlayThunderSfx();
+                        StartCoroutine(FlashRoutine());
                     }
                     yield return new WaitForSecondsRealtime(FrameSec);
                 }
 
-                FireImpactOnce(); // failsafe: guarantee the undo fired even if impactIdx was skipped
-
-                // STEP 7: restore the scene.
-                yield return FadeOverlay(OverlayHoldAlpha, 0f, OverlayFadeOutSec);
+                // After the last frame: hide the image, THEN execute the undo.
+                SetVisible(false);
+                FireImpactOnce();
             }
             finally
             {
-                FireImpactOnce(); // last-resort guarantee (e.g. coroutine interrupted before impact)
+                FireImpactOnce(); // last-resort guarantee (e.g. coroutine interrupted before the end)
                 SetVisible(false);
                 _playing = false;
-                SafeInvoke(onComplete); // STEP 8: re-enable
+                SafeInvoke(onComplete);
             }
         }
 

@@ -1177,6 +1177,15 @@ namespace BoltSort.GameStateManager
         }
 
         /// <summary>
+        /// Seeds per-column initial freeze turns for unit testing. In production
+        /// <see cref="InitMechanicState"/> sets <c>_freezeInit</c> from the level record's
+        /// frozen_tubes; this seam injects it directly for synchronous tests.
+        /// Remaining freeze stays a pure function of <see cref="MoveCount"/>
+        /// (<c>freezeInit − moveCount</c>), so undo restores it for free. Call only from tests.
+        /// </summary>
+        internal void SeedFreezeForTesting(int[] freezeInit) => _freezeInit = freezeInit;
+
+        /// <summary>
         /// Sets the current level ID and LDS reference for unit testing.
         /// In production, <see cref="LoadLevel"/> sets these; inject here for synchronous tests.
         /// Call only from test fixtures.

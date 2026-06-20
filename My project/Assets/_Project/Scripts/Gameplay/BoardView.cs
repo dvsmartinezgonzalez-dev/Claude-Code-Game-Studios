@@ -469,8 +469,10 @@ namespace BoltSort.Gameplay
             _hideDstCol  = -1;
             _hideDstSlot = -1;
 
-            // Play tube-completed SFX if the destination tube is now full and uniform-color
-            if (IsTubeComplete(dst))
+            // Play tube-completed SFX for the level's own tubes (color stacks + shipped temp
+            // slots). Runtime extra/helper tubes (dst >= colorCount + originalTempSlotCount)
+            // give zero completion feedback — no sound — per Fix 4 (add-tube scope).
+            if (dst < _colorCount + _originalTempSlotCount && IsTubeComplete(dst))
                 AudioMgr.Instance?.PlaySFX("tube_completed");
 
             _sortMechanic.OnAnimationComplete(seqId);

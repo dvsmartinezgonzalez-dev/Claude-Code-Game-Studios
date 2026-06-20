@@ -73,6 +73,13 @@ namespace BoltSort.SortMechanic
         /// </summary>
         private bool _paused;
 
+        /// <summary>
+        /// Temp-slot count the level shipped with, captured at board init (before any runtime
+        /// extra tubes exist). Temp slots at index ≥ this are runtime helper tubes, which Fix 4
+        /// excludes from the win condition (they must be empty to win).
+        /// </summary>
+        private int _originalTempSlotCount;
+
         // ── Held-bolt State ───────────────────────────────────────────────────────
 
         /// <summary>Color ID of the bolt currently held. Valid only in BoltSelected.</summary>
@@ -306,6 +313,10 @@ namespace BoltSort.SortMechanic
                 return;
             }
 
+            // Capture the level's own temp-slot count now — at init no runtime extra tubes
+            // exist yet, so the current count is the original (Fix 4 helper-tube boundary).
+            _originalTempSlotCount = _gsm.TempSlotCount;
+
             if (!AssertStackCountMatchesColorCount()) return;
             if (!AssertTempSlotDepthValid())          return;
             if (!AssertNoPhantomColorIds())           return;
@@ -494,10 +505,13 @@ namespace BoltSort.SortMechanic
 
         /// <summary>
         /// Evaluates the win condition against the current board state from GSM.
-        /// All color stacks must be full (count == stackDepth) and monochromatic (all bolts same color).
-        /// Win rule: every column is either EMPTY or COMPLETELY FULL with bolts of ONE color.
-        /// Temp slots are included — a solved board may have bolts sorted into any column.
-        /// O((colorCount + tempSlotCount) × maxDepth) ≤ 96 iterations; zero allocation.
+        /// Base rule: every column is EMPTY or full-to-capacity and a single matching color
+        /// (the level's color stacks and its own shipped temp slots — par is authored against this).
+        /// <para>Fix 4: RUNTIME EXTRA / helper tubes — the temp slots appended at runtime by the
+        /// add-tube mechanic (temp-slot index ≥ <see cref="_originalTempSlotCount"/>) — are excluded
+        /// from completion: they must be EMPTY to win. Balls parked in a scratch tube can therefore
+        /// never trigger a false win, while the level's own tubes keep their original semantics.</para>
+        /// O((colorCount + tempSlotCount) × maxDepth); zero allocation.
         /// </summary>
         private bool IsWon()
         {
@@ -508,6 +522,14 @@ namespace BoltSort.SortMechanic
 
             if (stacks == null || stacks.Length < colorCount || stackDepth <= 0)
                 return false;
+
+            // Fix 4: runtime extra/helper tubes (appended after the level's own temp slots)
+            // must be EMPTY — they never count as completed tubes.
+            IReadOnlyList<int>[] tempSlots = _gsm.TempSlotContents;
+            if (tempSlots != null)
+                for (int t = _originalTempSlotCount; t < tempSlots.Length; t++)
+                    if (tempSlots[t] != null && tempSlots[t].Count > 0)
+                        return false;
 
             int totalCols = colorCount + tempSlotCount;
             for (int i = 0; i < totalCols && i < stacks.Length; i++)

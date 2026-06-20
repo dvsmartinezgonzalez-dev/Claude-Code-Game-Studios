@@ -184,13 +184,15 @@ namespace BoltSort.Gameplay
 
             BuildNavBar(safeAreaGO);
 
-            // Settings panel
+            // Build the level grid BEFORE the Settings panel so the screen's own UI is
+            // fully constructed first and never depends on Settings initialization.
+            BuildPage(_currentPage);
+
+            // Settings panel (built last; starts hidden)
             var spHost = new GameObject("SettingsPanelHost");
             spHost.transform.SetParent(canvasGO.transform, false);
             _settingsPanel = spHost.AddComponent<SettingsPanel>();
             _settingsPanel.Initialize(_font, canvasGO.transform);
-
-            BuildPage(_currentPage);
         }
 
         // ── Bottom navigation bar: ‹‹ Prev | Page X of Y | Next ›› + Go-to ────────

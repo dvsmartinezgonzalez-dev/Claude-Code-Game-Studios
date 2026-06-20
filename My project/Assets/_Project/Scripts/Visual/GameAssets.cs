@@ -47,6 +47,22 @@ namespace BoltSort.Visual
         public static Sprite TitleSpark     => LoadRes("Sprites/Menu/spark");
         public static Sprite MenuPopup      => LoadRes("Sprites/Menu/popup");
 
+        // ── Settings popup art (assets_admin/Settings → Resources/Sprites/Settings/) ──
+        public static Sprite SettingsBackground => LoadRes("Sprites/Settings/background_large");
+        public static Sprite SettingsSoundOn    => LoadRes("Sprites/Settings/sound");
+        public static Sprite SettingsSoundOff   => LoadRes("Sprites/Settings/no_sound");
+        public static Sprite SettingsSfxOn      => LoadRes("Sprites/Settings/volume");
+        public static Sprite SettingsSfxOff     => LoadRes("Sprites/Settings/no_volume");
+        public static Sprite SettingsMinus      => LoadRes("Sprites/Settings/volume_minus");
+        public static Sprite SettingsPlus       => LoadRes("Sprites/Settings/volume_plus");
+        public static Sprite SettingsBarOn      => LoadRes("Sprites/Settings/sound_bar_on");
+        public static Sprite SettingsBarOff     => LoadRes("Sprites/Settings/sound_bar_off");
+        public static Sprite SettingsLanguageBtn=> LoadRes("Sprites/Settings/language_button");
+        public static Sprite SettingsStar       => LoadRes("Sprites/Settings/star");
+        public static Sprite SettingsShield     => LoadRes("Sprites/Settings/shield");
+        public static Sprite SettingsWideButton => LoadRes("Sprites/Settings/rate_game_privacy_button");
+        public static Sprite WhiteButton        => LoadRes("Sprites/Buttons/white_button");
+
         /// <summary>Decorative shop diamonds (1-5). Returns null if missing.</summary>
         public static Sprite MenuDiamond(int index) => LoadRes($"Sprites/Menu/diamond_{index}");
 

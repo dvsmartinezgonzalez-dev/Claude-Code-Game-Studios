@@ -13,13 +13,20 @@ namespace BoltSort.Audio
         private const string MusicKey = "bs.music_on";
         private const string SfxKey   = "bs.sfx_on";
 
+        // Integer 0–8 volume steps (Settings popup). 0 = muted.
+        private const string MusicVolKey = "MusicVolume";
+        private const string SfxVolKey   = "SFXVolume";
+        private const float  MusicBaseVolume = 0.20f;
+        private const float  SfxBaseVolume   = 1.0f;
+
         public static AudioManager Instance { get; private set; }
 
         private AudioSource _musicSource;
         private AudioSource _sfxSource;
 
-        private bool _musicEnabled = true;
-        private bool _sfxEnabled   = true;
+        private bool  _musicEnabled = true;
+        private bool  _sfxEnabled   = true;
+        private float _sfxScalar    = 1.0f;   // 0..1 multiplier derived from SFXVolume step
 
         // Cached clips — loaded from Resources/Audio/ in Awake
         private AudioClip _boltPick;
@@ -53,8 +60,57 @@ namespace BoltSort.Audio
             CreateAudioSources();
             LoadClips();
 
-            _musicEnabled = PlayerPrefs.GetInt(MusicKey, 1) == 1;
-            _sfxEnabled   = PlayerPrefs.GetInt(SfxKey,   1) == 1;
+            int musicStep = PlayerPrefs.GetInt(MusicVolKey, PlayerPrefs.GetInt(MusicKey, 1) == 1 ? 8 : 0);
+            int sfxStep   = PlayerPrefs.GetInt(SfxVolKey,   PlayerPrefs.GetInt(SfxKey,   1) == 1 ? 8 : 0);
+            ApplyMusicStep(musicStep);
+            ApplySfxStep(sfxStep);
+        }
+
+        // ── 0–8 step volume (Settings popup) ────────────────────────────────────────
+
+        /// <summary>Maps a 0–8 step to a linear scalar: 0 → -80 dB (mute), 1–8 → -20…0 dB.</summary>
+        private static float StepToScalar(int step)
+        {
+            if (step <= 0) return 0f;
+            float db = Mathf.Lerp(-20f, 0f, (step - 1) / 7f);
+            return Mathf.Pow(10f, db / 20f);
+        }
+
+        private void ApplyMusicStep(int step)
+        {
+            _musicEnabled = step > 0;
+            if (_musicSource != null) _musicSource.volume = MusicBaseVolume * StepToScalar(step);
+            if (_musicSource != null)
+            {
+                if (_musicEnabled) { if (!_musicSource.isPlaying && _musicSource.clip != null) _musicSource.Play(); }
+                else _musicSource.Pause();
+            }
+        }
+
+        private void ApplySfxStep(int step)
+        {
+            _sfxEnabled = step > 0;
+            _sfxScalar  = SfxBaseVolume * StepToScalar(step);
+        }
+
+        /// <summary>Sets music volume to a 0–8 step, persists it, and applies immediately.</summary>
+        public void SetMusicVolume(int step)
+        {
+            step = Mathf.Clamp(step, 0, 8);
+            PlayerPrefs.SetInt(MusicVolKey, step);
+            PlayerPrefs.SetInt(MusicKey, step > 0 ? 1 : 0);
+            PlayerPrefs.Save();
+            ApplyMusicStep(step);
+        }
+
+        /// <summary>Sets SFX volume to a 0–8 step, persists it, and applies immediately.</summary>
+        public void SetSFXVolume(int step)
+        {
+            step = Mathf.Clamp(step, 0, 8);
+            PlayerPrefs.SetInt(SfxVolKey, step);
+            PlayerPrefs.SetInt(SfxKey, step > 0 ? 1 : 0);
+            PlayerPrefs.Save();
+            ApplySfxStep(step);
         }
 
         private void CreateAudioSources()
@@ -98,7 +154,7 @@ namespace BoltSort.Audio
         public void PlaySFX(AudioClip clip)
         {
             if (!_sfxEnabled || clip == null) return;
-            _sfxSource.PlayOneShot(clip);
+            _sfxSource.PlayOneShot(clip, _sfxScalar);
         }
 
         public void PlaySFX(string clipName)
@@ -122,7 +178,7 @@ namespace BoltSort.Audio
                 "thunder"         => (_thunder,       1.00f),
                 _                 => (null,           1.00f),
             };
-            if (clip != null) _sfxSource.PlayOneShot(clip, vol);
+            if (clip != null) _sfxSource.PlayOneShot(clip, vol * _sfxScalar);
         }
 
         public void PlayMusic(AudioClip clip = null)
@@ -165,13 +221,13 @@ namespace BoltSort.Audio
         private IEnumerator PlayDelayed(AudioClip clip, float delay)
         {
             yield return new WaitForSeconds(delay);
-            if (_sfxEnabled && clip != null) _sfxSource.PlayOneShot(clip);
+            if (_sfxEnabled && clip != null) _sfxSource.PlayOneShot(clip, _sfxScalar);
         }
 
         private IEnumerator PlayDelayedScaled(AudioClip clip, float delay, float volumeScale)
         {
             yield return new WaitForSeconds(delay);
-            if (_sfxEnabled && clip != null) _sfxSource.PlayOneShot(clip, volumeScale);
+            if (_sfxEnabled && clip != null) _sfxSource.PlayOneShot(clip, volumeScale * _sfxScalar);
         }
 
         // Procedural BGM: soft ambient pad using layered sine waves in C major (8-second loop)

@@ -50,6 +50,15 @@ namespace BoltSort.Gameplay
         private Image _extraTubeButtonImg;
         private int   _extraTubeRemaining = MaxExtraTubeUses;
 
+        // ── Availability pulse (Fix 2) — subtle 1.0↔1.06 scale breathing while a
+        // gameplay button is usable; stops & resets to 1.0 the instant it is not. ──
+        private RectTransform _undoPulseRT;
+        private RectTransform _extraPulseRT;
+        private float _undoPressSuppressUntil;   // pause pulse briefly so it never fights the press bounce
+        private float _extraPressSuppressUntil;
+        private const float PulsePeriod   = 1.35f; // seconds per cycle (within 1.2–1.5s)
+        private const float PulseMaxScale = 1.06f;
+
         // ── Live UI refs ──────────────────────────────────────────────────────────
         private Text        _levelText;
         private Text        _movesText;
@@ -556,6 +565,7 @@ namespace BoltSort.Gameplay
         /// a tap is only consumed when an undo can actually be performed.</summary>
         private void OnUndoButtonTapped()
         {
+            _undoPressSuppressUntil = Time.unscaledTime + 0.22f; // let the press bounce play uninterrupted
             if (_thunderPlaying) return;               // mid-effect — block re-press (no duplicate undo)
             if (_undoRemaining <= 0) return;
             if (_gsm != null && !_gsm.CanUndo) return; // nothing to revert — don't spend a use (no thunder)
@@ -581,11 +591,46 @@ namespace BoltSort.Gameplay
         /// <c>onExtraTube</c> callback (Phase 3); without it the button is inert.</summary>
         private void OnExtraTubeButtonTapped()
         {
+            _extraPressSuppressUntil = Time.unscaledTime + 0.22f; // let the press bounce play uninterrupted
             if (_extraTubeRemaining <= 0) return;
             if (_onExtraTube == null) return;
             _extraTubeRemaining--;
             RefreshExtraTubeBadge();
             _onExtraTube.Invoke();
+        }
+
+        // ── Availability pulse (Fix 2) ────────────────────────────────────────────
+
+        /// <summary>True when an undo can actually be performed right now (a move exists to
+        /// revert and budget remains), so the Undo/Thunder button should pulse.</summary>
+        private bool UndoPulseAvailable() =>
+            !_levelComplete && !_thunderPlaying && _undoRemaining > 0 &&
+            _gsm != null && _gsm.CanUndo;
+
+        /// <summary>True when the player still has extra-tube uses, so the Add-tube button pulses.</summary>
+        private bool ExtraTubePulseAvailable() =>
+            !_levelComplete && _onExtraTube != null && _extraTubeRemaining > 0;
+
+        /// <summary>Drives both buttons' subtle scale breathing. A single sine source keeps them
+        /// in sync; each button pulses only while available and snaps back to 1.0 otherwise.
+        /// Skips writing during the brief post-press window so it never fights the press bounce.</summary>
+        private IEnumerator PulseButtons()
+        {
+            while (true)
+            {
+                float s = (Mathf.Sin(Time.unscaledTime * (2f * Mathf.PI / PulsePeriod)) + 1f) * 0.5f; // 0..1
+                float scale = Mathf.Lerp(1f, PulseMaxScale, s);
+                ApplyPulse(_undoPulseRT,  UndoPulseAvailable(),      _undoPressSuppressUntil,  scale);
+                ApplyPulse(_extraPulseRT, ExtraTubePulseAvailable(), _extraPressSuppressUntil, scale);
+                yield return null;
+            }
+        }
+
+        private static void ApplyPulse(RectTransform rt, bool available, float suppressUntil, float scale)
+        {
+            if (rt == null) return;
+            if (Time.unscaledTime < suppressUntil) return;     // press bounce owns the scale right now
+            rt.localScale = available ? new Vector3(scale, scale, 1f) : Vector3.one;
         }
 
         private void RefreshUndoBadge()
@@ -734,10 +779,12 @@ namespace BoltSort.Gameplay
 
             // ── Right group: Undo (+count), Extra Tube (+count) ───────────────────
             var undoBtn = MakeIconButton(topBar, "UndoHeaderButton", "↩", font, 38,
-                                         GameAssets.BtnUndoNew ?? GameAssets.BtnUndoAction, OnUndoButtonTapped);
+                                         GameAssets.BtnUndoNew ?? GameAssets.BtnUndoAction, OnUndoButtonTapped,
+                                         silentClick: true);
             _undoButtonImg = undoBtn.GetComponent<Image>();
             _undoCountText = AddCountBadge(undoBtn, font, MaxUndosPerLevel.ToString());
             PlaceHeaderButton(undoBtn.GetComponent<RectTransform>(), 0.775f, hBtnY, hBtn);
+            _undoPulseRT = undoBtn.GetComponent<RectTransform>();
 
             var extraBtn = MakeIconButton(topBar, "ExtraTubeButton", "+", font, 48,
                                           GameAssets.BtnExtraTube, OnExtraTubeButtonTapped);
@@ -746,9 +793,11 @@ namespace BoltSort.Gameplay
                 _extraTubeButtonImg.color = new Color(0.20f, 0.62f, 0.86f, 1f);
             _extraTubeCountText = AddCountBadge(extraBtn, font, _extraTubeRemaining.ToString());
             PlaceHeaderButton(extraBtn.GetComponent<RectTransform>(), 0.925f, hBtnY, hBtn);
+            _extraPulseRT = extraBtn.GetComponent<RectTransform>();
 
             RefreshUndoBadge();
             RefreshExtraTubeBadge();
+            StartCoroutine(PulseButtons());
 
             // ── Deadlock banner ──────────────────────────────────────────────────
             _deadlockText = MakeLabel(canvasGO, "DeadlockBanner",
@@ -1105,7 +1154,7 @@ namespace BoltSort.Gameplay
         // Icon-first button: uses sprite if available, falls back to labeled colored rect.
         private GameObject MakeIconButton(GameObject parent, string name, string fallbackLabel,
                                           Font font, int fontSize,
-                                          Sprite icon, Action onClick)
+                                          Sprite icon, Action onClick, bool silentClick = false)
         {
             var go  = new GameObject(name);
             go.transform.SetParent(parent.transform, false);
@@ -1141,7 +1190,9 @@ namespace BoltSort.Gameplay
             btn.colors = cs;
 
             var rt = go.GetComponent<RectTransform>();
-            btn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
+            // Undo/Thunder button suppresses the generic click SFX (its own thunder SFX plays instead).
+            if (!silentClick)
+                btn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
             btn.onClick.AddListener(() =>
             {
                 StartCoroutine(BounceButton(rt));
