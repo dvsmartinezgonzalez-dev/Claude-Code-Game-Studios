@@ -169,6 +169,24 @@ namespace BoltSort.GameStateManager
         /// level's own temp slots). 0 for a freshly loaded level.</summary>
         public int HelperTubeCount => _helperTubeCount;
 
+        // ── Magnet mechanic (L50+) ────────────────────────────────────────────────
+
+        /// <summary>First level (1-based) from which the Magnet mechanic is active.</summary>
+        public const int MagnetUnlockLevel = 50;
+
+        /// <summary>
+        /// True when the current level enables the Magnet mechanic (auto-chaining of
+        /// consecutive same-color bolts). Single source of truth for level gating.
+        /// </summary>
+        public bool IsMagnetActive() => _currentLevelId >= MagnetUnlockLevel;
+
+        /// <summary>
+        /// Number of bolts moved by the most recent committed move (1 for a normal move,
+        /// &gt;1 when Magnet chained additional same-color bolts). BoardView reads this to
+        /// drive the staggered chain animation. Concrete-only — visual systems use the concrete GSM.
+        /// </summary>
+        public int LastMoveBallCount { get; private set; } = 1;
+
         /// <inheritdoc/>
         public int MoveCount { get; private set; }
 
@@ -406,9 +424,18 @@ namespace BoltSort.GameStateManager
             var entry = _undoStack[_undoStack.Count - 1];
             _undoStack.RemoveAt(_undoStack.Count - 1);
 
-            // Revert: remove top bolt from destination, append back to source
-            _stackContents[entry.To].RemoveAt(_stackContents[entry.To].Count - 1);
-            _stackContents[entry.From].Add(entry.ColorId);
+            // Revert: move every bolt of this (possibly Magnet-chained) move back. Bolts return
+            // in reverse arrival order — last bolt placed on the destination comes off first and
+            // lands back on the source top. All chained bolts share one color, so re-adding
+            // entry.ColorId restores the original source order exactly. Count 0 = legacy single move.
+            int count = entry.Count > 0 ? entry.Count : 1;
+            List<int> toList   = _stackContents[entry.To];
+            List<int> fromList = _stackContents[entry.From];
+            for (int i = 0; i < count; i++)
+            {
+                toList.RemoveAt(toList.Count - 1);
+                fromList.Add(entry.ColorId);
+            }
 
             // Phase-2: undoing onto/over a column can expose a covered mystery top → reveal it.
             RevealMysteryIfExposed(entry.To);
@@ -464,14 +491,38 @@ namespace BoltSort.GameStateManager
         {
             if (_lifecycleState != GSMLifecycleState.Active) return;
 
-            // Step 1: Remove top bolt from source
+            // Step 1: Remove top bolt from source (the tapped bolt)
             _stackContents[src].RemoveAt(_stackContents[src].Count - 1);
-
-            // Phase-2: removing the source top may expose a covered mystery ball → reveal it.
-            RevealMysteryIfExposed(src);
 
             // Step 2: Append bolt to destination
             _stackContents[dst].Add(colorId);
+
+            // Magnet (L50+): pull consecutive same-color bolts directly below the moved one into
+            // the same destination, one by one, while the destination still has capacity. The
+            // pull stops at the first non-matching bolt; multicolor (0) and mystery (negative)
+            // bolts never trigger or join a chain (the == colorId test only matches a positive
+            // exact color). Partial fill is allowed — leftover bolts stay in the source. The whole
+            // chain is ONE logical move: a single undo entry and a single move-count increment,
+            // so undo reverses it atomically and frozen-tube counters (derived from move count)
+            // restore for free.
+            int movedCount = 1;
+            if (IsMagnetActive() && colorId > 0)
+            {
+                List<int> srcList = _stackContents[src];
+                List<int> dstList = _stackContents[dst];
+                int cap = GetColumnCapacity(dst);
+                while (dstList.Count < cap && srcList.Count > 0 &&
+                       srcList[srcList.Count - 1] == colorId)
+                {
+                    srcList.RemoveAt(srcList.Count - 1);
+                    dstList.Add(colorId);
+                    movedCount++;
+                }
+            }
+            LastMoveBallCount = movedCount;
+
+            // Phase-2: removing the source top(s) may expose a covered mystery ball → reveal it.
+            RevealMysteryIfExposed(src);
 
             // Step 3: Push undo entry (captures seqId BEFORE the post-commit increment)
             _undoStack.Add(new UndoEntry
@@ -480,6 +531,7 @@ namespace BoltSort.GameStateManager
                 To      = dst,
                 ColorId = colorId,
                 SeqId   = _currentSequenceId,
+                Count   = movedCount,
             });
 
             // Step 4: Increment sequence ID (monotonic — TR-GSM-002)

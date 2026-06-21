@@ -96,8 +96,7 @@ namespace BoltSort.Gameplay
             var tutGO = new GameObject("TutorialController");
             tutGO.AddComponent<TutorialController>().Initialize(_gsm, _sortMechanic, GameAssets.MenuFont);
 
-            _gsm.ExitLevel();
-            _gsm.LoadLevel(_currentLevelId);
+            LoadLevelWithMagnetCheck(_currentLevelId);
             AudioMgr.Instance?.PlayMusic();
         }
 
@@ -105,8 +104,7 @@ namespace BoltSort.Gameplay
 
         public void ResetLevel()
         {
-            _gsm.ExitLevel();
-            _gsm.LoadLevel(_currentLevelId);
+            LoadLevelWithMagnetCheck(_currentLevelId);
         }
 
         public void LoadNextLevel()
@@ -117,8 +115,30 @@ namespace BoltSort.Gameplay
                 return;
             }
             _currentLevelId++;
+            LoadLevelWithMagnetCheck(_currentLevelId);
+        }
+
+        /// <summary>
+        /// Tears down the current level and loads <paramref name="levelId"/>. The first time a
+        /// Magnet-enabled level (≥ <see cref="GameStateManager.MagnetUnlockLevel"/>) is loaded, shows
+        /// the one-shot unlock splash and defers the actual load until the player dismisses it
+        /// (PlayerPref-gated, so it never reappears). Independent of the mechanic — if the splash
+        /// fails to build it loads immediately.
+        /// </summary>
+        private void LoadLevelWithMagnetCheck(int levelId)
+        {
             _gsm.ExitLevel();
-            _gsm.LoadLevel(_currentLevelId);
+
+            if (levelId >= BoltSort.GameStateManager.GameStateManager.MagnetUnlockLevel &&
+                PlayerPrefs.GetInt(MagnetUnlockSplash.ShownPrefKey, 0) == 0)
+            {
+                PlayerPrefs.SetInt(MagnetUnlockSplash.ShownPrefKey, 1);
+                PlayerPrefs.Save();
+                MagnetUnlockSplash.Show(GameAssets.MenuFont, () => _gsm.LoadLevel(levelId));
+                return;
+            }
+
+            _gsm.LoadLevel(levelId);
         }
 
         private void OnUndoClicked() => _gsm.UndoRequested();

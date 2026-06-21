@@ -24,6 +24,13 @@ namespace BoltSort.GameStateManager
         public int ColorId;
 
         /// <summary>
+        /// Number of same-color bolts moved as one logical action. 1 for a normal single move;
+        /// &gt;1 when the Magnet mechanic (L50+) auto-chained additional bolts. Undo reverses
+        /// all <c>Count</c> bolts atomically. A value of 0 (legacy/unset) is treated as 1.
+        /// </summary>
+        public int Count;
+
+        /// <summary>
         /// <c>CurrentSequenceId</c> value at the time the move was committed (before the post-commit
         /// increment). <c>long</c> (int64) per GDD EC-12: int64 minimum for stale-signal safety.
         /// </summary>

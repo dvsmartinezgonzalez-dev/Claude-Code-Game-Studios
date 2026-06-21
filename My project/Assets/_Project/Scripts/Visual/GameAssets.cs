@@ -45,6 +45,7 @@ namespace BoltSort.Visual
         public static Sprite TitleBolt      => LoadRes("Sprites/Menu/title_bolt");
         public static Sprite TitleSort      => LoadRes("Sprites/Menu/title_sort");
         public static Sprite TitleSpark     => LoadRes("Sprites/Menu/spark");
+        public static Sprite MagnetIcon     => LoadRes("Sprites/Menu/magnet");
         public static Sprite MenuPopup      => LoadRes("Sprites/Menu/popup");
 
         // ── Settings popup art (assets_admin/Settings → Resources/Sprites/Settings/) ──

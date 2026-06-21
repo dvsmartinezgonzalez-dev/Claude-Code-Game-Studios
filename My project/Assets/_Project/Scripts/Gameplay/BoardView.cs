@@ -78,9 +78,18 @@ namespace BoltSort.Gameplay
         private SortMechState _prevFsmState = SortMechState.Idle;
 
         // ── Move animation state ──────────────────────────────────────────────────
+        /// <summary>Root container parenting every in-flight ghost ball of the current move, so a
+        /// mid-animation level reload can destroy them all at once. Null when no move is animating.</summary>
         private GameObject   _moveGhost;
-        private int          _hideDstCol  = -1;
-        private int          _hideDstSlot = -1;
+        /// <summary>Settled destination slots hidden while a ghost is in the air toward them.
+        /// Keyed by <see cref="SlotKey"/>. Supports multiple simultaneous slots for Magnet chains.</summary>
+        private readonly HashSet<int> _hiddenDstSlots = new HashSet<int>();
+
+        /// <summary>Stagger between consecutive bolts in a Magnet chain (seconds). Within the
+        /// 80–120ms design range; keeps the longest realistic chain well under the 1.5s watchdog.</summary>
+        private const float MagnetChainDelay = 0.10f;
+
+        private static int SlotKey(int col, int slot) => col * 1000 + slot;
 
         // ── Win state ─────────────────────────────────────────────────────────────
         private bool     _winPlaying;
@@ -144,8 +153,7 @@ namespace BoltSort.Gameplay
             _selYOffset  = 0f;
             _selScale    = 1f;
             _selLifted   = false;
-            _hideDstCol  = -1;
-            _hideDstSlot = -1;
+            _hiddenDstSlots.Clear();
             _winPlaying  = false;
 
             if (_moveGhost != null) { Destroy(_moveGhost); _moveGhost = null; }
@@ -159,7 +167,8 @@ namespace BoltSort.Gameplay
             _selScale   = 1f;
             _selLifted  = false;
             if (_selCoroutine != null) { StopCoroutine(_selCoroutine); _selCoroutine = null; }
-            StartCoroutine(AnimateBoltMove(src, dst, colorId, seqId));
+            int ballCount = _gsm != null ? Mathf.Max(1, _gsm.LastMoveBallCount) : 1;
+            StartCoroutine(AnimateBoltMove(src, dst, colorId, ballCount, seqId));
         }
 
         private void OnMoveRejected(int src, int dst, int colorId, MoveRejectedReason reason)
@@ -293,7 +302,11 @@ namespace BoltSort.Gameplay
         private IEnumerator ColumnPickupPop(Transform colTr)
         {
             if (colTr == null) yield break;
-            Vector3 orig   = colTr.localScale;
+            // Anchor to the canonical resting scale (every column rests at Vector3.one) rather
+            // than the live transform value. Reading colTr.localScale while a previous pop is
+            // still animating would capture an inflated X and restore to it, ratcheting tubes
+            // (and their child balls) progressively wider over the level. Fixed base = no drift.
+            Vector3 orig   = Vector3.one;
             Vector3 squish = new Vector3(orig.x * 1.08f, orig.y * 0.94f, orig.z);
             float dur = 0.06f, elapsed = 0f;
             while (elapsed < dur)
@@ -317,7 +330,8 @@ namespace BoltSort.Gameplay
         private IEnumerator ColumnLandPop(Transform colTr)
         {
             if (colTr == null) yield break;
-            Vector3 orig   = colTr.localScale;
+            // Canonical resting scale (see ColumnPickupPop) — avoids cumulative width drift.
+            Vector3 orig   = Vector3.one;
             Vector3 squish = new Vector3(orig.x * 1.06f, orig.y * 0.95f, orig.z);
             float dur = 0.05f, elapsed = 0f;
             while (elapsed < dur)
@@ -339,7 +353,7 @@ namespace BoltSort.Gameplay
 
         // ── Arc movement animation ────────────────────────────────────────────────
 
-        private IEnumerator AnimateBoltMove(int src, int dst, int colorId, long seqId)
+        private IEnumerator AnimateBoltMove(int src, int dst, int colorId, int count, long seqId)
         {
             if (_columnSlot0World == null || src >= _columnSlot0World.Length ||
                 dst >= _columnSlot0World.Length)
@@ -347,127 +361,70 @@ namespace BoltSort.Gameplay
                 _sortMechanic.OnAnimationComplete(seqId);
                 yield break;
             }
+            if (count < 1) count = 1;
 
-            // Compute positions AFTER GSM mutation
+            // Compute positions AFTER GSM mutation (every chained bolt already moved in state).
             var stacks = _gsm.StackContents;
             var temps  = _gsm.TempSlotContents;
-            int totalCols = _colorCount + _tempSlotCount;
 
             IReadOnlyList<int> dstCol = dst < _colorCount
                 ? (stacks != null && dst < stacks.Length ? stacks[dst] : null)
                 : (temps  != null && (dst - _colorCount) < temps.Length
                        ? temps[dst - _colorCount] : null);
-
-            int dstSlot = dstCol != null ? dstCol.Count - 1 : 0;
-
-            // Ball diameter in world units (matches a settled ball in the source column).
-            float boltSize = (_ballSize != null && src < _ballSize.Length) ? _ballSize[src] : _ballStep[src];
-
-            // src slot: GSM already removed the bolt — slot count now is correct
             IReadOnlyList<int> srcColAfter = src < _colorCount
                 ? (stacks != null && src < stacks.Length ? stacks[src] : null)
                 : (temps  != null && (src - _colorCount) < temps.Length
                        ? temps[src - _colorCount] : null);
-            int srcSlot = srcColAfter != null ? srcColAfter.Count : 0;
-            Vector3 srcWorld = _columnSlot0World[src] + Vector3.up * (srcSlot * _ballStep[src]);
 
-            Vector3 dstWorld = _columnSlot0World[dst] + Vector3.up * (dstSlot * _ballStep[dst]);
+            int dstCount = dstCol      != null ? dstCol.Count      : 0; // includes the bolts just placed
+            int srcCount = srcColAfter != null ? srcColAfter.Count : 0; // bolts that remain in source
 
-            // Hide the destination slot while ghost is in the air
-            _hideDstCol  = dst;
-            _hideDstSlot = dstSlot;
+            // Ball diameter in world units (matches a settled ball in the source column).
+            float boltSize = (_ballSize != null && src < _ballSize.Length) ? _ballSize[src] : _ballStep[src];
 
-            // Create ghost bolt — convert the target world diameter to a local scale using
-            // the ball sprite's native size (independent of import PPU).
-            Sprite ghostSpr   = GameAssets.BallSpriteForToken(colorId);
+            // Convert the target world diameter to a local scale using the ball sprite's native
+            // size (independent of import PPU).
+            Sprite ghostSpr    = GameAssets.BallSpriteForToken(colorId);
             float  ghostNative = ghostSpr != null ? ghostSpr.bounds.size.x : 1f;
             float  ghostScale  = boltSize / Mathf.Max(0.0001f, ghostNative);
 
-            _moveGhost = new GameObject("MoveGhost");
-            _moveGhost.transform.position   = srcWorld;
-            _moveGhost.transform.localScale = new Vector3(ghostScale, ghostScale, 1f);
+            // Root container so a mid-chain level reload can destroy every in-flight ghost at once.
+            _moveGhost = new GameObject("MoveGhostRoot");
 
-            var shadowGO = new GameObject("GhostShadow");
-            shadowGO.transform.SetParent(_moveGhost.transform, false);
-            shadowGO.transform.localPosition = new Vector3(0.04f, -0.05f, 0f);
-            shadowGO.transform.localScale    = new Vector3(1.1f, 0.6f, 1f);
-            var shadowSr = shadowGO.AddComponent<SpriteRenderer>();
-            shadowSr.sprite       = _shadowSprite;
-            shadowSr.color        = BoltSortTheme.BoltShadow;
-            shadowSr.sortingOrder = 8;
-
-            var ghostSr = _moveGhost.AddComponent<SpriteRenderer>();
-            ghostSr.sprite       = ghostSpr;
-            ghostSr.color        = Color.white;
-            ghostSr.sortingOrder = 9;
-
-            var shineGO = new GameObject("GhostShine");
-            shineGO.transform.SetParent(_moveGhost.transform, false);
-            shineGO.transform.localPosition = new Vector3(-0.20f, 0.22f, 0f);
-            shineGO.transform.localScale    = new Vector3(0.38f, 0.32f, 1f);
-            var shineSr = shineGO.AddComponent<SpriteRenderer>();
-            shineSr.sprite       = _shineSprite;
-            shineSr.color        = new Color(1f, 1f, 1f, 0.60f);
-            shineSr.sortingOrder = 10;
-
-            // Arc trajectory — Phase 1: rise (0–100ms), Phase 2: fall (100–220ms)
-            float peakY  = Mathf.Max(srcWorld.y, dstWorld.y) + 1.5f;
-            float arc1   = 0.10f; // rise duration
-            float arc2   = 0.12f; // fall duration
-
-            // Phase 1: rise
-            float elapsed = 0f;
-            while (elapsed < arc1)
+            // Spawn ALL ghosts up front, sitting at their source slots, so the column stays visually
+            // intact and the chain peels off one bolt at a time (GSM already emptied those slots).
+            // Bolt k == 0 is the topmost / tapped bolt (leaves first) and lands lowest in the group.
+            var ghosts = new GameObject[count];
+            for (int k = 0; k < count; k++)
             {
-                if (_moveGhost == null) yield break;
-                elapsed += Time.deltaTime;
-                float t  = Mathf.Clamp01(elapsed / arc1);
-                float x  = Mathf.Lerp(srcWorld.x, dstWorld.x, t * 0.5f);
-                float y  = Mathf.Lerp(srcWorld.y, peakY, TweenUtility.EaseOutQuad(t));
-                _moveGhost.transform.position = new Vector3(x, y, srcWorld.z);
-                yield return null;
+                int srcSlot = srcCount + (count - 1 - k);
+                int dstSlot = dstCount - count + k;
+                Vector3 srcWorld = _columnSlot0World[src] + Vector3.up * (srcSlot * _ballStep[src]);
+                ghosts[k] = CreateGhost(srcWorld, ghostScale, ghostSpr);
+                _hiddenDstSlots.Add(SlotKey(dst, dstSlot)); // hide settled slot until its ghost lands
             }
 
-            // Phase 2: fall
-            elapsed = 0f;
-            while (elapsed < arc2)
+            // Launch each ghost on a staggered delay; a shared counter lets us await all landings.
+            int[] landed = { 0 };
+            for (int k = 0; k < count; k++)
             {
-                if (_moveGhost == null) yield break;
-                elapsed += Time.deltaTime;
-                float t  = Mathf.Clamp01(elapsed / arc2);
-                float x  = Mathf.Lerp(srcWorld.x, dstWorld.x, 0.5f + t * 0.5f);
-                float y  = Mathf.Lerp(peakY, dstWorld.y, TweenUtility.EaseInQuad(t));
-                _moveGhost.transform.position = new Vector3(x, y, srcWorld.z);
-                yield return null;
+                int srcSlot = srcCount + (count - 1 - k);
+                int dstSlot = dstCount - count + k;
+                Vector3 srcWorld = _columnSlot0World[src] + Vector3.up * (srcSlot * _ballStep[src]);
+                Vector3 dstWorld = _columnSlot0World[dst] + Vector3.up * (dstSlot * _ballStep[dst]);
+                StartCoroutine(FlyGhost(ghosts[k], srcWorld, dstWorld, ghostScale,
+                                        colorId, dst, dstSlot, k * MagnetChainDelay, landed));
             }
 
-            // Play landing sound
-            AudioMgr.Instance?.PlaySFX("bolt_place");
-
-            // Landing squish: scale X*1.2 Y*0.85 then spring back (EaseOutElastic, 80ms)
-            SpawnLandingDust(dstWorld, BoltSortTheme.BoltColorForId(colorId));
-            if (dst >= 0 && dst < _columnTransforms.Length && _columnTransforms[dst] != null)
-                StartCoroutine(ColumnLandPop(_columnTransforms[dst]));
-
-            float squishDur = 0.08f;
-            elapsed = 0f;
-            while (elapsed < squishDur)
+            while (landed[0] < count)
             {
-                if (_moveGhost == null) yield break;
-                elapsed += Time.deltaTime;
-                float t = TweenUtility.EaseOutElastic(Mathf.Clamp01(elapsed / squishDur));
-                // squish is the "going in" motion (scale toward squished) then spring
-                float sx = Mathf.LerpUnclamped(ghostScale * 1.20f, ghostScale, t);
-                float sy = Mathf.LerpUnclamped(ghostScale * 0.85f, ghostScale, t);
-                _moveGhost.transform.localScale = new Vector3(sx, sy, 1f);
-                _moveGhost.transform.position   = dstWorld;
+                if (_moveGhost == null) yield break; // level reloaded mid-chain
                 yield return null;
             }
 
             // Cleanup
             if (_moveGhost != null) { Destroy(_moveGhost); _moveGhost = null; }
-            _hideDstCol  = -1;
-            _hideDstSlot = -1;
+            _hiddenDstSlots.Clear();
 
             // Play tube-completed SFX for the level's own tubes (color stacks + shipped temp
             // slots). Runtime extra/helper tubes (dst >= colorCount + originalTempSlotCount)
@@ -476,6 +433,109 @@ namespace BoltSort.Gameplay
                 AudioMgr.Instance?.PlaySFX("tube_completed");
 
             _sortMechanic.OnAnimationComplete(seqId);
+        }
+
+        /// <summary>Builds one ghost bolt (ball + shadow + shine) parented to the move root, placed
+        /// at <paramref name="worldPos"/>. Used for every bolt of a single or Magnet-chained move.</summary>
+        private GameObject CreateGhost(Vector3 worldPos, float ghostScale, Sprite ghostSpr)
+        {
+            var go = new GameObject("MoveGhost");
+            if (_moveGhost != null) go.transform.SetParent(_moveGhost.transform, worldPositionStays: true);
+            go.transform.position   = worldPos;
+            go.transform.localScale = new Vector3(ghostScale, ghostScale, 1f);
+
+            var shadowGO = new GameObject("GhostShadow");
+            shadowGO.transform.SetParent(go.transform, false);
+            shadowGO.transform.localPosition = new Vector3(0.04f, -0.05f, 0f);
+            shadowGO.transform.localScale    = new Vector3(1.1f, 0.6f, 1f);
+            var shadowSr = shadowGO.AddComponent<SpriteRenderer>();
+            shadowSr.sprite       = _shadowSprite;
+            shadowSr.color        = BoltSortTheme.BoltShadow;
+            shadowSr.sortingOrder = 8;
+
+            var ghostSr = go.AddComponent<SpriteRenderer>();
+            ghostSr.sprite       = ghostSpr;
+            ghostSr.color        = Color.white;
+            ghostSr.sortingOrder = 9;
+
+            var shineGO = new GameObject("GhostShine");
+            shineGO.transform.SetParent(go.transform, false);
+            shineGO.transform.localPosition = new Vector3(-0.20f, 0.22f, 0f);
+            shineGO.transform.localScale    = new Vector3(0.38f, 0.32f, 1f);
+            var shineSr = shineGO.AddComponent<SpriteRenderer>();
+            shineSr.sprite       = _shineSprite;
+            shineSr.color        = new Color(1f, 1f, 1f, 0.60f);
+            shineSr.sortingOrder = 10;
+
+            return go;
+        }
+
+        /// <summary>Flies one ghost bolt along the standard rise/fall arc after <paramref name="startDelay"/>,
+        /// then lands it (squish, dust, column pop) and reveals its destination slot. Increments
+        /// <paramref name="landed"/>[0] when finished so the parent coroutine can await all bolts.</summary>
+        private IEnumerator FlyGhost(GameObject ghost, Vector3 srcWorld, Vector3 dstWorld,
+                                     float ghostScale, int colorId, int dst, int dstSlot,
+                                     float startDelay, int[] landed)
+        {
+            // Hold at the source slot until this bolt's turn (chain stagger); 0 for a single move.
+            float wait = 0f;
+            while (wait < startDelay)
+            {
+                if (ghost == null) { landed[0]++; yield break; }
+                wait += Time.deltaTime;
+                yield return null;
+            }
+
+            // Arc trajectory — Phase 1: rise, Phase 2: fall (same path as a normal single move).
+            float peakY = Mathf.Max(srcWorld.y, dstWorld.y) + 1.5f;
+            float arc1  = 0.10f, arc2 = 0.12f;
+
+            float elapsed = 0f;
+            while (elapsed < arc1)
+            {
+                if (ghost == null) { landed[0]++; yield break; }
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / arc1);
+                float x = Mathf.Lerp(srcWorld.x, dstWorld.x, t * 0.5f);
+                float y = Mathf.Lerp(srcWorld.y, peakY, TweenUtility.EaseOutQuad(t));
+                ghost.transform.position = new Vector3(x, y, srcWorld.z);
+                yield return null;
+            }
+            elapsed = 0f;
+            while (elapsed < arc2)
+            {
+                if (ghost == null) { landed[0]++; yield break; }
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / arc2);
+                float x = Mathf.Lerp(srcWorld.x, dstWorld.x, 0.5f + t * 0.5f);
+                float y = Mathf.Lerp(peakY, dstWorld.y, TweenUtility.EaseInQuad(t));
+                ghost.transform.position = new Vector3(x, y, srcWorld.z);
+                yield return null;
+            }
+
+            AudioMgr.Instance?.PlaySFX("bolt_place");
+            SpawnLandingDust(dstWorld, BoltSortTheme.BoltColorForId(colorId));
+            if (dst >= 0 && dst < _columnTransforms.Length && _columnTransforms[dst] != null)
+                StartCoroutine(ColumnLandPop(_columnTransforms[dst]));
+
+            // Landing squish: scale X*1.2 Y*0.85 then spring back (EaseOutElastic, 80ms).
+            float squishDur = 0.08f;
+            elapsed = 0f;
+            while (elapsed < squishDur)
+            {
+                if (ghost == null) { landed[0]++; yield break; }
+                elapsed += Time.deltaTime;
+                float t = TweenUtility.EaseOutElastic(Mathf.Clamp01(elapsed / squishDur));
+                float sx = Mathf.LerpUnclamped(ghostScale * 1.20f, ghostScale, t);
+                float sy = Mathf.LerpUnclamped(ghostScale * 0.85f, ghostScale, t);
+                ghost.transform.localScale = new Vector3(sx, sy, 1f);
+                ghost.transform.position   = dstWorld;
+                yield return null;
+            }
+
+            _hiddenDstSlots.Remove(SlotKey(dst, dstSlot)); // settled bolt now rendered by LateUpdate
+            if (ghost != null) Destroy(ghost);
+            landed[0]++;
         }
 
         private void SpawnLandingDust(Vector3 worldPos, Color boltColor)
@@ -1159,8 +1219,8 @@ namespace BoltSort.Gameplay
                     var boltSr = _boltRenderers[col][slot];
                     if (boltSr == null) continue;
 
-                    // Hide destination slot during move animation
-                    if (col == _hideDstCol && slot == _hideDstSlot)
+                    // Hide destination slot(s) while a ghost is in the air toward them
+                    if (_hiddenDstSlots.Count > 0 && _hiddenDstSlots.Contains(SlotKey(col, slot)))
                     {
                         boltSr.enabled = false;
                         var shine = _shineRenderers[col]?[slot];
