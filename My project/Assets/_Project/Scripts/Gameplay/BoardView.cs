@@ -789,6 +789,36 @@ namespace BoltSort.Gameplay
             return _tubeMetricsByTier[tier];
         }
 
+        /// <summary>Measured proportions of the plus_one/two/three helper-tube sprites (cropped to
+        /// their opaque content). Distinct art from the standard tubes, so the glass/cap fractions
+        /// differ — using these (not the standard tiers) keeps balls centred inside the small
+        /// extra tubes. Capacities outside 1–3 fall back to the standard metrics.</summary>
+        private static TubeMetrics HelperTubeMetricsForCapacity(int capacity)
+        {
+            switch (capacity)
+            {
+                case 1: return new TubeMetrics { Aspect = 1.152f, GlassFrac = 0.837f, BotCapFrac = 0.143f, InteriorWFrac = 0.835f };
+                case 2: return new TubeMetrics { Aspect = 1.906f, GlassFrac = 0.902f, BotCapFrac = 0.086f, InteriorWFrac = 0.833f };
+                case 3: return new TubeMetrics { Aspect = 2.656f, GlassFrac = 0.929f, BotCapFrac = 0.062f, InteriorWFrac = 0.838f };
+                default: return TubeMetricsForCapacity(capacity);
+            }
+        }
+
+        /// <summary>Final on-screen height (world units) of a STANDARD tube sprite of the given
+        /// capacity, after width-driven scaling and the per-row height clamp. Used to derive the
+        /// shared bottom baseline so every tube in a row rests on the same floor (FIX 1).</summary>
+        private float TubeHeightForDepth(int depth, float rowHeight, float boardH)
+        {
+            TubeMetrics metrics = TubeMetricsForCapacity(depth);
+            Sprite spr  = GameAssets.TubeSprite(depth, selected: false);
+            float  nW   = (spr != null) ? spr.bounds.size.x : 1f;
+            float  nH   = (spr != null) ? spr.bounds.size.y : metrics.Aspect;
+            float  scale = _colWidth / Mathf.Max(0.0001f, nW);
+            float  h     = nH * scale;
+            float  maxH  = Mathf.Min(rowHeight * 0.95f, boardH * 0.75f);
+            return Mathf.Min(h, maxH);
+        }
+
         // ── Column construction ───────────────────────────────────────────────────
 
         private void RebuildColumns(bool animateDropIn = true)
@@ -855,13 +885,21 @@ namespace BoltSort.Gameplay
             _frozenIcon          = new SpriteRenderer[totalCols];
             _frozenLabel         = new TextMesh[totalCols];
 
+            // Shared bottom baseline (local Y where every tube's bottom edge rests), derived
+            // from the tallest tube so all tubes in a row are BOTTOM-aligned (FIX 1). Column
+            // GameObjects share slot0-Y per row, so this single offset bottom-aligns every
+            // column; the tallest tube is positioned identically to before, so uniform-depth
+            // levels render pixel-for-pixel unchanged.
+            int   maxDepthAll      = Mathf.Max(1, Mathf.Max(maxColorCap, maxTempCap));
+            float refColCtrLoc     = (maxDepthAll - 1) * 0.5f * _boltStep;
+            float rowBaselineLocal = refColCtrLoc - TubeHeightForDepth(maxDepthAll, rowHeight, boardH) * 0.5f;
+
             for (int col = 0; col < totalCols; col++)
             {
                 bool    isTemp    = col >= _colorCount;
+                bool    isHelper  = col >= _colorCount + _originalTempSlotCount;
                 int     depth     = _colCap[col]; // per-tube (asymmetric-aware)
                 Vector3 colLocal  = layout.Columns[col]; // (x, slot0-Y, 0)
-                float   colH      = depth * _boltStep;
-                float   colCtrLoc = (depth - 1) * 0.5f * _boltStep;
 
                 var colGO = new GameObject($"Column_{col}");
                 colGO.transform.SetParent(transform, false);
@@ -871,25 +909,16 @@ namespace BoltSort.Gameplay
                 _columnTransforms[col]  = colGO.transform;
                 _columnTargetLocal[col] = colLocal;
 
-                // Ambient glow beneath column (very subtle, column color at 10% alpha)
-                var glowGO = new GameObject("ColumnGlow");
-                glowGO.transform.SetParent(colGO.transform, false);
-                glowGO.transform.localPosition = new Vector3(0f, colCtrLoc, 0.1f);
-                glowGO.transform.localScale    = new Vector3(_colWidth * 1.5f, colH * 1.2f, 1f);
-                var glowSr = glowGO.AddComponent<SpriteRenderer>();
-                glowSr.sprite       = _glowSprite;
-                glowSr.color        = isTemp
-                    ? new Color(0.29f, 0.22f, 0.36f, 0.08f)
-                    : new Color(0.10f, 0.10f, 0.25f, 0.08f);
-                glowSr.sortingOrder = -3;
-                _columnGlowRenderers[col] = glowSr;
-
                 // Tube body sprite — real art, bottom-anchored. The PNG is a tall portrait
                 // image; we scale it UNIFORMLY so the visible tube is exactly _colWidth wide
                 // while keeping the sprite's own aspect (caps never distort). Sizing is driven
                 // by the available screen space, NOT by the sprite's native pixel size.
-                TubeMetrics metrics = TubeMetricsForCapacity(depth);
-                Sprite tubeSpr      = GameAssets.TubeSprite(depth, selected: false);
+                // Runtime helper (extra) tubes use dedicated plus-tube art for their capacity.
+                TubeMetrics metrics = isHelper ? HelperTubeMetricsForCapacity(depth)
+                                               : TubeMetricsForCapacity(depth);
+                Sprite tubeSpr      = isHelper
+                    ? GameAssets.HelperTubeSprite(depth, selected: false)
+                    : GameAssets.TubeSprite(depth, selected: false);
                 float spriteNativeW = (tubeSpr != null) ? tubeSpr.bounds.size.x : 1f;
                 float spriteNativeH = (tubeSpr != null) ? tubeSpr.bounds.size.y : metrics.Aspect;
 
@@ -905,7 +934,12 @@ namespace BoltSort.Gameplay
                 }
                 float tubeWidth = spriteNativeW * tubeScale; // == _colWidth unless height-clamped
 
-                float tubeBottomLoc  = colCtrLoc - tubeHeight * 0.5f;
+                // Bottom-align to the shared baseline; derive the real tube box (center/height)
+                // from it for the glow, frozen overlay and collider. Shorter tubes sit lower at
+                // the TOP, never sunk at the bottom.
+                float tubeBottomLoc  = rowBaselineLocal;
+                float colCtrLoc      = tubeBottomLoc + tubeHeight * 0.5f;
+                float colH           = tubeHeight;
                 float glassBottomLoc = tubeBottomLoc + tubeHeight * metrics.BotCapFrac;
                 float glassHeight    = tubeHeight * metrics.GlassFrac;
                 float ballStep       = glassHeight / depth;
@@ -922,6 +956,19 @@ namespace BoltSort.Gameplay
                 _slot0CenterLocal[col] = glassBottomLoc + 0.5f * ballStep;
                 _columnSlot0World[col] = transform.position + colLocal + Vector3.up * _slot0CenterLocal[col];
 
+                // Ambient glow beneath column (very subtle, column color at 10% alpha)
+                var glowGO = new GameObject("ColumnGlow");
+                glowGO.transform.SetParent(colGO.transform, false);
+                glowGO.transform.localPosition = new Vector3(0f, colCtrLoc, 0.1f);
+                glowGO.transform.localScale    = new Vector3(_colWidth * 1.5f, colH * 1.2f, 1f);
+                var glowSr = glowGO.AddComponent<SpriteRenderer>();
+                glowSr.sprite       = _glowSprite;
+                glowSr.color        = isTemp
+                    ? new Color(0.29f, 0.22f, 0.36f, 0.08f)
+                    : new Color(0.10f, 0.10f, 0.25f, 0.08f);
+                glowSr.sortingOrder = -3;
+                _columnGlowRenderers[col] = glowSr;
+
                 // Position so the sprite's BOTTOM edge lands exactly at tubeBottomLoc,
                 // regardless of the sprite's pivot (bottom-center once imported; center if
                 // the import hasn't refreshed yet). sprite.bounds is centered on the pivot,
@@ -932,10 +979,10 @@ namespace BoltSort.Gameplay
                 tubeGO.transform.SetParent(colGO.transform, false);
                 tubeGO.transform.localPosition = new Vector3(0f, tubeBottomLoc - spriteBottomOffset, 0f);
                 tubeGO.transform.localScale    = new Vector3(tubeScale, tubeScale, 1f);
-                bool isHelper = col >= _colorCount + _originalTempSlotCount;
                 var tubeSr = tubeGO.AddComponent<SpriteRenderer>();
                 tubeSr.sprite       = tubeSpr;
-                tubeSr.color        = isHelper ? new Color(0.55f, 0.85f, 0.98f, 1f)
+                // Helper tubes use dedicated plus-tube art → show its authored colour (no tint).
+                tubeSr.color        = isHelper ? Color.white
                                     : isTemp   ? new Color(0.85f, 0.80f, 0.95f, 1f)
                                     : Color.white;
                 tubeSr.sortingOrder = -1;
@@ -1186,8 +1233,11 @@ namespace BoltSort.Gameplay
                 var tsr = _tubeRenderers != null && col < _tubeRenderers.Length ? _tubeRenderers[col] : null;
                 if (tsr != null)
                 {
-                    int    depth   = _colCap[col];
-                    Sprite wantSpr = GameAssets.TubeSprite(depth, selected: col == heldCol);
+                    int    depth     = _colCap[col];
+                    bool   isHelperT = col >= _colorCount + _originalTempSlotCount;
+                    Sprite wantSpr   = isHelperT
+                        ? GameAssets.HelperTubeSprite(depth, selected: col == heldCol)
+                        : GameAssets.TubeSprite(depth, selected: col == heldCol);
                     if (tsr.sprite != wantSpr && wantSpr != null)
                     {
                         tsr.sprite = wantSpr;
@@ -1202,7 +1252,7 @@ namespace BoltSort.Gameplay
                     int   frozenRem  = _gsm != null ? _gsm.GetFreezeRemaining(col) : 0;
                     bool  isTempCol  = col >= _colorCount;
                     bool  isHelperCol = col >= _colorCount + _originalTempSlotCount;
-                    Color baseTint   = isHelperCol ? new Color(0.55f, 0.85f, 0.98f, 1f)
+                    Color baseTint   = isHelperCol ? Color.white   // dedicated plus-tube art → no tint
                                      : isTempCol   ? new Color(0.85f, 0.80f, 0.95f, 1f)
                                      : Color.white;
                     tsr.color = frozenRem > 0 ? new Color(0.50f, 0.72f, 1f, 1f) : baseTint;

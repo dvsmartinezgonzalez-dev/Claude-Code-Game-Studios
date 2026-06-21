@@ -29,6 +29,7 @@ namespace BoltSort.Editor
             ImportTubeContainers();
             ImportLevelButtonsGrid();
             ImportBallsAndTubes();
+            ImportHelperTubes();
             ImportConfettiSheet();
             ImportShopTabs();
             ImportShopWallpapers();
@@ -246,6 +247,22 @@ namespace BoltSort.Editor
             ImportCropped(tubesDir + "Tube_selected_XXL.png",            11,  41, 563, 2558, TubePivot);
         }
 
+        static void ImportHelperTubes()
+        {
+            // Resources/Sprites/Tubes/ — runtime helper (extra) tube art (plus_one/two/three,
+            // capacity 1/2/3, each with a _selected variant). Cropped to their opaque content
+            // (581×1682 canvases carry large transparent padding) with a Bottom-Center pivot, so
+            // the visible tube anchors on the board floor exactly like the standard tubes and
+            // balls sit inside the real glass. Rects are Unity bottom-left-origin (measured bbox).
+            const string dir = "Assets/Resources/Sprites/Tubes/";
+            ImportCropped(dir + "plus_one_tube.png",            55, 257, 480,  553, TubePivot);
+            ImportCropped(dir + "plus_two_tube.png",            55, 257, 480,  915, TubePivot);
+            ImportCropped(dir + "plus_three_tube.png",          55, 257, 480, 1275, TubePivot);
+            ImportCropped(dir + "plus_one_tube_selected.png",   11, 215, 570,  637, TubePivot);
+            ImportCropped(dir + "plus_two_tube_selected.png",   11, 215, 570, 1006, TubePivot);
+            ImportCropped(dir + "plus_three_tube_selected.png", 11, 215, 570, 1358, TubePivot);
+        }
+
         static void ImportConfettiSheet()
         {
             // 1080×1920 — scattered confetti pieces (top ~45% of image), transparent bg.
@@ -461,7 +478,8 @@ namespace BoltSort.Editor
             // tube sprites still carry their default (center) pivot. The tube check is
             // essential: buttons may already be sliced from an earlier run, which would
             // otherwise make us skip importing the newer ball/tube art entirely.
-            if (ButtonsSliced() && TubesBottomPivot() && ConfettiSliced() && ShopTabsSliced()) return;
+            if (ButtonsSliced() && TubesBottomPivot() && HelperTubesConfigured() &&
+                ConfettiSliced() && ShopTabsSliced()) return;
 
             Debug.Log("[GameAssets] Game assets not fully configured — auto-importing...");
             GameAssetImporter.ImportAll();
@@ -494,6 +512,22 @@ namespace BoltSort.Editor
             foreach (var obj in AssetDatabase.LoadAllAssetsAtPath(probeAsset))
                 if (obj is Sprite s && s.name == "confetti_0") return true;
             return false;
+        }
+
+        // True when the helper (plus) tube art is present, CROPPED to content, and bottom-pivoted,
+        // i.e. our ImportHelperTubes has run. The crop check (rect shorter than the full texture)
+        // also forces a re-import of any earlier full-rect version. Absent PNG → nothing to do.
+        static bool HelperTubesConfigured()
+        {
+            const string probeAsset = "Assets/Resources/Sprites/Tubes/plus_one_tube.png";
+            if (AssetImporter.GetAtPath(probeAsset) == null) return true; // PNG absent → nothing to do
+            foreach (var obj in AssetDatabase.LoadAllAssetsAtPath(probeAsset))
+            {
+                if (obj is Sprite s && s.rect.height > 0f && s.texture != null)
+                    return (s.pivot.y / s.rect.height) < 0.10f
+                        && s.rect.height < s.texture.height - 1; // cropped, not full-rect
+            }
+            return false; // no sprite sub-asset yet → needs import
         }
 
         // True when the tube sprite is configured with a bottom (y≈0) pivot, i.e. our

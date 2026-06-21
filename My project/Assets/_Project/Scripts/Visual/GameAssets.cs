@@ -201,6 +201,36 @@ namespace BoltSort.Visual
             return LoadRes($"Sprites/Tubes/{state}{size}");
         }
 
+        /// <summary>
+        /// Tube body sprite for a runtime helper (extra) tube of the given capacity.
+        /// Helper tubes use dedicated "plus" art: capacity 1 → plus_one_tube, 2 → plus_two_tube,
+        /// 3 → plus_three_tube (each with a matching _selected variant). Capacities outside 1–3
+        /// (a helper grown past 3) fall back to the standard <see cref="TubeSprite"/>. If a plus
+        /// asset is missing it logs a warning and falls back to the standard tube — never crashes.
+        /// </summary>
+        public static Sprite HelperTubeSprite(int capacity, bool selected)
+        {
+            string baseName = capacity == 1 ? "plus_one_tube"
+                            : capacity == 2 ? "plus_two_tube"
+                            : capacity == 3 ? "plus_three_tube"
+                            : null;
+            if (baseName == null) return TubeSprite(capacity, selected);
+
+            string name   = selected ? baseName + "_selected" : baseName;
+            string folder = SkinManager.ActiveTubeFolder;
+            if (!string.IsNullOrEmpty(folder))
+            {
+                var skinned = LoadRes($"Sprites/Tubes/{folder}{name}");
+                if (skinned != null) return skinned;
+            }
+            var spr = LoadRes($"Sprites/Tubes/{name}");
+            if (spr != null) return spr;
+
+            Debug.LogWarning($"[GameAssets] Helper tube sprite '{name}' missing — " +
+                             "falling back to the standard tube sprite.");
+            return TubeSprite(capacity, selected);
+        }
+
         // ── Fonts ───────────────────────────────────────────────────────────────────
         private static Font _menuFont;
 
