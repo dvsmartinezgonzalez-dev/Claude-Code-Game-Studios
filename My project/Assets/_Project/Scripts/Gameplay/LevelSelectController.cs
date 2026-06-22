@@ -488,7 +488,32 @@ namespace BoltSort.Gameplay
 
             if (mystery)    AddIcon(GameAssets.BallMystery,    new Color(0.4f, 0.3f, 0.6f, 0.9f));
             if (multicolor) AddIcon(GameAssets.BallMulticolor,  new Color(0.9f, 0.6f, 0.2f, 0.9f));
-            if (frozen)     AddIcon(null,                       new Color(0.5f, 0.72f, 1f, 0.95f));
+
+            if (frozen)
+            {
+                float badgeSize = cellSize * 0.45f;
+                var badgeGO = new GameObject("FrozenBadge");
+                badgeGO.transform.SetParent(cell.transform, false);
+                var badgeImg = badgeGO.AddComponent<Image>();
+                Sprite snowSpr = GameAssets.SnowflakeBadge;
+                if (snowSpr != null)
+                {
+                    badgeImg.sprite = snowSpr;
+                    badgeImg.preserveAspect = true;
+                    badgeImg.color = new Color(0.7f, 0.9f, 1f, 0.95f);
+                }
+                else
+                {
+                    Debug.LogWarning("[LevelSelect] snow_flake sprite missing — frozen badge shown as tinted square.");
+                    badgeImg.color = new Color(0.5f, 0.72f, 1f, 0.95f);
+                }
+                badgeImg.raycastTarget = false;
+                var badgeRt = badgeGO.GetComponent<RectTransform>();
+                badgeRt.anchorMin = badgeRt.anchorMax = new Vector2(1f, 1f);
+                badgeRt.pivot = new Vector2(1f, 1f);
+                badgeRt.sizeDelta = new Vector2(badgeSize, badgeSize);
+                badgeRt.anchoredPosition = new Vector2(-4f, -4f);
+            }
         }
 
         // ── Level number formatting (TDD §5) ──────────────────────────────────────

@@ -95,6 +95,8 @@ namespace BoltSort.Visual
         // Level select tiles (assets_admin/Levels → Resources/Sprites/Levels/)
         public static Sprite LevelBackground => LoadRes("Sprites/Levels/level_background");
         public static Sprite LevelLock       => LoadRes("Sprites/Levels/lock");
+        public static Sprite SnowflakeBadge  => LoadRes("Sprites/Levels/snow_flake");
+        public static Sprite FrozenTexture   => LoadRes("Sprites/Levels/frozen_texture");
 
         // ── Gameplay sprites — balls & tubes (assets_admin/Sprites_objets/New → Resources/Sprites/) ──
 

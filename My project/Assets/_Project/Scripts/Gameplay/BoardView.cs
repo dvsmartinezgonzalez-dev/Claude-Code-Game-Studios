@@ -40,8 +40,10 @@ namespace BoltSort.Gameplay
         private int[] _colCap;
 
         // ── Phase-2 frozen-tube overlay (per column) ──────────────────────────────
-        private SpriteRenderer[] _frozenIcon;   // snowflake glyph, shown while frozen
-        private TextMesh[]       _frozenLabel;  // remaining-turn counter
+        private SpriteRenderer[] _frozenIcon;          // snowflake glyph, shown while frozen
+        private SpriteRenderer[] _frozenOverlay;       // frozen_texture.png stretched over tube
+        private TextMesh[]       _frozenLabel;          // remaining-turn counter
+        private TextMesh[][]     _frozenLabelOutlines;  // 4-direction black outline copies
         private static Sprite    _snowSprite;
 
         // ── System references ─────────────────────────────────────────────────────
@@ -942,8 +944,10 @@ namespace BoltSort.Gameplay
             _ballSize            = new float[totalCols];
             _tubeWidth           = new float[totalCols];
             _slot0CenterLocal    = new float[totalCols];
-            _frozenIcon          = new SpriteRenderer[totalCols];
-            _frozenLabel         = new TextMesh[totalCols];
+            _frozenIcon           = new SpriteRenderer[totalCols];
+            _frozenOverlay        = new SpriteRenderer[totalCols];
+            _frozenLabel          = new TextMesh[totalCols];
+            _frozenLabelOutlines  = new TextMesh[totalCols][];
 
             // Shared bottom baseline (local Y where every tube's bottom edge rests), derived
             // from the tallest tube so all tubes in a row are BOTTOM-aligned (FIX 1). Column
@@ -1049,10 +1053,12 @@ namespace BoltSort.Gameplay
                 _tubeRenderers[col]     = tubeSr;
                 _columnBgRenderers[col] = tubeSr; // reused by PlayWinCelebration's FlashColumn
 
-                // Phase-2 frozen-tube overlay — snowflake + remaining-turn counter near the tube
-                // top. Created hidden; shown/updated each frame in LateUpdate from GSM freeze state.
-                float overlayY = colCtrLoc + colH * 0.5f + ballSize * 0.25f;
+                // Phase-2 frozen-tube overlay — frozen texture + snowflake + counter.
+                // Created hidden; shown/updated each frame in LateUpdate from GSM freeze state.
+                float overlayY      = colCtrLoc + colH * 0.5f + ballSize * 0.25f;  // snowflake above tube
+                float glassCenterLoc = glassBottomLoc + glassHeight * 0.5f;         // counter centered in glass
 
+                // Snowflake icon above the tube (decorative indicator)
                 var snowGO = new GameObject("FrozenIcon");
                 snowGO.transform.SetParent(colGO.transform, false);
                 snowGO.transform.localPosition = new Vector3(0f, overlayY, -0.2f);
@@ -1064,15 +1070,60 @@ namespace BoltSort.Gameplay
                 snowSr.enabled      = false;
                 _frozenIcon[col]    = snowSr;
 
+                // Frozen texture overlay — stretched to cover the full tube area (sortingOrder 3, above balls)
+                var frozenTexSpr = Visual.GameAssets.FrozenTexture;
+                var fOverlayGO = new GameObject("FrozenOverlay");
+                fOverlayGO.transform.SetParent(colGO.transform, false);
+                fOverlayGO.transform.localPosition = new Vector3(0f, colCtrLoc, 0f);
+                var fOverlaySr = fOverlayGO.AddComponent<SpriteRenderer>();
+                if (frozenTexSpr != null)
+                {
+                    fOverlaySr.sprite = frozenTexSpr;
+                    float fScaleX = tubeWidth  / Mathf.Max(0.0001f, frozenTexSpr.bounds.size.x);
+                    float fScaleY = tubeHeight / Mathf.Max(0.0001f, frozenTexSpr.bounds.size.y);
+                    fOverlayGO.transform.localScale = new Vector3(fScaleX, fScaleY, 1f);
+                }
+                else
+                {
+                    Debug.LogWarning("[BoardView] frozen_texture sprite missing — frozen overlay skipped.");
+                    fOverlayGO.transform.localScale = Vector3.zero;
+                }
+                fOverlaySr.color        = new Color(1f, 1f, 1f, 0.80f);
+                fOverlaySr.sortingOrder = 3;
+                fOverlaySr.enabled      = false;
+                _frozenOverlay[col]     = fOverlaySr;
+
+                // Black outline copies for the counter (4-direction, sortingOrder 5)
+                float counterCharSize = Mathf.Max(0.02f, ballSize * 0.21f);
+                float outlineOff = Mathf.Max(0.005f, ballSize * 0.012f);
+                var outlines = new TextMesh[4];
+                Vector2[] oOffsets = { new Vector2(outlineOff, 0), new Vector2(-outlineOff, 0),
+                                       new Vector2(0, outlineOff), new Vector2(0, -outlineOff) };
+                for (int oi = 0; oi < 4; oi++)
+                {
+                    var shGO = new GameObject("FrozenCounterOutline");
+                    shGO.transform.SetParent(colGO.transform, false);
+                    shGO.transform.localPosition = new Vector3(oOffsets[oi].x, glassCenterLoc + oOffsets[oi].y, -0.29f);
+                    var shTm = shGO.AddComponent<TextMesh>();
+                    shTm.text = ""; shTm.anchor = TextAnchor.MiddleCenter; shTm.alignment = TextAlignment.Center;
+                    shTm.fontSize = 48; shTm.characterSize = counterCharSize;
+                    shTm.color = Color.black;
+                    var shMr = shGO.GetComponent<MeshRenderer>();
+                    if (shMr != null) { shMr.sortingOrder = 5; shMr.enabled = false; }
+                    outlines[oi] = shTm;
+                }
+                _frozenLabelOutlines[col] = outlines;
+
+                // Counter text centered in the glass area (sortingOrder 6, above texture and outlines)
                 var lblGO = new GameObject("FrozenCounter");
                 lblGO.transform.SetParent(colGO.transform, false);
-                lblGO.transform.localPosition = new Vector3(0f, overlayY, -0.3f);
+                lblGO.transform.localPosition = new Vector3(0f, glassCenterLoc, -0.3f);
                 var tm = lblGO.AddComponent<TextMesh>();
                 tm.text          = "";
                 tm.anchor        = TextAnchor.MiddleCenter;
                 tm.alignment     = TextAlignment.Center;
                 tm.fontSize      = 48;
-                tm.characterSize = Mathf.Max(0.02f, ballSize * 0.18f);
+                tm.characterSize = counterCharSize;
                 tm.color         = new Color(0.08f, 0.22f, 0.5f, 1f);
                 var tmr = lblGO.GetComponent<MeshRenderer>();
                 if (tmr != null) { tmr.sortingOrder = 6; tmr.enabled = false; }
@@ -1323,11 +1374,43 @@ namespace BoltSort.Gameplay
                         float pulse = frozenRem == 1 ? 1f + 0.12f * Mathf.Sin(Time.time * 8f) : 1f; // thawing pulse
                         _frozenIcon[col].transform.localScale = Vector3.one * (_ballSize[col] * 0.85f * pulse);
                     }
+                    if (_frozenOverlay != null && col < _frozenOverlay.Length && _frozenOverlay[col] != null)
+                        _frozenOverlay[col].enabled = frozenRem > 0;
+
                     if (_frozenLabel != null && col < _frozenLabel.Length && _frozenLabel[col] != null)
                     {
                         var tmr = _frozenLabel[col].GetComponent<MeshRenderer>();
-                        if (frozenRem > 0) { _frozenLabel[col].text = frozenRem.ToString(); if (tmr != null) tmr.enabled = true; }
-                        else if (tmr != null) tmr.enabled = false;
+                        if (frozenRem > 0)
+                        {
+                            string counterText = frozenRem.ToString();
+                            _frozenLabel[col].text = counterText;
+                            if (tmr != null) tmr.enabled = true;
+                            if (_frozenLabelOutlines != null && col < _frozenLabelOutlines.Length &&
+                                _frozenLabelOutlines[col] != null)
+                            {
+                                foreach (var outline in _frozenLabelOutlines[col])
+                                {
+                                    if (outline == null) continue;
+                                    outline.text = counterText;
+                                    var omr = outline.GetComponent<MeshRenderer>();
+                                    if (omr != null) omr.enabled = true;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (tmr != null) tmr.enabled = false;
+                            if (_frozenLabelOutlines != null && col < _frozenLabelOutlines.Length &&
+                                _frozenLabelOutlines[col] != null)
+                            {
+                                foreach (var outline in _frozenLabelOutlines[col])
+                                {
+                                    if (outline == null) continue;
+                                    var omr = outline.GetComponent<MeshRenderer>();
+                                    if (omr != null) omr.enabled = false;
+                                }
+                            }
+                        }
                     }
                 }
 
