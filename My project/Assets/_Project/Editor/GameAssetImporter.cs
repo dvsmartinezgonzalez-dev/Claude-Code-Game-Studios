@@ -33,6 +33,7 @@ namespace BoltSort.Editor
             ImportConfettiSheet();
             ImportShopTabs();
             ImportShopWallpapers();
+            ImportParticlesSprite();
 
             // Single-sprite images — name differs from filename → use named single entry
             ImportNamed("Assets/game_assets/level_selector/level_unlocked_1.png",
@@ -331,6 +332,14 @@ namespace BoltSort.Editor
         }
 
         // Wallpapers (.jpg) → single sprites under Resources/Sprites/Shop/Wallpapers/.
+        static void ImportParticlesSprite()
+        {
+            // 1080×1920 — scattered white spherical particle shapes (lower half of image).
+            // Imported as a single sprite so GameAssets.AmbientParticleSprite can load it
+            // for use in BackgroundController's ambient particle system.
+            ImportSingle("Assets/Resources/Sprites/Levels/particles.png");
+        }
+
         static void ImportShopWallpapers()
         {
             const string dir = "Assets/Resources/Sprites/Shop/Wallpapers";
@@ -479,7 +488,7 @@ namespace BoltSort.Editor
             // essential: buttons may already be sliced from an earlier run, which would
             // otherwise make us skip importing the newer ball/tube art entirely.
             if (ButtonsSliced() && TubesBottomPivot() && HelperTubesConfigured() &&
-                ConfettiSliced() && ShopTabsSliced()) return;
+                ConfettiSliced() && ShopTabsSliced() && ParticlesImported()) return;
 
             Debug.Log("[GameAssets] Game assets not fully configured — auto-importing...");
             GameAssetImporter.ImportAll();
@@ -528,6 +537,14 @@ namespace BoltSort.Editor
                         && s.rect.height < s.texture.height - 1; // cropped, not full-rect
             }
             return false; // no sprite sub-asset yet → needs import
+        }
+
+        static bool ParticlesImported()
+        {
+            const string probeAsset = "Assets/Resources/Sprites/Levels/particles.png";
+            if (AssetImporter.GetAtPath(probeAsset) == null) return true; // PNG absent → nothing to do
+            var imp = AssetImporter.GetAtPath(probeAsset) as TextureImporter;
+            return imp != null && imp.textureType == TextureImporterType.Sprite;
         }
 
         // True when the tube sprite is configured with a bottom (y≈0) pivot, i.e. our

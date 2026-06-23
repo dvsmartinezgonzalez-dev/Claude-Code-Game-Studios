@@ -188,6 +188,11 @@ namespace BoltSort.Gameplay
             // fully constructed first and never depends on Settings initialization.
             BuildPage(_currentPage);
 
+            // If LevelDataSystem wasn't ready yet, mechanic icons were skipped — rebuild once it is.
+            var lds = LevelData.LevelDataSystem.Instance;
+            if (lds != null && !lds.IsReady)
+                lds.OnLevelDataReady += () => BuildPage(_currentPage);
+
             // Settings panel (built last; starts hidden)
             var spHost = new GameObject("SettingsPanelHost");
             spHost.transform.SetParent(canvasGO.transform, false);
@@ -491,7 +496,7 @@ namespace BoltSort.Gameplay
 
             if (frozen)
             {
-                float badgeSize = cellSize * 0.45f;
+                float badgeSize = cellSize * 0.22f;
                 var badgeGO = new GameObject("FrozenBadge");
                 badgeGO.transform.SetParent(cell.transform, false);
                 var badgeImg = badgeGO.AddComponent<Image>();

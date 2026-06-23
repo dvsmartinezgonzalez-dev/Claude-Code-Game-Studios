@@ -93,6 +93,13 @@ namespace BoltSort.Gameplay
 
         private static int SlotKey(int col, int slot) => col * 1000 + slot;
 
+        /// <summary>Mystery-reveal animations in flight: SlotKey → start time (Time.time). During the
+        /// first half the slot still shows the mystery skin; a scale pulse runs across the whole
+        /// duration before the real color takes over. Phase-2 (schema_version 2).</summary>
+        private readonly Dictionary<int, float> _mysteryRevealAnim = new Dictionary<int, float>();
+        /// <summary>Reveal animation length (s) — within the 0.2–0.3s design range.</summary>
+        private const float MysteryRevealDur = 0.25f;
+
         // ── Win state ─────────────────────────────────────────────────────────────
         private bool     _winPlaying;
         private Coroutine _winCoroutine;
@@ -105,6 +112,33 @@ namespace BoltSort.Gameplay
         private static Sprite _shadowSprite;
         private static Sprite _glowSprite;
         private static Sprite _particleCircle;
+
+        // ─────────────────────────────────────────────────────────────────────────
+
+        // ── Tutorial API — world positions of tube columns ────────────────────────
+
+        /// <summary>Total tube column count after the last level load. Zero before first level.</summary>
+        public int TubeCount => _columnSlot0World?.Length ?? 0;
+
+        /// <summary>World-space position of the top slot center of tube <paramref name="col"/>.</summary>
+        public Vector3 GetTubeTopWorldPos(int col)
+        {
+            if (_columnSlot0World == null || col < 0 || col >= _columnSlot0World.Length)
+                return Vector3.zero;
+            int   cap  = (_colCap    != null && col < _colCap.Length)    ? _colCap[col]    : 1;
+            float step = (_ballStep  != null && col < _ballStep.Length)  ? _ballStep[col]  : 0f;
+            return _columnSlot0World[col] + Vector3.up * ((cap - 1) * step);
+        }
+
+        /// <summary>World-space center of tube <paramref name="col"/>, halfway up the stack.</summary>
+        public Vector3 GetTubeCenterWorldPos(int col)
+        {
+            if (_columnSlot0World == null || col < 0 || col >= _columnSlot0World.Length)
+                return Vector3.zero;
+            int   cap  = (_colCap   != null && col < _colCap.Length)   ? _colCap[col]   : 1;
+            float step = (_ballStep != null && col < _ballStep.Length) ? _ballStep[col] : 0f;
+            return _columnSlot0World[col] + Vector3.up * ((cap - 1) * 0.5f * step);
+        }
 
         // ─────────────────────────────────────────────────────────────────────────
 
@@ -156,6 +190,7 @@ namespace BoltSort.Gameplay
             _selScale    = 1f;
             _selLifted   = false;
             _hiddenDstSlots.Clear();
+            _mysteryRevealAnim.Clear();
             _winPlaying  = false;
 
             if (_moveGhost != null) { Destroy(_moveGhost); _moveGhost = null; }
@@ -1074,13 +1109,13 @@ namespace BoltSort.Gameplay
                 var frozenTexSpr = Visual.GameAssets.FrozenTexture;
                 var fOverlayGO = new GameObject("FrozenOverlay");
                 fOverlayGO.transform.SetParent(colGO.transform, false);
-                fOverlayGO.transform.localPosition = new Vector3(0f, colCtrLoc, 0f);
+                fOverlayGO.transform.localPosition = new Vector3(0f, colCtrLoc - colH * 0.10f + 0.1f, 0f);
                 var fOverlaySr = fOverlayGO.AddComponent<SpriteRenderer>();
                 if (frozenTexSpr != null)
                 {
                     fOverlaySr.sprite = frozenTexSpr;
-                    float fScaleX = tubeWidth  / Mathf.Max(0.0001f, frozenTexSpr.bounds.size.x);
-                    float fScaleY = tubeHeight / Mathf.Max(0.0001f, frozenTexSpr.bounds.size.y);
+                    float fScaleX = tubeWidth  / Mathf.Max(0.0001f, frozenTexSpr.bounds.size.x) * 1.46875f;
+                    float fScaleY = Mathf.Max(0f, tubeHeight * 1.46875f - 0.2f) / Mathf.Max(0.0001f, frozenTexSpr.bounds.size.y);
                     fOverlayGO.transform.localScale = new Vector3(fScaleX, fScaleY, 1f);
                 }
                 else
@@ -1312,6 +1347,24 @@ namespace BoltSort.Gameplay
                     }
                     boltSr.color  = Color.white;
 
+                    // Mystery reveal animation (rule #4): keep the hidden skin for the first half,
+                    // then let the real color show, with a scale pulse across the whole reveal.
+                    float revealPulse = 1f;
+                    if (_mysteryRevealAnim.Count > 0)
+                    {
+                        int rk = SlotKey(col, slot);
+                        if (_mysteryRevealAnim.TryGetValue(rk, out float t0))
+                        {
+                            float p = (Time.time - t0) / MysteryRevealDur;
+                            if (p >= 1f) _mysteryRevealAnim.Remove(rk);
+                            else
+                            {
+                                if (p < 0.5f) boltSr.sprite = GameAssets.BallMystery;
+                                revealPulse = 1f + 0.25f * Mathf.Sin(Mathf.Clamp01(p) * Mathf.PI);
+                            }
+                        }
+                    }
+
                     // Base position (slot center)
                     float slotY = _slot0CenterLocal[col] + slot * _ballStep[col];
 
@@ -1329,7 +1382,7 @@ namespace BoltSort.Gameplay
 
                     // Scale to the target world diameter, normalized by the sprite's native
                     // size so the result is independent of the PNG's import PPU.
-                    float diameter   = _ballSize[col] * (isHeldSlot ? _selScale : 1f);
+                    float diameter   = _ballSize[col] * (isHeldSlot ? _selScale : 1f) * revealPulse;
                     float nativeBallW = boltSr.sprite != null ? boltSr.sprite.bounds.size.x : 1f;
                     float ballScale  = diameter / Mathf.Max(0.0001f, nativeBallW);
                     boltSr.transform.localScale = new Vector3(ballScale, ballScale, 1f);
@@ -1451,6 +1504,9 @@ namespace BoltSort.Gameplay
                        ? temps[flatIndex - _colorCount] : null);
             int topSlot = (col != null && col.Count > 0) ? col.Count - 1 : 0;
             Vector3 world = _columnSlot0World[flatIndex] + Vector3.up * (topSlot * _ballStep[flatIndex]);
+
+            // Drive the 0.2–0.3s hide→pop→reveal transition in LateUpdate for this slot (rule #4).
+            _mysteryRevealAnim[SlotKey(flatIndex, topSlot)] = Time.time;
 
             AudioMgr.Instance?.PlaySFX("mystery_reveal");
             Color c = BoltSortTheme.BoltColorForId(revealedColor);

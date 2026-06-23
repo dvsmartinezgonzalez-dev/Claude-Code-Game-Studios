@@ -95,8 +95,9 @@ namespace BoltSort.Visual
         // Level select tiles (assets_admin/Levels → Resources/Sprites/Levels/)
         public static Sprite LevelBackground => LoadRes("Sprites/Levels/level_background");
         public static Sprite LevelLock       => LoadRes("Sprites/Levels/lock");
-        public static Sprite SnowflakeBadge  => LoadRes("Sprites/Levels/snow_flake");
-        public static Sprite FrozenTexture   => LoadRes("Sprites/Levels/frozen_texture");
+        public static Sprite SnowflakeBadge       => LoadRes("Sprites/Levels/snow_flake_compressed");
+        public static Sprite FrozenTexture        => LoadRes("Sprites/Levels/frozen_texture_2");
+        public static Sprite AmbientParticleSprite => LoadRes("Sprites/Levels/particles");
 
         // ── Gameplay sprites — balls & tubes (assets_admin/Sprites_objets/New → Resources/Sprites/) ──
 
@@ -348,6 +349,32 @@ namespace BoltSort.Visual
             img.sprite         = sprite;
             img.color          = Color.white;
             img.preserveAspect = preserveAspect;
+        }
+
+        // ── Tutorial sprites (assets_admin/Tutorial → Resources/Sprites/Tutorial/) ──
+
+        /// <summary>Green checkmark shown on valid tube destinations during tutorial.</summary>
+        public static Sprite TutorialRightIcon => LoadRes("Sprites/Tutorial/right_tutorial");
+
+        /// <summary>Red X shown on invalid tube destinations during tutorial.</summary>
+        public static Sprite TutorialWrongIcon => LoadRes("Sprites/Tutorial/wrong_tutorial");
+
+        /// <summary>
+        /// Loads sequentially-numbered hand-animation frames (1.png, 2.png, …) from
+        /// Resources/Sprites/Tutorial/Hands/{type}/ until a frame is missing.
+        /// <paramref name="type"/> matches the subfolder name: "Indicate", "Indicate_Down",
+        /// "Point", or "Pulse".
+        /// </summary>
+        public static Sprite[] TutorialHandFrames(string type)
+        {
+            var list = new System.Collections.Generic.List<Sprite>();
+            for (int i = 1; i <= 12; i++)
+            {
+                var s = LoadRes($"Sprites/Tutorial/Hands/{type}/{i}");
+                if (s == null) break;
+                list.Add(s);
+            }
+            return list.ToArray();
         }
 
         /// <summary>Clears the runtime sprite cache (call when switching scenes if needed).</summary>

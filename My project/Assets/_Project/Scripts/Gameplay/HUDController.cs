@@ -54,6 +54,14 @@ namespace BoltSort.Gameplay
         // gameplay button is usable; stops & resets to 1.0 the instant it is not. ──
         private RectTransform _undoPulseRT;
         private RectTransform _extraPulseRT;
+
+        /// <summary>Header undo button RectTransform — used by TutorialOverlaySystem for hand placement.</summary>
+        public RectTransform UndoButtonRT      => _undoPulseRT;
+        /// <summary>Header extra-tube button RectTransform — used by TutorialOverlaySystem for hand placement.</summary>
+        public RectTransform ExtraTubeButtonRT => _extraPulseRT;
+        private RectTransform _retryHeaderRT;
+        /// <summary>Header retry/restart button RectTransform — used by TutorialOverlaySystem for hand placement.</summary>
+        public RectTransform RetryButtonRT => _retryHeaderRT;
         private float _undoPressSuppressUntil;   // pause pulse briefly so it never fights the press bounce
         private float _extraPressSuppressUntil;
         private const float PulsePeriod   = 1.35f; // seconds per cycle (within 1.2–1.5s)
@@ -751,6 +759,7 @@ namespace BoltSort.Gameplay
             var retryBtn = MakeIconButton(topBar, "RetryHeaderButton", "↺", font, 38,
                                           GameAssets.BtnRestartLevel ?? GameAssets.BtnRetryAction, _onReset);
             PlaceHeaderButton(retryBtn.GetComponent<RectTransform>(), 0.225f, hBtnY, hBtn);
+            _retryHeaderRT = retryBtn.GetComponent<RectTransform>();
 
             // ── Center: Level title + small moves line beneath ────────────────────
             _levelText = MakeLabel(topBar, "LevelText", "Level —", font, 42, // +10%

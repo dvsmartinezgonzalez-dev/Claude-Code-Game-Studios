@@ -26,8 +26,28 @@ namespace BoltSort.Gameplay
             EnsureTransitionManager();
             EnsureEventSystem();
             ConfigureCamera();
+            new GameObject("BackgroundController").AddComponent<BoltSort.Visual.BackgroundController>();
+            SpawnWorldBackground();
             BuildUI();
             AudioMgr.Instance?.PlayMusic();
+        }
+
+        /// <summary>Adds game_background.png as a world-space sprite so particles in front of it
+        /// are visible through the transparent canvas background.</summary>
+        private static void SpawnWorldBackground()
+        {
+            Sprite spr = GameAssets.GameBackground;
+            if (spr == null) return;
+            Camera cam = Camera.main;
+            float camH = cam != null ? cam.orthographicSize * 2f : 19.2f;
+            float camW = cam != null ? camH * cam.aspect       : camH * (9f / 16f);
+            float sw   = spr.bounds.size.x, sh = spr.bounds.size.y;
+            float s    = Mathf.Max(camW / Mathf.Max(0.0001f, sw), camH / Mathf.Max(0.0001f, sh));
+            var go = new GameObject("GameBackground_World");
+            go.transform.localScale = new Vector3(s, s, 1f);
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite       = spr;
+            sr.sortingOrder = -98; // above gradient (-100), behind particles (5)
         }
 
         // ── Android back button (GP-02) ───────────────────────────────────────────
@@ -67,11 +87,8 @@ namespace BoltSort.Gameplay
             float lpu     = 1280f / Screen.height;
             float safeTop = (Screen.height - Screen.safeArea.yMax) * lpu;
 
-            // Background — use game_background sprite if available, else solid color
-            var bg    = MakePanel(canvasGO, "Background", BoltSortTheme.BackgroundDeep);
-            var bgImg = bg.GetComponent<Image>();
-            GameAssets.Apply(bgImg, GameAssets.GameBackground);
-            Stretch(bgImg.GetComponent<RectTransform>());
+            // Background is now a world-space SpriteRenderer (SpawnWorldBackground),
+            // so the canvas background is transparent to let particles show through.
 
             // Title — two stacked image words ("BOLT" / "SORT") + decorative spark,
             // replacing the old "BOLT SORT" text label.
@@ -141,6 +158,11 @@ namespace BoltSort.Gameplay
             SetAnchors(levelsBtn.GetComponent<RectTransform>(),
                 new Vector2(0.04f, 0.11f), new Vector2(0.47f, 0.25f));
 
+            // Tutorial gate — lock LEVELS and SHOP until the onboarding tutorial is complete.
+            bool tutorialDone = PlayerPrefs.GetInt("bs.tutorial_complete", 0) == 1;
+            if (!tutorialDone)
+                ApplyTutorialLock(levelsBtn, font);
+
             // Settings button (top-left corner) — btn_settings sprite (red gear circle)
             var settingsBtn = MakeAnimatedButton(canvasGO, "SettingsButton", "", font, 44, OnSettingsClicked);
             var settingsImg = settingsBtn.GetComponent<Image>();
@@ -178,6 +200,9 @@ namespace BoltSort.Gameplay
                 shopImg.color = new Color(0.55f, 0.25f, 0.75f, 1f); // purple
             SetAnchors(shopBtn.GetComponent<RectTransform>(),
                 new Vector2(0.53f, 0.11f), new Vector2(0.96f, 0.25f));
+
+            if (!tutorialDone)
+                ApplyTutorialLock(shopBtn, font);
 
             // MM-05: diamond decorations — ~18% larger with slight overflow beyond button edges
             MakeDiamond(shopBtn, "ShopDiamond_L", GameAssets.MenuDiamond(1),
@@ -426,6 +451,40 @@ namespace BoltSort.Gameplay
             rt.anchorMin = anchorMin; rt.anchorMax = anchorMax;
             rt.pivot     = new Vector2(0.5f, 0.5f);
             rt.offsetMin = offsetMin; rt.offsetMax = offsetMax;
+        }
+
+        /// <summary>
+        /// Disables the button interaction and overlays a dimmed lock icon to signal the
+        /// feature is gated behind tutorial completion.
+        /// </summary>
+        private static void ApplyTutorialLock(GameObject btn, Font font)
+        {
+            // Disable the button so taps do nothing.
+            var b = btn.GetComponent<Button>();
+            if (b != null) b.interactable = false;
+
+            // Semi-transparent dim so it reads as "inactive".
+            var img = btn.GetComponent<Image>();
+            if (img != null) img.color = new Color(0.4f, 0.4f, 0.4f, 0.75f);
+
+            // Hide the text label so the lock replaces it visually.
+            var lbl = btn.transform.Find("Label")?.GetComponent<Text>();
+            if (lbl != null) lbl.enabled = false;
+
+            // Lock icon centered inside the button.
+            var lockGO  = new GameObject("LockIcon");
+            lockGO.transform.SetParent(btn.transform, false);
+            var lockImg = lockGO.AddComponent<Image>();
+            lockImg.raycastTarget = false;
+            lockImg.preserveAspect = true;
+            var lockSpr = GameAssets.LevelLock;
+            if (lockSpr != null) { lockImg.sprite = lockSpr; lockImg.color = Color.white; }
+            else                   lockImg.color = new Color(0.8f, 0.8f, 0.8f, 0.9f);
+            var lockRT = lockImg.rectTransform;
+            lockRT.anchorMin = new Vector2(0.5f, 0.5f);
+            lockRT.anchorMax = new Vector2(0.5f, 0.5f);
+            lockRT.pivot     = new Vector2(0.5f, 0.5f);
+            lockRT.sizeDelta = new Vector2(145.6f, 145.6f); // +180% of the original 52px for clear visibility
         }
 
         private static void Stretch(RectTransform rt)

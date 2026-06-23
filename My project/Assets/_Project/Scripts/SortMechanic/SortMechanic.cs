@@ -174,6 +174,9 @@ namespace BoltSort.SortMechanic
         /// <summary>Flat column index of the held bolt. Valid only when CurrentState == BoltSelected.</summary>
         public int           HeldSourceIndex => _heldSourceIndex;
 
+        /// <summary>Color ID of the bolt currently held. Valid only when CurrentState == BoltSelected.</summary>
+        public int           HeldColorId     => _heldColorId;
+
         // ── Unity Lifecycle ───────────────────────────────────────────────────────
 
         private void Awake()

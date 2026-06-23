@@ -140,8 +140,8 @@ namespace BoltSort.Visual
             main.startLifetime   = new ParticleSystem.MinMaxCurve(5f, 10f);
             main.startSize       = new ParticleSystem.MinMaxCurve(0.05f, 0.13f);
             main.startColor      = new ParticleSystem.MinMaxGradient(
-                new Color(0.85f, 0.70f, 1.00f, 0.18f),   // soft lavender
-                new Color(1.00f, 0.90f, 1.00f, 0.45f));  // near-white pink
+                new Color(1f, 1f, 1f, 0.20f),
+                new Color(1f, 1f, 1f, 0.50f));
             main.startSpeed      = new ParticleSystem.MinMaxCurve(0.05f, 0.25f);
             main.gravityModifier = 0f;
             main.simulationSpace = ParticleSystemSimulationSpace.World;
@@ -178,8 +178,57 @@ namespace BoltSort.Visual
                 });
             col.color = grad;
 
-            var renderer     = ps.GetComponent<ParticleSystemRenderer>();
+            var renderer = ps.GetComponent<ParticleSystemRenderer>();
+            renderer.renderMode   = ParticleSystemRenderMode.Billboard;
             renderer.sortingOrder = 5;
+
+            // Assign a transparent white material so particles render as white spheres.
+            Shader sh = Shader.Find("Universal Render Pipeline/Particles/Unlit")
+                     ?? Shader.Find("Sprites/Default");
+            if (sh != null)
+            {
+                var mat = new Material(sh) { color = Color.white };
+                mat.mainTexture        = BuildParticleDotTexture();
+                mat.mainTextureScale   = Vector2.one;  // no tiling
+                mat.mainTextureOffset  = Vector2.zero;
+                if (sh.name.Contains("Universal"))
+                {
+                    mat.SetFloat("_Surface", 1f);
+                    mat.SetFloat("_Blend",   0f);
+                    mat.SetFloat("_ZWrite",  0f);
+                    mat.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+                    mat.renderQueue = 3000;
+                }
+                renderer.material = mat;
+            }
+        }
+
+        /// <summary>
+        /// Procedural soft white sphere for ambient particles, generated in code like the
+        /// gradient and vignette. A centred radial alpha falloff renders as a round white
+        /// dot (no square, no stripe, no atlas dependency); size variety comes from
+        /// <c>main.startSize</c> and fade from <c>colorOverLifetime</c>.
+        /// </summary>
+        private static Texture2D BuildParticleDotTexture()
+        {
+            const int size = 64;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+                { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+
+            float c      = (size - 1) * 0.5f;
+            float radius = c;
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = x - c, dy = y - c;
+                    float d  = Mathf.Sqrt(dx * dx + dy * dy) / radius; // 0 centre → 1 edge
+                    float a  = Mathf.SmoothStep(1f, 0f, d);            // soft round falloff
+                    tex.SetPixel(x, y, new Color(1f, 1f, 1f, a));
+                }
+            }
+            tex.Apply();
+            return tex;
         }
     }
 }

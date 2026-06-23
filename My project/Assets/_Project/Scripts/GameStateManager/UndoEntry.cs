@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace BoltSort.GameStateManager
 {
     /// <summary>
@@ -35,5 +37,15 @@ namespace BoltSort.GameStateManager
         /// increment). <c>long</c> (int64) per GDD EC-12: int64 minimum for stale-signal safety.
         /// </summary>
         public long SeqId;
+
+        /// <summary>
+        /// Phase-2 (schema_version 2): source-column depths (bottom=0) of mystery bolts that this
+        /// move revealed (negative→positive flip when exposed at the source top, possibly several
+        /// during a Magnet chain). Null when the move revealed nothing — the common case, kept null
+        /// to avoid per-move heap allocation. On undo the reverse re-stacks the covering bolts and
+        /// these depths are flipped back to their hidden (negative) encoding (UND rule #10). All
+        /// reveals in one move occur on the <see cref="From"/> column.
+        /// </summary>
+        public List<int> RevealedDepths;
     }
 }

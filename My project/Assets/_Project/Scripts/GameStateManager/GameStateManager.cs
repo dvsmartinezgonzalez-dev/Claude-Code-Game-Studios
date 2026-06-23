@@ -437,6 +437,20 @@ namespace BoltSort.GameStateManager
                 fromList.Add(entry.ColorId);
             }
 
+            // Phase-2 (mystery rule #10): if this move revealed mystery bolts, the revert above has
+            // re-stacked the covering bolts, so re-hide each one (flip back to its negative encoding).
+            // The reverse restores source geometry exactly, so the recorded depths map to the same
+            // bolts. BoardView's render re-applies the mystery skin automatically (token < 0).
+            if (entry.RevealedDepths != null)
+            {
+                for (int i = 0; i < entry.RevealedDepths.Count; i++)
+                {
+                    int d = entry.RevealedDepths[i];
+                    if (d >= 0 && d < fromList.Count && fromList[d] > 0)
+                        fromList[d] = -fromList[d];
+                }
+            }
+
             // Phase-2: undoing onto/over a column can expose a covered mystery top → reveal it.
             RevealMysteryIfExposed(entry.To);
 
@@ -497,14 +511,22 @@ namespace BoltSort.GameStateManager
             // Step 2: Append bolt to destination
             _stackContents[dst].Add(colorId);
 
+            // Phase-2 (mystery rule #6): removing the source top may expose a covered mystery bolt.
+            // Reveal it BEFORE the Magnet evaluation so a bolt whose hidden color matches the moved
+            // color joins the chain like any normal bolt. Each revealed source depth is recorded so
+            // undo can re-hide it (UND rule #10). revealedDepths stays null when nothing reveals.
+            List<int> revealedDepths = null;
+            int rd = RevealMysteryIfExposed(src);
+            if (rd >= 0) { revealedDepths = new List<int>(); revealedDepths.Add(rd); }
+
             // Magnet (L50+): pull consecutive same-color bolts directly below the moved one into
             // the same destination, one by one, while the destination still has capacity. The
-            // pull stops at the first non-matching bolt; multicolor (0) and mystery (negative)
-            // bolts never trigger or join a chain (the == colorId test only matches a positive
-            // exact color). Partial fill is allowed — leftover bolts stay in the source. The whole
-            // chain is ONE logical move: a single undo entry and a single move-count increment,
-            // so undo reverses it atomically and frozen-tube counters (derived from move count)
-            // restore for free.
+            // pull stops at the first non-matching bolt; the multicolor wildcard (0) and a still
+            // hidden mystery (negative) top never match (== colorId needs a positive exact color),
+            // but a mystery just revealed above whose color equals colorId does join. Partial fill
+            // is allowed — leftover bolts stay in the source. The whole chain is ONE logical move:
+            // a single undo entry and a single move-count increment, so undo reverses it atomically
+            // and frozen-tube counters (derived from move count) restore for free.
             int movedCount = 1;
             if (IsMagnetActive() && colorId > 0)
             {
@@ -517,12 +539,13 @@ namespace BoltSort.GameStateManager
                     srcList.RemoveAt(srcList.Count - 1);
                     dstList.Add(colorId);
                     movedCount++;
+                    // Pulling can expose the next covered mystery → reveal it (it may also match
+                    // and continue the chain on the following iteration).
+                    rd = RevealMysteryIfExposed(src);
+                    if (rd >= 0) { if (revealedDepths == null) revealedDepths = new List<int>(); revealedDepths.Add(rd); }
                 }
             }
             LastMoveBallCount = movedCount;
-
-            // Phase-2: removing the source top(s) may expose a covered mystery ball → reveal it.
-            RevealMysteryIfExposed(src);
 
             // Step 3: Push undo entry (captures seqId BEFORE the post-commit increment)
             _undoStack.Add(new UndoEntry
@@ -532,6 +555,7 @@ namespace BoltSort.GameStateManager
                 ColorId = colorId,
                 SeqId   = _currentSequenceId,
                 Count   = movedCount,
+                RevealedDepths = revealedDepths,
             });
 
             // Step 4: Increment sequence ID (monotonic — TR-GSM-002)
@@ -1014,22 +1038,30 @@ namespace BoltSort.GameStateManager
         }
 
         /// <summary>
-        /// If the top of the given column is a mystery ball (negative color id), permanently
-        /// reveals it by flipping the stored value to its positive color and firing
-        /// <see cref="OnMysteryRevealed"/>. No-op for empty columns or non-mystery tops.
+        /// If the top of the given column is a mystery ball (negative color id), reveals it by
+        /// flipping the stored value to its positive color and firing <see cref="OnMysteryRevealed"/>.
+        /// No-op for empty columns or non-mystery tops. The reveal is permanent within forward play;
+        /// undo re-hides it via <see cref="UndoEntry.RevealedDepths"/> (UND rule #10).
         /// </summary>
-        private void RevealMysteryIfExposed(int flatIndex)
+        /// <returns>
+        /// The column depth (bottom=0) that was revealed, or -1 if nothing was revealed.
+        /// Callers that drive undo re-hide record this; load/undo-side callers ignore it.
+        /// </returns>
+        private int RevealMysteryIfExposed(int flatIndex)
         {
-            if (_stackContents == null || flatIndex < 0 || flatIndex >= _stackContents.Length) return;
+            if (_stackContents == null || flatIndex < 0 || flatIndex >= _stackContents.Length) return -1;
             var col = _stackContents[flatIndex];
-            if (col == null || col.Count == 0) return;
-            int top = col[col.Count - 1];
+            if (col == null || col.Count == 0) return -1;
+            int depth = col.Count - 1;
+            int top = col[depth];
             if (top < 0)
             {
                 int revealed = -top;
-                col[col.Count - 1] = revealed;
+                col[depth] = revealed;
                 OnMysteryRevealed?.Invoke(flatIndex, revealed);
+                return depth;
             }
+            return -1;
         }
 
         // ── Extra (helper) tube mechanic ──────────────────────────────────────────

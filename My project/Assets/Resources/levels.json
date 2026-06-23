@@ -9364,14 +9364,14 @@
       "level_id": 161,
       "display_name": "Level 161",
       "difficulty_tier": 5,
-      "schema_version": 1,
+      "schema_version": 2,
       "color_count": 6,
       "stack_depth": 6,
       "color_stacks": [
         [
           1,
           4,
-          5,
+          -5,
           3,
           2,
           6
@@ -9422,7 +9422,8 @@
       "is_tutorial": false,
       "daily_challenge_eligible": true,
       "par_moves": 65,
-      "added_version": "2026.06"
+      "added_version": "2026.06",
+      "mystery_balls": true
     },
     {
       "level_id": 162,
@@ -10004,7 +10005,7 @@
       "level_id": 171,
       "display_name": "Level 171",
       "difficulty_tier": 5,
-      "schema_version": 1,
+      "schema_version": 2,
       "color_count": 6,
       "stack_depth": 6,
       "color_stacks": [
@@ -10035,7 +10036,7 @@
         [
           1,
           2,
-          1,
+          -1,
           5,
           2,
           2
@@ -10062,7 +10063,8 @@
       "is_tutorial": false,
       "daily_challenge_eligible": true,
       "par_moves": 61,
-      "added_version": "2026.06"
+      "added_version": "2026.06",
+      "mystery_balls": true
     },
     {
       "level_id": 172,

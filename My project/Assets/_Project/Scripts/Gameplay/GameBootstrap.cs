@@ -77,7 +77,8 @@ namespace BoltSort.Gameplay
             bgGO.AddComponent<BackgroundController>();
 
             var boardGO = new GameObject("Board");
-            boardGO.AddComponent<BoardView>().Initialize(_gsm, _sortMechanic);
+            var boardView = boardGO.AddComponent<BoardView>();
+            boardView.Initialize(_gsm, _sortMechanic);
 
             var hudGO = new GameObject("HUD");
             _hud = hudGO.AddComponent<HUDController>();
@@ -95,6 +96,11 @@ namespace BoltSort.Gameplay
             // before LoadLevel so a level that introduces a mechanic shows its prompt.
             var tutGO = new GameObject("TutorialController");
             tutGO.AddComponent<TutorialController>().Initialize(_gsm, _sortMechanic, GameAssets.MenuFont);
+
+            // Animated tutorial overlay (new-user onboarding). Dormant if tutorial already complete.
+            var tutOverlayGO = new GameObject("TutorialOverlaySystem");
+            tutOverlayGO.AddComponent<TutorialOverlaySystem>()
+                        .Initialize(_gsm, _sortMechanic, boardView, _hud);
 
             LoadLevelWithMagnetCheck(_currentLevelId);
             AudioMgr.Instance?.PlayMusic();
