@@ -29,6 +29,13 @@ namespace BoltSort.LevelData
 
         private LdsState _state = LdsState.Uninitialized;
         private Dictionary<int, LevelRecord> _levelCache = new Dictionary<int, LevelRecord>();
+
+        /// <summary>
+        /// In-memory cache of procedurally-generated levels (201+). Kept separate from
+        /// <see cref="_levelCache"/> so curated-catalogue semantics (GetMaxLevelId, GetRange,
+        /// GetByFilter) are unaffected. Never persisted — generation is deterministic per id.
+        /// </summary>
+        private readonly Dictionary<int, LevelRecord> _proceduralCache = new Dictionary<int, LevelRecord>();
         private TaskCompletionSource<bool> _initTcs;
         private TaskCompletionSource<bool> _reloadTcs;
         private SystemReadiness _readiness;
@@ -246,9 +253,24 @@ namespace BoltSort.LevelData
         public LevelRecord GetLevel(int levelId)
         {
             GuardReady();
-            if (!_levelCache.TryGetValue(levelId, out var record))
-                throw new LevelDataException($"Level {levelId} not found.", LdsErrorCode.NotFound);
-            return record;
+            if (_levelCache.TryGetValue(levelId, out var record))
+                return record;
+
+            // Levels 201+ are generated procedurally at runtime (in-memory only; never written to
+            // levels.json). Deterministic per id and validated before caching. See ProcLevelGenerator.
+            if (levelId >= ProcLevelGenerator.ProcFirstLevel && levelId <= ProcLevelGenerator.ProcMaxLevel)
+            {
+                if (_proceduralCache.TryGetValue(levelId, out var generated))
+                    return generated;
+                generated = ProcLevelGenerator.Generate(levelId);
+                if (generated != null)
+                {
+                    _proceduralCache[levelId] = generated;
+                    return generated;
+                }
+            }
+
+            throw new LevelDataException($"Level {levelId} not found.", LdsErrorCode.NotFound);
         }
 
         /// <summary>

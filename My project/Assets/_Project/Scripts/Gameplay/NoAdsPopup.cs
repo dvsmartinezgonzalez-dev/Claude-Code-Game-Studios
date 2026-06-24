@@ -71,8 +71,9 @@ namespace BoltSort.Gameplay
             cardBtn.colors = cbc;
 
             // Change 7A: title moved slightly lower + black outline for readability
-            var title = AddLabel(card, "Title", "Eliminar anuncios", 44,
+            var title = AddLabel(card, "Title", "Remove Ads", 44,
                                  new Vector2(0f, 0.76f), new Vector2(1f, 0.90f));
+            LocalizedText.Bind(title, "key_remove_ads_title");
             title.color = BoltSortTheme.WinGold;
             var titleOl = title.gameObject.AddComponent<Outline>();
             titleOl.effectColor    = new Color(0f, 0f, 0f, 0.9f);
@@ -95,8 +96,9 @@ namespace BoltSort.Gameplay
 
             // Change 7B: description font size increased ~25% (26 → 33); wrapping already enabled
             var desc = AddLabel(card, "Desc",
-                "¡Di adiós a los anuncios emergentes y banners forzados para siempre!",
+                "Say goodbye to pop-up ads and forced banners forever!",
                 33, new Vector2(0.06f, 0.30f), new Vector2(0.94f, 0.52f));
+            LocalizedText.Bind(desc, "key_remove_ads_desc");
             desc.color = new Color(1f, 1f, 1f, 0.9f);
 
             // Buy button — general_button.png + "4,99€"

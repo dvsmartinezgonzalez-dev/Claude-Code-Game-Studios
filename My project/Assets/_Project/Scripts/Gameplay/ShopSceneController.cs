@@ -101,7 +101,7 @@ namespace BoltSort.Gameplay
             hr.pivot = new Vector2(0.5f, 1f);
             hr.offsetMin = new Vector2(0f, -(110f + _safeTop)); hr.offsetMax = Vector2.zero;
 
-            var title = MakeLabel(header, "Title", "SHOP", _font, 52,
+            var title = MakeLabel(header, "Title", Tr("key_shop"), _font, 52,
                                   TextAnchor.MiddleCenter, bold: true, shadow: true);
             title.color = BoltSortTheme.HUDText;
             var tr = title.rectTransform;
@@ -367,9 +367,9 @@ namespace BoltSort.Gameplay
 
             // Status
             string status; Color statusColor;
-            if (equipped)       { status = "✓ Equipped"; statusColor = Color.white; }
-            else if (unlocked)  { status = "Equip";          statusColor = new Color(0.55f, 0.85f, 1f, 1f); }
-            else                { status = $"{item.UnlockCost} coins"; statusColor = CoinGold; }
+            if (equipped)       { status = "✓ " + Tr("key_equipped"); statusColor = Color.white; }
+            else if (unlocked)  { status = Tr("key_equip");          statusColor = new Color(0.55f, 0.85f, 1f, 1f); }
+            else                { status = TrF("key_cost_coins_fmt", item.UnlockCost); statusColor = CoinGold; }
 
             var st = MakeLabel(cell, "Status", status, _font, 26,
                                TextAnchor.MiddleCenter, bold: true, shadow: false);
@@ -456,12 +456,12 @@ namespace BoltSort.Gameplay
             thr.anchoredPosition = new Vector2(0f, -48f);
 
             AddCardLabel(card, item.DisplayName, 38, new Vector2(0f, 0.40f), new Vector2(1f, 0.50f), Color.white);
-            var price = AddCardLabel(card, $"{item.UnlockCost} coins", 40,
+            var price = AddCardLabel(card, TrF("key_cost_coins_fmt", item.UnlockCost), 40,
                                      new Vector2(0f, 0.30f), new Vector2(1f, 0.40f), CoinGold);
             price.color = CoinGold;
 
             // Confirm
-            var confirm = CreateButton(card, "Confirm", "BUY", 32,
+            var confirm = CreateButton(card, "Confirm", Tr("key_buy"), 32,
                                        new Color(0.18f, 0.55f, 0.30f, 1f),
                                        () => ConfirmPurchase(item));
             var cfr = confirm.GetComponent<RectTransform>();
@@ -471,7 +471,7 @@ namespace BoltSort.Gameplay
             cfr.anchoredPosition = new Vector2(0f, 120f);
 
             // Cancel
-            var cancel = CreateButton(card, "Cancel", "CANCEL", 30,
+            var cancel = CreateButton(card, "Cancel", Tr("key_cancel"), 30,
                                       new Color(0.40f, 0.20f, 0.24f, 1f), ClosePopup);
             var cnr = cancel.GetComponent<RectTransform>();
             cnr.anchorMin = new Vector2(0.5f, 0f); cnr.anchorMax = new Vector2(0.5f, 0f);
@@ -494,10 +494,10 @@ namespace BoltSort.Gameplay
                     UpdateCoins();
                     ClosePopup();
                     RebuildGrid();
-                    ShowToast("Unlocked!");
+                    ShowToast(Tr("key_unlocked"));
                     break;
                 case PurchaseResult.NotEnoughCoins:
-                    ShowToast("Not enough coins");
+                    ShowToast(Tr("key_not_enough_coins"));
                     if (_popup != null)
                         StartCoroutine(ShakeAnim(_popup.transform.Find("Card") as RectTransform));
                     break;
@@ -562,7 +562,7 @@ namespace BoltSort.Gameplay
             cr.sizeDelta = new Vector2(520f, 620f);
 
             // Title centered within the top header area of the popup background
-            AddCardLabel(card, "Comprar monedas", 38, new Vector2(0.05f, 0.82f), new Vector2(0.95f, 0.94f), CoinGold);
+            AddCardLabel(card, Tr("key_buy_coins"), 38, new Vector2(0.05f, 0.82f), new Vector2(0.95f, 0.94f), CoinGold);
 
             // Fix 5A: offer buttons — fixed pixel sizes, evenly stacked, well-contained in the popup
             // Card is 520×620. Use fixed-height rows centered in the lower portion.
@@ -606,7 +606,7 @@ namespace BoltSort.Gameplay
                 rowRt.sizeDelta        = new Vector2(offerBtnW, offerBtnH);
 
                 var rowLabel = MakeLabel(rowGO, "Label",
-                                         $"{FormatCoins(offerCoins)} monedas  —  {offerPrice}",
+                                         TrF("key_coins_pack_fmt", FormatCoins(offerCoins), offerPrice),
                                          _font, 26, TextAnchor.MiddleCenter, bold: true, shadow: true);
                 rowLabel.color = Color.white; rowLabel.raycastTarget = false;
                 var llr = rowLabel.rectTransform;
@@ -802,6 +802,21 @@ namespace BoltSort.Gameplay
         {
             rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
             rt.offsetMin = rt.offsetMax = Vector2.zero;
+        }
+
+        // ── Localization helpers ────────────────────────────────────────────────────
+        // The shop scene is rebuilt on entry, so static resolution against the active
+        // table is sufficient (no in-scene language selector to refresh live).
+        private static string Tr(string key)
+        {
+            var m = LocalizationManager.Instance;
+            return m != null ? m.Get(key) : key;
+        }
+
+        private static string TrF(string key, params object[] args)
+        {
+            var m = LocalizationManager.Instance;
+            return m != null ? m.Format(key, args) : key;
         }
     }
 }

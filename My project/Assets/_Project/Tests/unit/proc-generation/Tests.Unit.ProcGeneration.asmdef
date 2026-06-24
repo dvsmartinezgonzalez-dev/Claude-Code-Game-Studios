@@ -1,0 +1,21 @@
+{
+    "name": "Tests.Unit.ProcGeneration",
+    "rootNamespace": "BoltSort.Tests.Unit.ProcGeneration",
+    "references": [
+        "BoltSort.LevelData"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false,
+    "optionalUnityReferences": [
+        "TestAssembly"
+    ]
+}

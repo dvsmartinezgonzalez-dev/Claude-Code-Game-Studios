@@ -30,6 +30,7 @@ namespace BoltSort.Gameplay
         private void Awake()
         {
             EnsureSaveSystem();
+            EconomyManager.EnsureInstance(); // after SaveSystem: seeds coins from it on first run
             EnsureAudioManager();
             EnsureTransitionManager();
             EnsureCamera();
@@ -60,6 +61,19 @@ namespace BoltSort.Gameplay
         private void OnDestroy()
         {
             SettingsPanel.OnGamePaused -= _sortMechanic.SetGamePaused;
+            if (EconomyManager.Instance != null)
+                EconomyManager.Instance.OnPowerUpDropped -= ShowPowerUpDropPopup;
+        }
+
+        // Reward drop full-screen reveal (System 2). Distinct accent and icon per power-up type.
+        private void ShowPowerUpDropPopup(PowerUpType type)
+        {
+            string msg = type == PowerUpType.ExtraTube ? "You got an Extra Tube!" : "You got a Lightning Bolt!";
+            Color  accent = type == PowerUpType.ExtraTube
+                ? new Color(0.20f, 0.62f, 0.86f, 1f) : new Color(1f, 0.85f, 0.2f, 1f);
+            Sprite icon = type == PowerUpType.ExtraTube
+                ? GameAssets.BtnExtraTube : (GameAssets.BtnUndoNew ?? GameAssets.BtnUndoAction);
+            RewardPopup.Show(GameAssets.MenuFont, msg, accent, icon);
         }
 
         private IEnumerator Start()
@@ -69,8 +83,14 @@ namespace BoltSort.Gameplay
             yield return new WaitUntil(() => _lds.IsReady);
             Destroy(loadingOverlay);                        // GP-04: hide after LDS ready
 
-            _maxLevelId     = Mathf.Max(1, _lds.GetMaxLevelId());
+            // Procedural generation extends progression past the curated catalogue to the
+            // SaveSystem-bounded ceiling (9999); levels 201+ are generated on demand.
+            _maxLevelId     = Mathf.Max(_lds.GetMaxLevelId(), BoltSort.LevelData.ProcLevelGenerator.ProcMaxLevel);
             _currentLevelId = ReadTargetLevel();
+
+            // Reward drops (System 2): show a small toast when a power-up drops after a level.
+            var economy = EconomyManager.Instance;
+            if (economy != null) economy.OnPowerUpDropped += ShowPowerUpDropPopup;
 
             // Background controller (gradient + vignette + ambient particles)
             var bgGO = new GameObject("BackgroundController");
@@ -202,8 +222,23 @@ namespace BoltSort.Gameplay
 
         private async void HandleLevelComplete(int levelId, int moves, int par, long seqId)
         {
-            int stars       = moves <= par ? 3 : moves <= (int)(par * 1.5f) ? 2 : 1;
-            int coinsEarned = stars * 10;
+            int stars = moves <= par ? 3 : moves <= (int)(par * 1.5f) ? 2 : 1;
+
+            // EconomyManager (System 3) is the currency authority: it awards first-time vs replay
+            // coins, streak/milestone/achievement bonuses, rolls power-up drops (System 2) for
+            // non-tutorial levels, and mirrors the coin balance back into SaveSystem.
+            var economy = EconomyManager.Instance;
+            int coinsEarned;
+            if (economy != null)
+            {
+                bool isTutorial = false;
+                try { isTutorial = _lds.GetLevel(levelId).IsTutorial; } catch { /* generated ⇒ not tutorial */ }
+                coinsEarned = economy.OnLevelComplete(levelId, stars, isTutorial);
+            }
+            else
+            {
+                coinsEarned = stars * 10;
+            }
 
             // SetWinResult runs synchronously here (GameBootstrap subscribed in Awake, before
             // HUD subscribed in Start) so _winStarCount/_winCoins are set before HUD's handler
@@ -213,7 +248,9 @@ namespace BoltSort.Gameplay
             var ss = SaveSystem.SaveSystem.Instance;
             if (ss == null || !ss.IsReady) return;
 
-            ss.SetCoinBalance(ss.GetCoinBalance() + coinsEarned);
+            // Coins already written by EconomyManager; only mirror in the no-economy fallback path.
+            if (economy == null)
+                ss.SetCoinBalance(ss.GetCoinBalance() + coinsEarned);
 
             int savedCurrent = ss.GetCurrentLevelId();
             int newCurrent   = Math.Max(levelId + 1, savedCurrent);

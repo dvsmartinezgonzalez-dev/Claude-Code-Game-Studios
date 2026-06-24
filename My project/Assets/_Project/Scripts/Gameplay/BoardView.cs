@@ -45,6 +45,9 @@ namespace BoltSort.Gameplay
         private TextMesh[]       _frozenLabel;          // remaining-turn counter
         private TextMesh[][]     _frozenLabelOutlines;  // 4-direction black outline copies
         private static Sprite    _snowSprite;
+        /// <summary>Shared sprite material for ghost flight trails (E8) — one instance for all
+        /// trails (each trail colours itself via its own gradient), so no per-move allocation.</summary>
+        private static Material  _trailMaterial;
 
         // ── System references ─────────────────────────────────────────────────────
         private BoltSort.GameStateManager.GameStateManager _gsm;
@@ -97,6 +100,11 @@ namespace BoltSort.Gameplay
         /// first half the slot still shows the mystery skin; a scale pulse runs across the whole
         /// duration before the real color takes over. Phase-2 (schema_version 2).</summary>
         private readonly Dictionary<int, float> _mysteryRevealAnim = new Dictionary<int, float>();
+        /// <summary>Tube-completion pulse animations in flight: SlotKey → start time (Time.time).
+        /// LateUpdate multiplies a small sine bump into the ball's scale across the duration;
+        /// staggered bottom→top by registering future start times. Purely additive polish (E4).</summary>
+        private readonly Dictionary<int, float> _tubeCompletePulse = new Dictionary<int, float>();
+        private const float TubeCompletePulseDur = 0.30f;
         /// <summary>Reveal animation length (s) — within the 0.2–0.3s design range.</summary>
         private const float MysteryRevealDur = 0.25f;
 
@@ -191,6 +199,7 @@ namespace BoltSort.Gameplay
             _selLifted   = false;
             _hiddenDstSlots.Clear();
             _mysteryRevealAnim.Clear();
+            _tubeCompletePulse.Clear();
             _winPlaying  = false;
 
             if (_moveGhost != null) { Destroy(_moveGhost); _moveGhost = null; }
@@ -221,6 +230,7 @@ namespace BoltSort.Gameplay
         {
             if (_winPlaying) return;
             _winPlaying  = true;
+            HapticManager.Heavy();
             if (_winCoroutine != null) StopCoroutine(_winCoroutine);
             _winCoroutine = StartCoroutine(PlayWinCelebration());
         }
@@ -278,6 +288,7 @@ namespace BoltSort.Gameplay
                 if (cur == SortMechState.BoltSelected)
                 {
                     AudioMgr.Instance?.PlaySFX("bolt_pick");
+                    HapticManager.Light();
                     if (_selCoroutine != null) StopCoroutine(_selCoroutine);
                     _selCoroutine = StartCoroutine(AnimateLift());
                     // D.2-E: column squish pop on pickup
@@ -437,7 +448,7 @@ namespace BoltSort.Gameplay
                 int srcSlot = srcCount + (count - 1 - k);
                 int dstSlot = dstCount - count + k;
                 Vector3 srcWorld = _columnSlot0World[src] + Vector3.up * (srcSlot * _ballStep[src]);
-                ghosts[k] = CreateGhost(srcWorld, ghostScale, ghostSpr);
+                ghosts[k] = CreateGhost(srcWorld, ghostScale, ghostSpr, colorId, boltSize);
                 _hiddenDstSlots.Add(SlotKey(dst, dstSlot)); // hide settled slot until its ghost lands
             }
 
@@ -466,15 +477,25 @@ namespace BoltSort.Gameplay
             // Play tube-completed SFX for the level's own tubes (color stacks + shipped temp
             // slots). Runtime extra/helper tubes (dst >= colorCount + originalTempSlotCount)
             // give zero completion feedback — no sound — per Fix 4 (add-tube scope).
-            if (dst < _colorCount + _originalTempSlotCount && IsTubeComplete(dst))
+            bool tubeCompleted = dst < _colorCount + _originalTempSlotCount && IsTubeComplete(dst);
+            if (tubeCompleted)
+            {
                 AudioMgr.Instance?.PlaySFX("tube_completed");
+                HapticManager.Medium();
+                StartCoroutine(PlayTubeCompletionFlash(dst, colorId));
+            }
+            else
+            {
+                HapticManager.Light(); // routine ball-settle tick (Medium reserved for completions)
+            }
 
             _sortMechanic.OnAnimationComplete(seqId);
         }
 
         /// <summary>Builds one ghost bolt (ball + shadow + shine) parented to the move root, placed
         /// at <paramref name="worldPos"/>. Used for every bolt of a single or Magnet-chained move.</summary>
-        private GameObject CreateGhost(Vector3 worldPos, float ghostScale, Sprite ghostSpr)
+        private GameObject CreateGhost(Vector3 worldPos, float ghostScale, Sprite ghostSpr,
+                                       int colorId, float diameter)
         {
             var go = new GameObject("MoveGhost");
             if (_moveGhost != null) go.transform.SetParent(_moveGhost.transform, worldPositionStays: true);
@@ -503,6 +524,29 @@ namespace BoltSort.Gameplay
             shineSr.sprite       = _shineSprite;
             shineSr.color        = new Color(1f, 1f, 1f, 0.60f);
             shineSr.sortingOrder = 10;
+
+            // E8: color trail during flight — fades from 60% alpha at the ball to 0 at the tail.
+            // Disabled at landing (FlyGhost) and destroyed with the ghost, so it never lingers.
+            var trailGO = new GameObject("GhostTrail");
+            trailGO.transform.SetParent(go.transform, false);
+            trailGO.transform.localPosition = Vector3.zero;
+            var trail = trailGO.AddComponent<TrailRenderer>();
+            trail.time              = 0.12f;
+            trail.minVertexDistance = Mathf.Max(0.01f, diameter * 0.10f);
+            trail.startWidth        = diameter * 0.6f;
+            trail.endWidth          = 0f;
+            trail.numCapVertices    = 4;
+            trail.autodestruct      = false;
+            trail.sortingOrder      = 7; // behind shadow(8) and ball(9)
+            if (_trailMaterial == null) _trailMaterial = new Material(Shader.Find("Sprites/Default"));
+            trail.sharedMaterial    = _trailMaterial;
+            Color trailColor = BoltSortTheme.BoltColorForId(colorId);
+            var grad = new Gradient();
+            grad.SetKeys(
+                new[] { new GradientColorKey(trailColor, 0f), new GradientColorKey(trailColor, 1f) },
+                new[] { new GradientAlphaKey(0.6f, 0f), new GradientAlphaKey(0f, 1f) });
+            trail.colorGradient = grad;
+            trail.Clear();
 
             return go;
         }
@@ -549,6 +593,10 @@ namespace BoltSort.Gameplay
                 ghost.transform.position = new Vector3(x, y, srcWorld.z);
                 yield return null;
             }
+
+            // Stop the flight trail the instant the ball lands (E8); it vanishes with the ghost.
+            var landTrail = ghost != null ? ghost.GetComponentInChildren<TrailRenderer>() : null;
+            if (landTrail != null) landTrail.emitting = false;
 
             AudioMgr.Instance?.PlaySFX("bolt_place");
             SpawnLandingDust(dstWorld, BoltSortTheme.BoltColorForId(colorId));
@@ -624,6 +672,7 @@ namespace BoltSort.Gameplay
             Transform colTr    = _columnTransforms[col];
             Vector3   basePos  = colTr.localPosition;
             float     px       = 0.20f; // world-unit shake amplitude
+            HapticManager.Light(); // E3: light buzz on invalid placement
 
             // Flash held bolt red
             IReadOnlyList<int> colData = col < _colorCount
@@ -684,6 +733,62 @@ namespace BoltSort.Gameplay
             }
 
             _sortMechanic.OnRejectionAnimationComplete();
+        }
+
+        // ── Tube completion celebration (E4) ──────────────────────────────────────
+
+        /// <summary>Mid-game tube-completion polish: a staggered ball pulse (bottom→top via
+        /// <see cref="_tubeCompletePulse"/>), a soft white flash over the tube, and a small upward
+        /// particle burst in the tube colour. Purely additive — self-expires, reads live geometry,
+        /// and never touches sorting/win logic or the victory flow.</summary>
+        private IEnumerator PlayTubeCompletionFlash(int col, int colorId)
+        {
+            if (_colCap == null || col < 0 || col >= _colCap.Length) yield break;
+            int cap = _colCap[col];
+
+            // Ball pulse — register each slot with a staggered (future) start time, bottom→top.
+            for (int slot = 0; slot < cap; slot++)
+                _tubeCompletePulse[SlotKey(col, slot)] = Time.time + slot * 0.04f;
+
+            // Upward particle fan from the top of the tube, in the completed colour.
+            if (_columnSlot0World != null && col < _columnSlot0World.Length &&
+                _ballStep != null && col < _ballStep.Length)
+            {
+                Vector3 top = _columnSlot0World[col] + Vector3.up * (cap * _ballStep[col]);
+                Color   c   = BoltSortTheme.BoltColorForId(colorId);
+                const int burst = 7;
+                for (int i = 0; i < burst; i++)
+                {
+                    float angle = 60f + (60f / (burst - 1)) * i; // 60°–120°, fanning upward
+                    float speed = Random.Range(2.5f, 4.5f);
+                    StartCoroutine(WinParticle(top, angle, speed, Random.Range(0.07f, 0.11f),
+                                               Random.Range(0.40f, 0.70f), c));
+                }
+            }
+
+            // Soft white flash: a transient overlay cloned from the tube sprite, fading 0.6→0.
+            // An overlay (not a tint) keeps LateUpdate's per-frame tube colour writes from fighting it.
+            if (_tubeRenderers != null && col < _tubeRenderers.Length && _tubeRenderers[col] != null)
+            {
+                var src = _tubeRenderers[col];
+                var fGO = new GameObject("TubeCompleteFlash");
+                fGO.transform.SetParent(src.transform, worldPositionStays: false);
+                fGO.transform.localPosition = new Vector3(0f, 0f, -0.05f);
+                fGO.transform.localScale    = Vector3.one;
+                var fsr = fGO.AddComponent<SpriteRenderer>();
+                fsr.sprite       = src.sprite;
+                fsr.sortingOrder = src.sortingOrder + 5;
+
+                float dur = 0.40f, elapsed = 0f;
+                while (elapsed < dur)
+                {
+                    if (fsr == null) break;
+                    elapsed += Time.deltaTime;
+                    fsr.color = new Color(1f, 1f, 1f, 0.6f * (1f - elapsed / dur));
+                    yield return null;
+                }
+                if (fGO != null) Destroy(fGO);
+            }
         }
 
         // ── Win celebration ───────────────────────────────────────────────────────
@@ -1380,9 +1485,19 @@ namespace BoltSort.Gameplay
 
                     boltSr.transform.localPosition = new Vector3(0f, slotY, 0f);
 
+                    // Tube-completion celebration pulse (additive polish, E4; see _tubeCompletePulse).
+                    float completePulse = 1f;
+                    if (_tubeCompletePulse.Count > 0 &&
+                        _tubeCompletePulse.TryGetValue(SlotKey(col, slot), out float ct0))
+                    {
+                        float cp = (Time.time - ct0) / TubeCompletePulseDur;
+                        if (cp >= 1f) _tubeCompletePulse.Remove(SlotKey(col, slot));
+                        else if (cp > 0f) completePulse = 1f + 0.12f * Mathf.Sin(cp * Mathf.PI);
+                    }
+
                     // Scale to the target world diameter, normalized by the sprite's native
                     // size so the result is independent of the PNG's import PPU.
-                    float diameter   = _ballSize[col] * (isHeldSlot ? _selScale : 1f) * revealPulse;
+                    float diameter   = _ballSize[col] * (isHeldSlot ? _selScale : 1f) * revealPulse * completePulse;
                     float nativeBallW = boltSr.sprite != null ? boltSr.sprite.bounds.size.x : 1f;
                     float ballScale  = diameter / Mathf.Max(0.0001f, nativeBallW);
                     boltSr.transform.localScale = new Vector3(ballScale, ballScale, 1f);

@@ -97,6 +97,17 @@ namespace BoltSort.Gameplay
         private Image         _nextShineImg;
         private SettingsPanel _settingsPanel;
 
+        // ── Currency counters (Economy) — own strip below the header band, no overlap ──
+        // Show OWNED balances (coins, gems) and OWNED power-up inventory (Extra Tube / Lightning
+        // Bolt, cap 3). Distinct from the header Extra-Tube button, which grants per-level free
+        // USES and is intentionally left untouched.
+        private EconomyManager _economy;
+        private Action _onEconomyChangedHandler;
+        private Text _coinsCounter;
+        private Text _gemsCounter;
+        private Text _tubesCounter;
+        private Text _boltsCounter;
+
         // Confetti rain layout, in the 720×1280 logical-pixel space (see class doc).
         private const int   ConfettiPieceCount = 30;
         private const float ConfettiHalfWidth   = 360f;  // 720 / 2
@@ -108,6 +119,7 @@ namespace BoltSort.Gameplay
 
         // ── Move counter animation ────────────────────────────────────────────────
         private int       _lastMoveCount = -1;
+        private int       _currentLevelId;
         private Coroutine _movesAnimCoroutine;
 
         // ── Stored event handlers ─────────────────────────────────────────────────
@@ -140,7 +152,8 @@ namespace BoltSort.Gameplay
 
             _onLevelLoadedHandler = (id, cc, sd, tsc, tsd, seqId) =>
             {
-                if (_levelText  != null) _levelText.text = $"Level {id}";
+                _currentLevelId = id;
+                if (_levelText  != null) _levelText.text = TrFmt("key_level_fmt", id);
                 _levelComplete = false;
                 _deadlock      = false;
                 _lastMoveCount = 0;
@@ -161,7 +174,7 @@ namespace BoltSort.Gameplay
             _onLevelCompleteHandler = (id, moves, par, seqId) =>
             {
                 _levelComplete = true;
-                if (_winMovesText != null) _winMovesText.text = $"Moves: {moves}";
+                if (_winMovesText != null) _winMovesText.text = TrFmt("key_moves_fmt", moves);
                 if (_winOverlay   != null) StartCoroutine(ShowWinOverlay(moves));
             };
             gsm.OnLevelComplete += _onLevelCompleteHandler;
@@ -177,7 +190,7 @@ namespace BoltSort.Gameplay
             int cur = _gsm.MoveCount;
             if (cur != _lastMoveCount)
             {
-                _movesText.text = $"Moves: {cur}";
+                _movesText.text = TrFmt("key_moves_fmt", cur);
                 if (_lastMoveCount >= 0 && _movesRT != null)
                 {
                     if (_movesAnimCoroutine != null) StopCoroutine(_movesAnimCoroutine);
@@ -481,10 +494,10 @@ namespace BoltSort.Gameplay
                 {
                     elapsed += Time.deltaTime;
                     int displayed = Mathf.RoundToInt(Mathf.Lerp(0f, moves, elapsed / dur));
-                    _winMovesText.text = $"Moves: {displayed}";
+                    _winMovesText.text = TrFmt("key_moves_fmt", displayed);
                     yield return null;
                 }
-                _winMovesText.text = $"Moves: {moves}";
+                _winMovesText.text = TrFmt("key_moves_fmt", moves);
             }
 
             // Coin count-up + bounce (WIN-04)
@@ -495,10 +508,10 @@ namespace BoltSort.Gameplay
                 {
                     elapsed += Time.deltaTime;
                     int displayed = Mathf.RoundToInt(Mathf.Lerp(0f, _winCoins, elapsed / dur));
-                    _winCoinsText.text = $"+{displayed} coins";
+                    _winCoinsText.text = TrFmt("key_coins_fmt", displayed);
                     yield return null;
                 }
-                _winCoinsText.text = $"+{_winCoins} coins";
+                _winCoinsText.text = TrFmt("key_coins_fmt", _winCoins);
 
                 var coinRT = _winCoinsText.GetComponent<RectTransform>();
                 yield return StartCoroutine(TweenUtility.LerpRectScale(
@@ -557,6 +570,83 @@ namespace BoltSort.Gameplay
                 _gsm.OnLevelLoaded   -= _onLevelLoadedHandler;
                 _gsm.OnLevelComplete -= _onLevelCompleteHandler;
             }
+            if (_economy != null && _onEconomyChangedHandler != null)
+                _economy.OnBalanceChanged -= _onEconomyChangedHandler;
+        }
+
+        // ── Currency counters (Economy) ───────────────────────────────────────────
+
+        /// <summary>Builds the four-counter currency strip (Coins, Gems, Extra Tubes, Lightning
+        /// Bolts) anchored below the header + deadlock band so it never overlaps existing HUD
+        /// elements, and live-binds it to <see cref="EconomyManager.OnBalanceChanged"/>.</summary>
+        private void BuildCurrencyBar(GameObject canvasGO, Font font, float topBarH, float safeTop)
+        {
+            _economy = EconomyManager.Instance;
+
+            var bar = MakePanel(canvasGO, "CurrencyBar", new Color(0f, 0f, 0f, 0f));
+            bar.GetComponent<Image>().raycastTarget = false;
+            var rt = bar.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0f, 1f);
+            rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot     = new Vector2(0.5f, 1f);
+            float top = -(topBarH + safeTop + 54f);          // start below the deadlock banner band
+            rt.offsetMax = new Vector2(-12f, top);
+            rt.offsetMin = new Vector2(12f, top - 52f);
+
+            _coinsCounter = AddCurrencyCell(bar, font, 0.125f, new Color(1f, 0.82f, 0.20f, 1f)); // Coins
+            _gemsCounter  = AddCurrencyCell(bar, font, 0.375f, new Color(0.40f, 0.85f, 1f, 1f)); // Gems
+            _tubesCounter = AddCurrencyCell(bar, font, 0.625f, new Color(0.20f, 0.62f, 0.86f, 1f)); // Extra Tubes (owned)
+            _boltsCounter = AddCurrencyCell(bar, font, 0.875f, new Color(1f, 0.85f, 0.20f, 1f)); // Lightning Bolts (owned)
+
+            RefreshCurrency();
+            if (_economy != null)
+            {
+                _onEconomyChangedHandler = RefreshCurrency;
+                _economy.OnBalanceChanged += _onEconomyChangedHandler;
+            }
+        }
+
+        /// <summary>One currency cell: a colored icon swatch + a number label, centered at
+        /// <paramref name="anchorX"/> (a fraction of the bar width). Returns the number label.</summary>
+        private Text AddCurrencyCell(GameObject parent, Font font, float anchorX, Color iconColor)
+        {
+            var cell = new GameObject("CurrencyCell");
+            cell.transform.SetParent(parent.transform, false);
+            var crt = cell.AddComponent<RectTransform>();
+            crt.anchorMin = crt.anchorMax = new Vector2(anchorX, 0.5f);
+            crt.pivot     = new Vector2(0.5f, 0.5f);
+            crt.anchoredPosition = Vector2.zero;
+            crt.sizeDelta        = new Vector2(150f, 48f);
+
+            var iconGO = new GameObject("Icon");
+            iconGO.transform.SetParent(cell.transform, false);
+            var iconImg = iconGO.AddComponent<Image>();
+            iconImg.color = iconColor;
+            iconImg.raycastTarget = false;
+            var irt = iconGO.GetComponent<RectTransform>();
+            irt.anchorMin = irt.anchorMax = new Vector2(0f, 0.5f);
+            irt.pivot     = new Vector2(0f, 0.5f);
+            irt.anchoredPosition = Vector2.zero;
+            irt.sizeDelta        = new Vector2(34f, 34f);
+
+            var t = MakeLabel(cell, "Num", "0", font, 28, TextAnchor.MiddleLeft, bold: true, shadow: true);
+            t.color = Color.white;
+            t.raycastTarget = false;
+            AddOutline(t, new Color(0f, 0f, 0f, 0.9f), 1.5f);
+            var trt = t.rectTransform;
+            trt.anchorMin = new Vector2(0f, 0f); trt.anchorMax = new Vector2(1f, 1f);
+            trt.offsetMin = new Vector2(42f, 0f); trt.offsetMax = new Vector2(0f, 0f);
+            return t;
+        }
+
+        /// <summary>Pushes the current economy balances into the four counters. Safe with no economy.</summary>
+        private void RefreshCurrency()
+        {
+            if (_economy == null) _economy = EconomyManager.Instance;
+            if (_coinsCounter != null) _coinsCounter.text = (_economy != null ? _economy.Coins : 0).ToString();
+            if (_gemsCounter  != null) _gemsCounter.text  = (_economy != null ? _economy.Gems : 0).ToString();
+            if (_tubesCounter != null) _tubesCounter.text = (_economy != null ? _economy.ExtraTubes : 0).ToString();
+            if (_boltsCounter != null) _boltsCounter.text = (_economy != null ? _economy.LightningBolts : 0).ToString();
         }
 
         private void OnSettingsClicked() => _settingsPanel?.Toggle();
@@ -751,7 +841,8 @@ namespace BoltSort.Gameplay
 
             // ── Left group: Settings, Retry (symmetric with the right group) ──────
             var settingsBtn = MakeIconButton(topBar, "SettingsButton", "⚙", font, 36,
-                                             GameAssets.BtnMenuSettings ?? GameAssets.NavSettings, OnSettingsClicked);
+                                             GameAssets.BtnMenuSettings ?? GameAssets.NavSettings, OnSettingsClicked,
+                                             juice: true);
             if (GameAssets.BtnMenuSettings == null && GameAssets.NavSettings == null)
                 settingsBtn.GetComponent<Image>().color = new Color(0.12f, 0.12f, 0.22f, 0.85f);
             PlaceHeaderButton(settingsBtn.GetComponent<RectTransform>(), 0.075f, hBtnY, hBtn);
@@ -775,6 +866,8 @@ namespace BoltSort.Gameplay
             // Vertically centered on the side buttons' center-line (hBtnY + hBtn/2).
             lrt.anchoredPosition = new Vector2(0f, hBtnY + hBtn * 0.5f);
             lrt.sizeDelta        = new Vector2(320f, 54f);
+            // Live-refresh on language change while the HUD is visible behind Settings.
+            LocalizedText.BindFormat(_levelText, "key_level_fmt", () => new object[] { _currentLevelId });
 
             _movesText = MakeLabel(topBar, "MovesText", "Moves: 0", font, 24,
                                    TextAnchor.MiddleCenter, bold: true, shadow: true);
@@ -785,6 +878,7 @@ namespace BoltSort.Gameplay
             mrt.anchoredPosition = new Vector2(0f, hBtnY - 30f); // clear the lowered Level label
             mrt.sizeDelta        = new Vector2(280f, 32f);
             _movesRT = _movesText.GetComponent<RectTransform>();
+            LocalizedText.BindFormat(_movesText, "key_moves_fmt", () => new object[] { _gsm != null ? _gsm.MoveCount : 0 });
 
             // ── Right group: Undo (+count), Extra Tube (+count) ───────────────────
             var undoBtn = MakeIconButton(topBar, "UndoHeaderButton", "↩", font, 38,
@@ -813,12 +907,16 @@ namespace BoltSort.Gameplay
                                       "No more moves! Tap Reset", font, 34,
                                       TextAnchor.MiddleCenter, bold: false, shadow: false);
             _deadlockText.color = new Color(0.95f, 0.24f, 0.24f, 1f);
+            LocalizedText.Bind(_deadlockText, "key_deadlock");
             var dlRect = _deadlockText.GetComponent<RectTransform>();
             dlRect.anchorMin = new Vector2(0.1f, 1f); dlRect.anchorMax = new Vector2(0.9f, 1f);
             dlRect.pivot     = new Vector2(0.5f, 1f);
             dlRect.offsetMin = new Vector2(0f, -(topBarH + safeTop + 54f));
             dlRect.offsetMax = new Vector2(0f, -(topBarH + safeTop));
             _deadlockText.gameObject.SetActive(false);
+
+            // Currency counter strip intentionally hidden — placeholder colored squares
+            // are not player-facing. Economy logic lives in EconomyManager independently.
 
             // ── Bottom bar ───────────────────────────────────────────────────────
             const float botBarH = 140f;
@@ -927,6 +1025,7 @@ namespace BoltSort.Gameplay
             var winTitle = MakeLabel(winCard, "WinTitle", "LEVEL COMPLETE!",
                                      font, 52, TextAnchor.MiddleCenter, bold: true, shadow: true);
             winTitle.color = BoltSortTheme.WinGold;
+            LocalizedText.Bind(winTitle, "key_level_complete");
             AddOutline(winTitle, new Color(0f, 0f, 0f, 0.9f), 3f);
             _winTitleRT = winTitle.GetComponent<RectTransform>();
             _winTitleRT.anchorMin = _winTitleRT.anchorMax = new Vector2(0.5f, 1f);
@@ -993,6 +1092,7 @@ namespace BoltSort.Gameplay
             _moreLevelsText = MakeLabel(winCard, "MoreLevels", "More levels coming soon!",
                                         font, 26, TextAnchor.MiddleCenter, bold: false, shadow: true);
             _moreLevelsText.color = new Color(1f, 0.95f, 0.7f, 1f);
+            LocalizedText.Bind(_moreLevelsText, "key_more_levels");
             var mlRect = _moreLevelsText.GetComponent<RectTransform>();
             mlRect.anchorMin = mlRect.anchorMax = new Vector2(0.5f, 1f);
             mlRect.pivot     = new Vector2(0.5f, 1f);
@@ -1014,6 +1114,7 @@ namespace BoltSort.Gameplay
             nextLabelGO.transform.SetParent(nextBtn.transform, false);
             var nextLabelT = nextLabelGO.AddComponent<Text>();
             nextLabelT.text = "Next Level"; nextLabelT.font = font; nextLabelT.fontSize = 40;
+            LocalizedText.Bind(nextLabelT, "key_next_level");
             nextLabelT.fontStyle = FontStyle.Bold; nextLabelT.alignment = TextAnchor.MiddleCenter;
             nextLabelT.color = Color.white; nextLabelT.supportRichText = false;
             nextLabelT.raycastTarget = false;
@@ -1048,7 +1149,7 @@ namespace BoltSort.Gameplay
                                            GameAssets.MenuButton, _onReplay ?? _onReset);
             if (GameAssets.MenuButton == null)
                 replayBtn.GetComponent<Image>().color = new Color(0.22f, 0.22f, 0.36f, 1f);
-            AddTextLabel(replayBtn, "Retry", font, 30);
+            LocalizedText.Bind(AddTextLabel(replayBtn, "Retry", font, 30), "key_retry");
             var rpRect = replayBtn.GetComponent<RectTransform>();
             rpRect.anchorMin = rpRect.anchorMax = new Vector2(0.5f, 0f);
             rpRect.pivot     = new Vector2(0.5f, 0f);
@@ -1061,7 +1162,7 @@ namespace BoltSort.Gameplay
                                          GameAssets.MenuButton, _onMenu);
             if (GameAssets.MenuButton == null)
                 homeBtn.GetComponent<Image>().color = new Color(0.22f, 0.36f, 0.22f, 1f);
-            AddTextLabel(homeBtn, "Home", font, 30);
+            LocalizedText.Bind(AddTextLabel(homeBtn, "Home", font, 30), "key_home");
             var hbRect = homeBtn.GetComponent<RectTransform>();
             hbRect.anchorMin = hbRect.anchorMax = new Vector2(0.5f, 0f);
             hbRect.pivot     = new Vector2(0.5f, 0f);
@@ -1075,7 +1176,7 @@ namespace BoltSort.Gameplay
         // ── UI helpers ────────────────────────────────────────────────────────────
 
         /// <summary>Adds a centered text label as a direct child of a button GameObject.</summary>
-        private static void AddTextLabel(GameObject btnGO, string text, Font font, int fontSize)
+        private static Text AddTextLabel(GameObject btnGO, string text, Font font, int fontSize)
         {
             var lgo = new GameObject("Label");
             lgo.transform.SetParent(btnGO.transform, false);
@@ -1087,7 +1188,18 @@ namespace BoltSort.Gameplay
             var lr = lgo.GetComponent<RectTransform>();
             lr.anchorMin = Vector2.zero; lr.anchorMax = Vector2.one;
             lr.offsetMin = lr.offsetMax = Vector2.zero;
+            return t;
         }
+
+        /// <summary>Localizes a key via the active <see cref="LocalizationManager"/> (key fallback if absent).</summary>
+        private static string Tr(string key)
+            => LocalizationManager.Instance != null ? LocalizationManager.Instance.Get(key) : key;
+
+        /// <summary>Localized format string filled with <paramref name="args"/>.</summary>
+        private static string TrFmt(string key, params object[] args)
+            => LocalizationManager.Instance != null
+                ? LocalizationManager.Instance.Format(key, args)
+                : string.Format(key, args);
 
         private static GameObject MakePanel(GameObject parent, string name, Color color)
         {
@@ -1163,7 +1275,8 @@ namespace BoltSort.Gameplay
         // Icon-first button: uses sprite if available, falls back to labeled colored rect.
         private GameObject MakeIconButton(GameObject parent, string name, string fallbackLabel,
                                           Font font, int fontSize,
-                                          Sprite icon, Action onClick, bool silentClick = false)
+                                          Sprite icon, Action onClick, bool silentClick = false,
+                                          bool juice = false)
         {
             var go  = new GameObject(name);
             go.transform.SetParent(parent.transform, false);
@@ -1202,11 +1315,23 @@ namespace BoltSort.Gameplay
             // Undo/Thunder button suppresses the generic click SFX (its own thunder SFX plays instead).
             if (!silentClick)
                 btn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
-            btn.onClick.AddListener(() =>
+
+            if (juice)
             {
-                StartCoroutine(BounceButton(rt));
-                onClick?.Invoke();
-            });
+                // Pointer down/up press feel + haptic via the reusable component. Use ONLY on
+                // buttons without their own scale animation (idle pulse) — see ButtonJuice docs.
+                go.AddComponent<ButtonJuice>();
+                btn.onClick.AddListener(() => onClick?.Invoke());
+            }
+            else
+            {
+                btn.onClick.AddListener(() =>
+                {
+                    HapticManager.Light();
+                    StartCoroutine(BounceButton(rt));
+                    onClick?.Invoke();
+                });
+            }
             return go;
         }
 

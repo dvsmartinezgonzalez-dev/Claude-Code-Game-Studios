@@ -122,8 +122,9 @@ namespace BoltSort.Gameplay
                 playLabel.verticalOverflow   = VerticalWrapMode.Overflow;
                 var playLabelRt = playLabel.rectTransform;
                 playLabelRt.anchorMin = new Vector2(0f, 0.50f);
-                playLabelRt.anchorMax = new Vector2(1f, 0.92f);
+                playLabelRt.anchorMax = new Vector2(1f, 1.00f);
                 playLabelRt.offsetMin = playLabelRt.offsetMax = Vector2.zero;
+                LocalizedText.Bind(playLabel, "key_play");
             }
 
             // MM-03: "Level X" subtitle — sits directly below PLAY in the lower half
@@ -135,6 +136,7 @@ namespace BoltSort.Gameplay
             lvlLabelGO.transform.SetParent(playBtn.transform, false);
             var lvlLabelT = lvlLabelGO.AddComponent<Text>();
             lvlLabelT.text             = $"Level {nextLevelId}";
+            LocalizedText.BindFormat(lvlLabelT, "key_level_fmt", () => new object[] { nextLevelId });
             lvlLabelT.font             = font;
             lvlLabelT.fontSize         = 31; // +10%
             lvlLabelT.fontStyle        = FontStyle.Bold;
@@ -149,7 +151,7 @@ namespace BoltSort.Gameplay
             lvlLabelRT.offsetMin = lvlLabelRT.offsetMax = Vector2.zero;
 
             // LEVELS button — shared general_button.png base + independent text label
-            var levelsBtn = MakeAnimatedButton(canvasGO, "LevelsButton", "LEVELS", font, 44, OnLevelsClicked);
+            var levelsBtn = MakeAnimatedButton(canvasGO, "LevelsButton", "LEVELS", font, 52, OnLevelsClicked);
             var levelsImg = levelsBtn.GetComponent<Image>();
             if (GameAssets.MenuButton != null)
                 GameAssets.Apply(levelsImg, GameAssets.MenuButton, preserveAspect: true);
@@ -157,6 +159,7 @@ namespace BoltSort.Gameplay
                 levelsImg.color = new Color(0.20f, 0.40f, 0.65f, 1f);
             SetAnchors(levelsBtn.GetComponent<RectTransform>(),
                 new Vector2(0.04f, 0.11f), new Vector2(0.47f, 0.25f));
+            LocalizedText.Bind(levelsBtn.transform.Find("Label")?.GetComponent<Text>(), "key_levels");
 
             // Tutorial gate — lock LEVELS and SHOP until the onboarding tutorial is complete.
             bool tutorialDone = PlayerPrefs.GetInt("bs.tutorial_complete", 0) == 1;
@@ -200,6 +203,7 @@ namespace BoltSort.Gameplay
                 shopImg.color = new Color(0.55f, 0.25f, 0.75f, 1f); // purple
             SetAnchors(shopBtn.GetComponent<RectTransform>(),
                 new Vector2(0.53f, 0.11f), new Vector2(0.96f, 0.25f));
+            LocalizedText.Bind(shopBtn.transform.Find("Label")?.GetComponent<Text>(), "key_shop");
 
             if (!tutorialDone)
                 ApplyTutorialLock(shopBtn, font);
@@ -207,7 +211,7 @@ namespace BoltSort.Gameplay
             // MM-05: diamond decorations — ~18% larger with slight overflow beyond button edges
             MakeDiamond(shopBtn, "ShopDiamond_L", GameAssets.MenuDiamond(1),
                 new Vector2(0f, 0.10f), new Vector2(0f, 0.90f),
-                new Vector2(-10f, 0f), new Vector2(80f, 0f));
+                new Vector2(-15f, 0f), new Vector2(52f, 0f));
             MakeDiamond(shopBtn, "ShopDiamond_R1", GameAssets.MenuDiamond(2),
                 new Vector2(1f, 0.38f), new Vector2(1f, 1.02f),
                 new Vector2(-72f, 0f), new Vector2(10f, 0f));

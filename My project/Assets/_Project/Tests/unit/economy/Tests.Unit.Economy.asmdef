@@ -1,0 +1,21 @@
+{
+    "name": "Tests.Unit.Economy",
+    "rootNamespace": "BoltSort.Tests.Unit.Economy",
+    "references": [
+        "BoltSort.Gameplay"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false,
+    "optionalUnityReferences": [
+        "TestAssembly"
+    ]
+}

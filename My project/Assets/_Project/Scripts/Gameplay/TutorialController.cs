@@ -52,11 +52,11 @@ namespace BoltSort.Gameplay
 
             // Show the first un-seen mechanic present on this level (one per load).
             if (HasFrozen(rec) && NotSeen("frozen"))
-                Show("frozen", "FROZEN TUBE", "This tube is frozen for a few moves. Plan around it!");
+                Show("frozen", "key_tut_frozen_title", "key_tut_frozen_body");
             else if (HasMystery(rec) && NotSeen("mystery"))
-                Show("mystery", "MYSTERY BALL", "This ball hides its color. Move the ball above it to reveal it!");
+                Show("mystery", "key_tut_mystery_title", "key_tut_mystery_body");
             else if (rec.HasMulticolor && NotSeen("multicolor"))
-                Show("multicolor", "MULTICOLOR BALL", "This special ball matches any color. Use it wisely!");
+                Show("multicolor", "key_tut_multicolor_title", "key_tut_multicolor_body");
         }
 
         private static bool HasFrozen(BoltSort.LevelData.LevelRecord rec)
@@ -77,7 +77,7 @@ namespace BoltSort.Gameplay
 
         // ── Placeholder overlay ───────────────────────────────────────────────────
 
-        private void Show(string flagKey, string title, string body)
+        private void Show(string flagKey, string titleKey, string bodyKey)
         {
             _pendingFlagKey = flagKey;
             _sm?.SetGamePaused(true); // block board input until dismissed
@@ -109,10 +109,10 @@ namespace BoltSort.Gameplay
             prt.pivot = new Vector2(0.5f, 0.5f);
             prt.sizeDelta = new Vector2(560f, 420f);
 
-            MakeLabel(panel, "Title", title, 48, new Vector2(0f, 110f), new Vector2(520f, 90f),
-                      BoltSortTheme.WinGold);
-            MakeLabel(panel, "Body", body, 30, new Vector2(0f, -10f), new Vector2(500f, 180f),
-                      Color.white);
+            LocalizedText.Bind(MakeLabel(panel, "Title", Tr(titleKey), 48, new Vector2(0f, 110f), new Vector2(520f, 90f),
+                      BoltSortTheme.WinGold), titleKey);
+            LocalizedText.Bind(MakeLabel(panel, "Body", Tr(bodyKey), 30, new Vector2(0f, -10f), new Vector2(500f, 180f),
+                      Color.white), bodyKey);
 
             // OK button
             var okGO = new GameObject("OK");
@@ -125,7 +125,7 @@ namespace BoltSort.Gameplay
             okrt.pivot = new Vector2(0.5f, 0f);
             okrt.sizeDelta = new Vector2(220f, 80f);
             okrt.anchoredPosition = new Vector2(0f, 30f);
-            MakeLabel(okGO, "Label", "OK", 36, Vector2.zero, new Vector2(220f, 80f), Color.white);
+            LocalizedText.Bind(MakeLabel(okGO, "Label", Tr("key_ok"), 36, Vector2.zero, new Vector2(220f, 80f), Color.white), "key_ok");
         }
 
         private void Dismiss()
@@ -143,7 +143,7 @@ namespace BoltSort.Gameplay
 
         // ── UI helpers ────────────────────────────────────────────────────────────
 
-        private void MakeLabel(GameObject parent, string name, string text, int size,
+        private Text MakeLabel(GameObject parent, string name, string text, int size,
                                Vector2 anchoredPos, Vector2 sizeDelta, Color color)
         {
             var go = new GameObject(name);
@@ -159,7 +159,11 @@ namespace BoltSort.Gameplay
             rt.pivot = new Vector2(0.5f, 0.5f);
             rt.anchoredPosition = anchoredPos;
             rt.sizeDelta = sizeDelta;
+            return t;
         }
+
+        private static string Tr(string key)
+            => LocalizationManager.Instance != null ? LocalizationManager.Instance.Get(key) : key;
 
         private static void Stretch(RectTransform rt)
         {

@@ -94,11 +94,13 @@ namespace BoltSort.Gameplay
             _iconRt.anchoredPosition = Vector2.zero;
             _iconRt.sizeDelta        = new Vector2(260f, 260f);
 
-            AddLabel(card, font, "Title", "MAGNET UNLOCKED!", 66,
-                     new Vector2(0.05f, 0.50f), new Vector2(0.95f, 0.64f), BoltSortTheme.WinGold, outline: true);
-            AddLabel(card, font, "Body",
+            LocalizedText.Bind(AddLabel(card, font, "Title", "MAGNET UNLOCKED!", 66,
+                     new Vector2(0.05f, 0.50f), new Vector2(0.95f, 0.64f), BoltSortTheme.WinGold, outline: true),
+                     "key_magnet_title");
+            LocalizedText.Bind(AddLabel(card, font, "Body",
                      "From now on, same-color balls will follow each other automatically!",
-                     40, new Vector2(0.08f, 0.26f), new Vector2(0.92f, 0.48f), Color.black, outline: false);
+                     40, new Vector2(0.08f, 0.26f), new Vector2(0.92f, 0.48f), Color.black, outline: false),
+                     "key_magnet_body");
 
             // LET'S GO! button — reuse general_button.png.
             var btnGO = new GameObject("LetsGoButton");
@@ -114,7 +116,8 @@ namespace BoltSort.Gameplay
             btnRt.pivot     = new Vector2(0.5f, 0f);
             btnRt.anchoredPosition = new Vector2(0f, 80f);
             btnRt.sizeDelta        = new Vector2(440f, 140f);
-            AddLabel(btnGO, font, "Label", "LET'S GO!", 48, Vector2.zero, Vector2.one, Color.white, outline: false);
+            LocalizedText.Bind(AddLabel(btnGO, font, "Label", "LET'S GO!", 48, Vector2.zero, Vector2.one, Color.white, outline: false),
+                     "key_lets_go");
 
             StartCoroutine(ScaleIn());
             StartCoroutine(PulseIcon());

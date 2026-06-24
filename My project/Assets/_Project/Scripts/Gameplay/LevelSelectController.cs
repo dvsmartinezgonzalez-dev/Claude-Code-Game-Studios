@@ -118,6 +118,7 @@ namespace BoltSort.Gameplay
 
             var titleText = MakeLabel(header, "Title", "LEVELS", _font, 52,
                                       TextAnchor.MiddleCenter, bold: true, shadow: true);
+            LocalizedText.Bind(titleText, "key_levels");
             titleText.color = BoltSortTheme.HUDText;
             Stretch(titleText.GetComponent<RectTransform>());
             StartCoroutine(AnimateTitle(titleText.rectTransform));
@@ -223,6 +224,7 @@ namespace BoltSort.Gameplay
             // Page label
             _pageLabel = MakeLabel(nav, "PageLabel", "", _font, 30, TextAnchor.MiddleCenter, true, true);
             _pageLabel.color = BoltSortTheme.HUDText;
+            LocalizedText.BindFormat(_pageLabel, "key_page_fmt", () => new object[] { _currentPage + 1, _pageCount });
             var plr = _pageLabel.GetComponent<RectTransform>();
             plr.anchorMin = new Vector2(0.5f, 0.5f); plr.anchorMax = new Vector2(0.5f, 0.5f);
             plr.pivot = new Vector2(0.5f, 0.5f); plr.sizeDelta = new Vector2(240f, 80f);
@@ -237,7 +239,7 @@ namespace BoltSort.Gameplay
             ntr.anchoredPosition = new Vector2(-8f, 35f);
 
             // Change 3C: input field — plain white rounded background (no action-button sprite)
-            _gotoInput = MakeIntInput(nav, "GotoInput", "Go to…");
+            _gotoInput = MakeIntInput(nav, "GotoInput", Tr("key_goto_placeholder"));
             var gotoInputImg = _gotoInput.GetComponent<Image>();
             // White rounded background matching the game's button border style.
             if (GameAssets.MenuButton != null)
@@ -266,6 +268,7 @@ namespace BoltSort.Gameplay
                 goLabelGO.transform.SetParent(goBtn.transform, false);
                 var goLabelT = goLabelGO.AddComponent<Text>();
                 goLabelT.text = "GO"; goLabelT.font = _font; goLabelT.fontSize = 30;
+                LocalizedText.Bind(goLabelT, "key_go");
                 goLabelT.fontStyle = FontStyle.Bold; goLabelT.alignment = TextAnchor.MiddleCenter;
                 goLabelT.color = Color.white; goLabelT.supportRichText = false;
                 goLabelT.raycastTarget = false;
@@ -398,7 +401,7 @@ namespace BoltSort.Gameplay
                     lockRt.anchorMin = lockRt.anchorMax = new Vector2(0.5f, 0.5f);
                     lockRt.pivot = new Vector2(0.5f, 0.5f);
                     lockRt.anchoredPosition = Vector2.zero;
-                    float lockSize = _cellSize * 0.6f * 1.25f;
+                    float lockSize = _cellSize * 0.6f * 1.25f * 1.25f;
                     lockRt.sizeDelta = new Vector2(lockSize, lockSize);
                     lockImg.raycastTarget = false;
                 }
@@ -439,7 +442,7 @@ namespace BoltSort.Gameplay
             }
 
             // Page label + nav button interactability
-            if (_pageLabel != null) _pageLabel.text = $"Page {_currentPage + 1} of {_pageCount}";
+            if (_pageLabel != null) _pageLabel.text = TrFmt("key_page_fmt", _currentPage + 1, _pageCount);
             if (_prevBtn != null) _prevBtn.interactable = _currentPage > 0;
             if (_nextBtn != null) _nextBtn.interactable = _currentPage < _pageCount - 1;
 
@@ -745,6 +748,14 @@ namespace BoltSort.Gameplay
             go.AddComponent<Image>().color = color;
             return go;
         }
+
+        private static string Tr(string key)
+            => LocalizationManager.Instance != null ? LocalizationManager.Instance.Get(key) : key;
+
+        private static string TrFmt(string key, params object[] args)
+            => LocalizationManager.Instance != null
+                ? LocalizationManager.Instance.Format(key, args)
+                : string.Format(key, args);
 
         private static Text MakeLabel(GameObject parent, string name, string text, Font font,
                                       int size, TextAnchor anchor, bool bold, bool shadow)

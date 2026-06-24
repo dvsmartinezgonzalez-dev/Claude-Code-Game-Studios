@@ -27,10 +27,25 @@ namespace BoltSort.Gameplay
         private Action     _onGoShop;
         private Action     _onGoLevels;
         private Text       _langButtonLabel;
+        private Text[]     _langChecks;
+        private Image[]    _langRowImages;   // row backgrounds — recolored on selection change
+        private Text[]     _langRowLabels;   // row name labels — recolored on selection change
 
+        // Native language names shown in the selector, aligned 1:1 with LangCodes.
         private static readonly string[] Languages =
-            { "English", "Spanish", "French", "German", "Italian",
-              "Portuguese", "Japanese", "Korean", "Chinese" };
+            { "English", "Español", "Português", "Français", "Deutsch",
+              "Italiano", "Русский", "中文", "日本語", "हिन्दी" };
+        private static readonly string[] LangCodes =
+            { "en", "es", "pt", "fr", "de", "it", "ru", "zh", "ja", "hi" };
+
+        private static int CurrentLangIndex()
+        {
+            string cur = LocalizationManager.Instance != null
+                ? LocalizationManager.Instance.CurrentLanguage : LocalizationManager.DefaultLanguage;
+            for (int i = 0; i < LangCodes.Length; i++)
+                if (LangCodes[i] == cur) return i;
+            return 0;
+        }
 
         /// <summary>
         /// Fired before the overlay's active state changes.
@@ -110,6 +125,7 @@ namespace BoltSort.Gameplay
 
             // Title "SETTINGS" on the blue banner (top-centre)
             var title = AddLabel(card, "Title", "SETTINGS", font, 34, TextAnchor.MiddleCenter, Color.white, 0f);
+            LocalizedText.Bind(title, "key_settings");
             var trt = title.GetComponent<RectTransform>();
             trt.anchorMin = new Vector2(0.5f, 1f); trt.anchorMax = new Vector2(0.5f, 1f);
             trt.pivot = new Vector2(0.5f, 1f);
@@ -150,17 +166,17 @@ namespace BoltSort.Gameplay
 
             // In-game navigation (gameplay HUD only)
             if (_onGoShop != null)
-                BuildWideButton(content, GameAssets.MenuButton, null, "Go to Shop", 58f, Color.white,
-                                () => _onGoShop.Invoke());
+                LocalizedText.Bind(BuildWideButton(content, GameAssets.MenuButton, null, "Go to Shop", 58f, Color.white,
+                                () => _onGoShop.Invoke()), "key_go_shop");
             if (_onGoLevels != null)
-                BuildWideButton(content, GameAssets.MenuButton, null, "Go to Levels", 58f, Color.white,
-                                () => _onGoLevels.Invoke());
+                LocalizedText.Bind(BuildWideButton(content, GameAssets.MenuButton, null, "Go to Levels", 58f, Color.white,
+                                () => _onGoLevels.Invoke()), "key_go_levels");
 
             // No Ads row — no_ads icon + white_button
             BuildNoAdsRow(content, font);
 
             // Rate / Privacy — full-width buttons (rate_game_privacy_button.png)
-            BuildWideButton(content, GameAssets.SettingsWideButton, GameAssets.SettingsStar,
+            LocalizedText.Bind(BuildWideButton(content, GameAssets.SettingsWideButton, GameAssets.SettingsStar,
                             "Rate the game", 58f, Color.white, () =>
             {
 #if UNITY_IOS
@@ -168,10 +184,10 @@ namespace BoltSort.Gameplay
 #else
                 Application.OpenURL("https://play.google.com/store/apps/details?id=com.dvsstudio.boltsort");
 #endif
-            });
-            BuildWideButton(content, GameAssets.SettingsWideButton, GameAssets.SettingsShield,
+            }), "key_rate");
+            LocalizedText.Bind(BuildWideButton(content, GameAssets.SettingsWideButton, GameAssets.SettingsShield,
                             "Privacy Policy", 58f, Color.white,
-                            () => Application.OpenURL("https://dvsstudio.github.io/boltsort/privacy"));
+                            () => Application.OpenURL("https://dvsstudio.github.io/boltsort/privacy")), "key_privacy");
 
             // Scrollable language list (hidden until Language is tapped)
             BuildLanguageList(card, font);
@@ -296,9 +312,10 @@ namespace BoltSort.Gameplay
 
             var lbl = AddLabel(row, "Label", "Language", font, 30, TextAnchor.MiddleLeft, new Color(0.30f, 0.25f, 0.10f), 0f);
             lbl.raycastTarget = false;
+            LocalizedText.Bind(lbl, "key_language");
             var lblLe = lbl.gameObject.AddComponent<LayoutElement>(); lblLe.flexibleWidth = 1f;
 
-            int idx = Mathf.Clamp(PlayerPrefs.GetInt(LangIdxKey, 0), 0, Languages.Length - 1);
+            int idx = CurrentLangIndex();
             var btnGo = new GameObject("LanguageButton");
             btnGo.transform.SetParent(row.transform, false);
             var btnImg = btnGo.AddComponent<Image>();
@@ -352,13 +369,14 @@ namespace BoltSort.Gameplay
 
             var t = AddLabel(btnGo, "Label", "No Ads", font, 30, TextAnchor.MiddleCenter, new Color(0.20f, 0.18f, 0.10f), 0f);
             t.raycastTarget = false;
+            LocalizedText.Bind(t, "key_no_ads");
             var lr = t.GetComponent<RectTransform>();
             lr.anchorMin = Vector2.zero; lr.anchorMax = Vector2.one; lr.offsetMin = lr.offsetMax = Vector2.zero;
         }
 
         // ── Generic full-width button (bg sprite + optional leading icon + centred text) ──
 
-        private void BuildWideButton(GameObject parent, Sprite bg, Sprite icon, string label,
+        private Text BuildWideButton(GameObject parent, Sprite bg, Sprite icon, string label,
                                      float height, Color textColor, Action onClick)
         {
             var go = new GameObject($"{label}Button");
@@ -389,81 +407,242 @@ namespace BoltSort.Gameplay
             t.raycastTarget = false;
             var lr = t.GetComponent<RectTransform>();
             lr.anchorMin = Vector2.zero; lr.anchorMax = Vector2.one; lr.offsetMin = lr.offsetMax = Vector2.zero;
+            return t;
         }
 
         // ── Scrollable language list (hidden until Language is tapped) ────────────────
 
+        // Row height used both for LayoutElement.preferredHeight and for row content sizing.
+        private const float LangRowH = 62f;
+
         private void BuildLanguageList(GameObject card, Font font)
         {
+            // Panel — uses popup sprite for consistency; falls back to a semi-transparent dark rect.
             _langPanel = new GameObject("LanguagePanel");
             _langPanel.transform.SetParent(card.transform, false);
-            _langPanel.AddComponent<Image>().color = new Color(0.04f, 0.04f, 0.09f, 0.99f);
-            _langPanel.AddComponent<Button>().onClick.AddListener(() => _langPanel.SetActive(false));
+            var panelImg = _langPanel.AddComponent<Image>();
+            var popupSpr = GameAssets.MenuPopup;
+            if (popupSpr != null) { panelImg.sprite = popupSpr; panelImg.color = Color.white; panelImg.type = Image.Type.Simple; }
+            else                  { panelImg.color = new Color(0.06f, 0.06f, 0.13f, 0.97f); }
             var pr = _langPanel.GetComponent<RectTransform>();
             pr.anchorMin = pr.anchorMax = pr.pivot = new Vector2(0.5f, 0.5f);
             pr.anchoredPosition = Vector2.zero;
-            pr.sizeDelta = new Vector2(420f, 460f);
+            pr.sizeDelta = new Vector2(440f, 560f);
 
-            var hdr = AddLabel(_langPanel, "LangTitle", "Language", font, 36,
-                               TextAnchor.MiddleCenter, Color.white, 195f);
-            hdr.raycastTarget = false;
+            // ── Header row (title + close button) ─────────────────────────────────────
+            const float hdrH = 62f;
+            var hdrGO = new GameObject("Header", typeof(RectTransform));
+            hdrGO.transform.SetParent(_langPanel.transform, false);
+            var hdrRt = hdrGO.GetComponent<RectTransform>();
+            hdrRt.anchorMin = new Vector2(0f, 1f); hdrRt.anchorMax = new Vector2(1f, 1f);
+            hdrRt.pivot     = new Vector2(0.5f, 1f);
+            hdrRt.sizeDelta = new Vector2(0f, hdrH);
+            hdrRt.anchoredPosition = Vector2.zero;
 
-            var scrollGO = new GameObject("Scroll");
+            var hdrTitleGO = new GameObject("Title");
+            hdrTitleGO.transform.SetParent(hdrGO.transform, false);
+            var hdrTitle = hdrTitleGO.AddComponent<Text>();
+            hdrTitle.font = font; hdrTitle.fontSize = 34; hdrTitle.fontStyle = FontStyle.Bold;
+            hdrTitle.alignment = TextAnchor.MiddleCenter; hdrTitle.color = Color.white;
+            hdrTitle.supportRichText = false; hdrTitle.raycastTarget = false;
+            hdrTitle.horizontalOverflow = HorizontalWrapMode.Wrap;
+            hdrTitle.verticalOverflow   = VerticalWrapMode.Overflow;
+            var htrt = hdrTitleGO.GetComponent<RectTransform>();
+            htrt.anchorMin = Vector2.zero; htrt.anchorMax = Vector2.one;
+            htrt.offsetMin = new Vector2(56f, 0f); htrt.offsetMax = new Vector2(-56f, 0f);
+            LocalizedText.Bind(hdrTitle, "key_language");
+
+            // Close X on the language panel
+            var closeBtnGO = new GameObject("CloseBtn");
+            closeBtnGO.transform.SetParent(hdrGO.transform, false);
+            var closeBtnImg = closeBtnGO.AddComponent<Image>();
+            var exitSpr = GameAssets.BtnExit;
+            if (exitSpr != null) GameAssets.Apply(closeBtnImg, exitSpr, preserveAspect: true);
+            else closeBtnImg.color = new Color(0.7f, 0.2f, 0.2f, 1f);
+            closeBtnGO.AddComponent<Button>().onClick.AddListener(() =>
+            {
+                AudioMgr.Instance?.PlaySFX("button_tap");
+                _langPanel.SetActive(false);
+            });
+            var cbrt = closeBtnGO.GetComponent<RectTransform>();
+            cbrt.anchorMin = new Vector2(1f, 0.5f); cbrt.anchorMax = new Vector2(1f, 0.5f);
+            cbrt.pivot     = new Vector2(1f, 0.5f);
+            cbrt.anchoredPosition = new Vector2(-8f, 0f);
+            cbrt.sizeDelta        = new Vector2(48f, 48f);
+
+            // Thin divider under header
+            var divGO = new GameObject("Divider");
+            divGO.transform.SetParent(_langPanel.transform, false);
+            divGO.AddComponent<Image>().color = new Color(1f, 1f, 1f, 0.15f);
+            var divRt = divGO.GetComponent<RectTransform>();
+            divRt.anchorMin = new Vector2(0.05f, 1f); divRt.anchorMax = new Vector2(0.95f, 1f);
+            divRt.pivot     = new Vector2(0.5f, 1f);
+            divRt.anchoredPosition = new Vector2(0f, -hdrH);
+            divRt.sizeDelta        = new Vector2(0f, 2f);
+
+            // ── Scroll view ────────────────────────────────────────────────────────────
+            var scrollGO = new GameObject("Scroll", typeof(RectTransform));
             scrollGO.transform.SetParent(_langPanel.transform, false);
-            var scroll = scrollGO.AddComponent<ScrollRect>();
-            scroll.horizontal = false; scroll.vertical = true; scroll.scrollSensitivity = 24f;
             var srt = scrollGO.GetComponent<RectTransform>();
             srt.anchorMin = new Vector2(0f, 0f); srt.anchorMax = new Vector2(1f, 1f);
-            srt.offsetMin = new Vector2(16f, 16f); srt.offsetMax = new Vector2(-16f, -56f);
+            // Top margin leaves room for header; bottom/side inset for visual breathing room.
+            srt.offsetMin = new Vector2(10f, 10f);
+            srt.offsetMax = new Vector2(-10f, -(hdrH + 6f));
 
+            var scroll = scrollGO.AddComponent<ScrollRect>();
+            scroll.horizontal = false; scroll.vertical = true;
+            scroll.movementType = ScrollRect.MovementType.Elastic;
+            scroll.elasticity = 0.1f; scroll.inertia = true;
+            scroll.decelerationRate = 0.135f; scroll.scrollSensitivity = 28f;
+
+            // Viewport — RectMask2D avoids stencil/alpha issues that Mask has with
+            // transparent backgrounds, and is the preferred approach for scroll views.
             var viewport = new GameObject("Viewport");
             viewport.transform.SetParent(scrollGO.transform, false);
-            var vpImg = viewport.AddComponent<Image>(); vpImg.color = new Color(0f, 0f, 0f, 0f);
-            viewport.AddComponent<Mask>().showMaskGraphic = false;
+            viewport.AddComponent<RectMask2D>();
+            // A near-invisible Image is needed so the scroll rect receives pointer events
+            // inside the viewport area (raycasting requires a graphic component).
+            var vpImg = viewport.AddComponent<Image>();
+            vpImg.color = new Color(0f, 0f, 0f, 0.001f);
             Stretch(viewport.GetComponent<RectTransform>());
             scroll.viewport = viewport.GetComponent<RectTransform>();
 
+            // Content — top-anchored, grows downward via ContentSizeFitter.
             var content = new GameObject("Content", typeof(RectTransform));
             content.transform.SetParent(viewport.transform, false);
             var crt = content.GetComponent<RectTransform>();
             crt.anchorMin = new Vector2(0f, 1f); crt.anchorMax = new Vector2(1f, 1f);
-            crt.pivot = new Vector2(0.5f, 1f); crt.offsetMin = crt.offsetMax = Vector2.zero;
+            crt.pivot = new Vector2(0.5f, 1f);
+            crt.offsetMin = crt.offsetMax = Vector2.zero;
             scroll.content = crt;
+
             var vlg = content.AddComponent<VerticalLayoutGroup>();
-            vlg.spacing = 8f; vlg.padding = new RectOffset(4, 4, 4, 4);
-            vlg.childControlHeight = true; vlg.childControlWidth = true;
-            vlg.childForceExpandHeight = false; vlg.childForceExpandWidth = true;
+            vlg.spacing = 6f;
+            vlg.padding = new RectOffset(4, 4, 4, 4);
+            // Let the VLG set child heights from LayoutElement.preferredHeight;
+            // do NOT use childForceExpandHeight — that collapses rows when content
+            // is taller than the viewport.
+            vlg.childControlWidth = true;  vlg.childForceExpandWidth = true;
+            vlg.childControlHeight = true; vlg.childForceExpandHeight = false;
+            vlg.childAlignment = TextAnchor.UpperCenter;
+
             var fit = content.AddComponent<ContentSizeFitter>();
             fit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            int selected = PlayerPrefs.GetInt(LangIdxKey, 0);
+            // ── Language rows ──────────────────────────────────────────────────────────
+            int selected = CurrentLangIndex();
+            _langChecks    = new Text[Languages.Length];
+            _langRowImages = new Image[Languages.Length];
+            _langRowLabels = new Text[Languages.Length];
+            var btnSpr = GameAssets.MenuButton ?? GameAssets.WhiteButton;
+
             for (int i = 0; i < Languages.Length; i++)
             {
                 int idx = i;
+                bool isSel = (i == selected);
+
                 var rowGo = new GameObject($"Lang_{i}");
                 rowGo.transform.SetParent(content.transform, false);
+
+                // Background image — use general_button sprite when available.
                 var rowImg = rowGo.AddComponent<Image>();
-                rowImg.color = i == selected ? new Color(0.20f, 0.55f, 0.30f, 1f)
-                                             : new Color(0.15f, 0.15f, 0.28f, 1f);
-                var le = rowGo.AddComponent<LayoutElement>(); le.minHeight = 56f;
-                rowGo.AddComponent<Button>().onClick.AddListener(() =>
+                if (btnSpr != null)
                 {
-                    AudioMgr.Instance?.PlaySFX("button_tap");
-                    PlayerPrefs.SetInt(LangIdxKey, idx);
-                    PlayerPrefs.SetString(LangNameKey, Languages[idx]);
-                    PlayerPrefs.Save();
-                    if (_langButtonLabel != null) _langButtonLabel.text = Languages[idx].ToUpper();
-                    _langPanel.SetActive(false);
-                });
-                var lbl = AddLabel(rowGo, "Label", Languages[i], font, 30,
-                                   TextAnchor.MiddleCenter, Color.white, 0f);
-                lbl.raycastTarget = false;
-                var lrt = lbl.GetComponent<RectTransform>();
+                    rowImg.sprite = btnSpr;
+                    rowImg.type   = Image.Type.Sliced;
+                    rowImg.color  = isSel ? new Color(1f, 0.85f, 0.1f, 1f)   // yellow = selected
+                                          : new Color(0.18f, 0.25f, 0.45f, 1f);
+                }
+                else
+                {
+                    rowImg.color = isSel ? new Color(0.20f, 0.55f, 0.30f, 1f)
+                                        : new Color(0.15f, 0.18f, 0.32f, 1f);
+                }
+
+                // Give the layout a fixed preferred height so the VLG can measure the row.
+                var le = rowGo.AddComponent<LayoutElement>();
+                le.preferredHeight = LangRowH;
+                le.minHeight       = LangRowH;
+
+                _langRowImages[i] = rowImg;
+                rowGo.AddComponent<Button>().onClick.AddListener(() => SelectLanguage(idx));
+
+                // Language name label (centered, slightly inset from the checkmark side).
+                var lblGO = new GameObject("Label");
+                lblGO.transform.SetParent(rowGo.transform, false);
+                var lbl = lblGO.AddComponent<Text>();
+                _langRowLabels[i] = lbl;
+                lbl.text = Languages[i]; lbl.font = font; lbl.fontSize = 28;
+                lbl.fontStyle = FontStyle.Bold; lbl.alignment = TextAnchor.MiddleCenter;
+                lbl.color = isSel ? new Color(0.1f, 0.05f, 0f) : Color.white;
+                lbl.supportRichText = false; lbl.raycastTarget = false;
+                // Wrap avoids LayoutGroup height measurement issues that Overflow causes.
+                lbl.horizontalOverflow = HorizontalWrapMode.Wrap;
+                lbl.verticalOverflow   = VerticalWrapMode.Overflow;
+                var lrt = lblGO.GetComponent<RectTransform>();
                 lrt.anchorMin = Vector2.zero; lrt.anchorMax = Vector2.one;
-                lrt.anchoredPosition = Vector2.zero; lrt.sizeDelta = Vector2.zero;
+                lrt.offsetMin = new Vector2(10f, 0f); lrt.offsetMax = new Vector2(-40f, 0f);
+
+                // Outline for readability.
+                var ol = lblGO.AddComponent<Outline>();
+                ol.effectColor    = new Color(0f, 0f, 0f, 0.6f);
+                ol.effectDistance = new Vector2(1f, -1f);
+
+                // Checkmark glyph (right-aligned).
+                var chkGO = new GameObject("Check");
+                chkGO.transform.SetParent(rowGo.transform, false);
+                var chk = chkGO.AddComponent<Text>();
+                chk.text = "✓"; chk.font = font; chk.fontSize = 28;
+                chk.fontStyle = FontStyle.Bold; chk.alignment = TextAnchor.MiddleRight;
+                chk.color = isSel ? new Color(0.1f, 0.05f, 0f) : new Color(0.6f, 1f, 0.7f, 1f);
+                chk.supportRichText = false; chk.raycastTarget = false;
+                chk.horizontalOverflow = HorizontalWrapMode.Overflow;
+                chk.verticalOverflow   = VerticalWrapMode.Overflow;
+                var ckrt = chkGO.GetComponent<RectTransform>();
+                ckrt.anchorMin = Vector2.zero; ckrt.anchorMax = Vector2.one;
+                ckrt.offsetMin = Vector2.zero; ckrt.offsetMax = new Vector2(-8f, 0f);
+                chk.enabled = isSel;
+                _langChecks[i] = chk;
             }
 
             _langPanel.SetActive(false);
+        }
+
+        /// <summary>Maps the language-list index to its localization code.</summary>
+        private static string LangCodeFor(int idx) => LangCodes[Mathf.Clamp(idx, 0, LangCodes.Length - 1)];
+
+        /// <summary>Applies a language selection live: persists, switches the active table,
+        /// updates row visuals and checkmarks, updates the collapsed button label, closes the panel.</summary>
+        private void SelectLanguage(int idx)
+        {
+            AudioMgr.Instance?.PlaySFX("button_tap");
+            PlayerPrefs.SetInt(LangIdxKey, idx);
+            PlayerPrefs.SetString(LangNameKey, Languages[idx]);
+            PlayerPrefs.Save();
+            LocalizationManager.Instance?.SetLanguage(LangCodeFor(idx));
+            if (_langButtonLabel != null) _langButtonLabel.text = Languages[idx].ToUpper();
+
+            bool hasSpr = GameAssets.MenuButton != null || GameAssets.WhiteButton != null;
+            for (int i = 0; i < Languages.Length; i++)
+            {
+                bool isSel = (i == idx);
+
+                if (_langRowImages != null && i < _langRowImages.Length && _langRowImages[i] != null)
+                    _langRowImages[i].color = isSel
+                        ? (hasSpr ? new Color(1f, 0.85f, 0.1f, 1f) : new Color(0.20f, 0.55f, 0.30f, 1f))
+                        : (hasSpr ? new Color(0.18f, 0.25f, 0.45f, 1f) : new Color(0.15f, 0.18f, 0.32f, 1f));
+
+                if (_langRowLabels != null && i < _langRowLabels.Length && _langRowLabels[i] != null)
+                    _langRowLabels[i].color = isSel ? new Color(0.1f, 0.05f, 0f) : Color.white;
+
+                if (_langChecks != null && i < _langChecks.Length && _langChecks[i] != null)
+                {
+                    _langChecks[i].enabled = isSel;
+                    _langChecks[i].color   = isSel ? new Color(0.1f, 0.05f, 0f) : new Color(0.6f, 1f, 0.7f, 1f);
+                }
+            }
+
+            if (_langPanel != null) _langPanel.SetActive(false);
         }
 
         // ── Shared helpers ───────────────────────────────────────────────────────────

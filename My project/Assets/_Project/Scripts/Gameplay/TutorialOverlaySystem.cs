@@ -228,7 +228,7 @@ namespace BoltSort.Gameplay
         {
             yield return null; // let BoardView settle its layout
 
-            SetHintText("TAP A TUBE!");
+            SetHintText("key_hint_tap_tube");
 
             if (_board != null && _board.TubeCount > 0 && Camera.main != null)
             {
@@ -242,14 +242,14 @@ namespace BoltSort.Gameplay
 
         private void ShowPlaceHint()
         {
-            SetHintText("PLACE THE BALL!");
+            SetHintText("key_hint_place_ball");
             RefreshPlaceIcons();
         }
 
         private IEnumerator ShowMismatchHint()
         {
             // A: prompt a second move; the rule message appears on a wrong-color tap.
-            SetHintText("NOW TRY ANOTHER TUBE!");
+            SetHintText("key_hint_another_tube");
             yield return null;
             RefreshPlaceIcons();
         }
@@ -264,7 +264,7 @@ namespace BoltSort.Gameplay
 
         private IEnumerator MismatchMessageRoutine()
         {
-            SetHintText("You can only place a ball on top of the SAME COLOR!");
+            SetHintText("key_hint_same_color");
 
             // Point the hand at the first valid destination (Indicate_Down).
             int valid = FindValidDestination();
@@ -280,7 +280,7 @@ namespace BoltSort.Gameplay
             yield return new WaitForSeconds(MismatchMsgDuration);
 
             if (_step == Step.MismatchHint)
-                SetHintText("NOW TRY ANOTHER TUBE!");
+                SetHintText("key_hint_another_tube");
             _mismatchMsgCo = null;
         }
 
@@ -291,7 +291,7 @@ namespace BoltSort.Gameplay
 
         private IEnumerator ShowUndoHint()
         {
-            SetHintText("Made a mistake? Use the lightning bolt to UNDO your last move!");
+            SetHintText("key_hint_undo");
             _undoWatchMoveCount = _gsm != null ? _gsm.MoveCount : 0;
             yield return null; // let HUD finish building
 
@@ -305,7 +305,7 @@ namespace BoltSort.Gameplay
 
         private IEnumerator ShowExtraTubeHint()
         {
-            SetHintText("ADD A TUBE! +");
+            SetHintText("key_hint_add_tube");
             yield return null; // wait for HUD to be built
 
             var rt = _hud != null ? _hud.ExtraTubeButtonRT : null;
@@ -323,7 +323,7 @@ namespace BoltSort.Gameplay
 
         private IEnumerator ShowResetHint()
         {
-            SetHintText("Stuck? Tap here to restart the level anytime!");
+            SetHintText("key_hint_restart");
             _resetPending = true;
             yield return null;
 
@@ -342,7 +342,7 @@ namespace BoltSort.Gameplay
             _step = Step.FreePlay;
             StopHandAnims();
             if (_handImage != null) _handImage.enabled = false;
-            SetHintText("GOOD!");
+            SetHintText("key_good");
             yield return new WaitForSeconds(1.0f);
             if (next == Step.FreePlay) HideAll();
         }
@@ -362,7 +362,7 @@ namespace BoltSort.Gameplay
 
         private IEnumerator FinalMessage()
         {
-            SetHintText("GREAT!");
+            SetHintText("key_great");
             yield return new WaitForSeconds(1.2f);
             HideAll();
         }
@@ -541,10 +541,11 @@ namespace BoltSort.Gameplay
             ClearTubeIcons();
         }
 
-        private void SetHintText(string msg)
+        private void SetHintText(string key)
         {
             if (_hintText == null) return;
-            _hintText.text    = msg;
+            // Bind the localization key so the hint also updates live if the language changes.
+            LocalizedText.Bind(_hintText, key);
             _hintText.enabled = true;
         }
 
