@@ -91,11 +91,39 @@ namespace BoltSort.Visual
         // Shop coin UI (assets_admin/Shop/Shop_elements → Resources/Sprites/Shop/)
         public static Sprite ShopCoinIcon     => LoadRes("Sprites/Shop/coin");
         public static Sprite ShopMoreCoins    => LoadRes("Sprites/Shop/more_coins");
+        public static Sprite ShopMoreCoins2   => LoadRes("Sprites/Shop/more_coins_2");
+
+        // ── Redesigned Shop scene (assets_admin/Shop/Shop_elements + Main_menu → Resources/Sprites/Shop/) ──
+        public static Sprite ShopBackground   => LoadRes("Sprites/Shop/shop_background");
+        public static Sprite ShopBanner       => LoadRes("Sprites/Shop/banner_shop");
+        public static Sprite ShopExitButton   => LoadRes("Sprites/Shop/exit_button");
+        public static Sprite ShopCoin2        => LoadRes("Sprites/Shop/coin_2");
+        public static Sprite ShopDiamond2     => LoadRes("Sprites/Shop/diamond_2");
+        // Pre-sized 70×70 currency icons for the shop currency bar and card price rows.
+        public static Sprite ShopCoinShop     => LoadRes("Sprites/Shop/coin_shop");
+        public static Sprite ShopDiamondShop  => LoadRes("Sprites/Shop/diamond_shop");
+        public static Sprite ShopCardBg       => LoadRes("Sprites/Shop/card_bg");
+        public static Sprite ShopEtiqueta     => LoadRes("Sprites/Shop/etiqueta");
+        public static Sprite ShopBtnGreen     => LoadRes("Sprites/Shop/btn_green");
+        public static Sprite ShopBtnLightBlue => LoadRes("Sprites/Shop/btn_light_blue");
+        public static Sprite ShopBtnYellow    => LoadRes("Sprites/Shop/btn_yellow");
+        public static Sprite ShopBtnBlue      => LoadRes("Sprites/Shop/btn_blue");
+
+        /// <summary>Full-width 4-icon category row, one sprite per selected tab
+        /// (0 = Tubes, 1 = Balls, 2 = Backgrounds, 3 = Specials).</summary>
+        public static Sprite ShopTabRow(int selectedIndex) => selectedIndex switch
+        {
+            0 => LoadRes("Sprites/Shop/tab_tubes"),
+            1 => LoadRes("Sprites/Shop/tab_balls"),
+            2 => LoadRes("Sprites/Shop/tab_backgrounds"),
+            _ => LoadRes("Sprites/Shop/tab_specials"),
+        };
 
         // Level select tiles (assets_admin/Levels → Resources/Sprites/Levels/)
         public static Sprite LevelBackground => LoadRes("Sprites/Levels/level_background");
         public static Sprite LevelLock       => LoadRes("Sprites/Levels/lock");
         public static Sprite SnowflakeBadge       => LoadRes("Sprites/Levels/snow_flake_compressed");
+        public static Sprite SnowFlakeIcon        => LoadRes("Sprites/Levels/snow_flake");
         public static Sprite FrozenTexture        => LoadRes("Sprites/Levels/frozen_texture_2");
         public static Sprite AmbientParticleSprite => LoadRes("Sprites/Levels/particles");
 

@@ -16,6 +16,11 @@ namespace BoltSort.Visual
     {
         public static SceneTransitionManager Instance { get; private set; }
 
+        /// <summary>Name of the scene that was active when the last transition started.
+        /// Lets a destination scene (e.g. Shop) navigate back to its caller without the
+        /// caller having to register itself. Null until the first transition.</summary>
+        public static string PreviousScene { get; private set; }
+
         /// <summary>Fired at transition start so BoardView can animate columns out.</summary>
         public static event Action OnTransitionOut;
 
@@ -78,6 +83,9 @@ namespace BoltSort.Visual
             AudioMgr.Instance?.PlaySFX("scene_whoosh");
 
             yield return StartCoroutine(FadeOverlay(0f, 1f, outDuration, fadeIn: false));
+
+            // Record the caller before swapping scenes so destinations can navigate back.
+            PreviousScene = SceneManager.GetActiveScene().name;
 
             var op = SceneManager.LoadSceneAsync(sceneName);
             while (op != null && !op.isDone) yield return null;

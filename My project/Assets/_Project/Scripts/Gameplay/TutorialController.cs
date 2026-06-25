@@ -1,35 +1,29 @@
 using UnityEngine;
-using UnityEngine.UI;
 using BoltSort.Visual;
 using GSM = BoltSort.GameStateManager.GameStateManager;
 using SM  = BoltSort.SortMechanic.SortMechanic;
-using AudioMgr = BoltSort.Audio.AudioManager;
 
 namespace BoltSort.Gameplay
 {
     /// <summary>
-    /// Phase-2 mechanic tutorial TRIGGER stubs (TDD §6). On level load, if the level introduces a
-    /// mechanic the player has not seen yet, pauses the board and shows a minimal placeholder panel
-    /// (mechanic name + a one-line hint + OK). A PlayerPrefs flag <c>bs.tut.&lt;key&gt;</c> is set on
-    /// dismiss so each tutorial shows exactly once.
-    ///
-    /// This is intentionally a STUB: the full animated-hand tutorial overlay is a later phase. The
-    /// trigger logic, one-shot flags, pause gate (reuses <see cref="SM.SetGamePaused"/>), and
-    /// per-mechanic copy are all final; only the visuals are placeholder.
+    /// Detects the first time a level introduces a phase-2 mechanic (frozen tube, mystery ball,
+    /// multicolor ball) and shows a one-shot <see cref="SpecialMechanicSplash"/> — the same
+    /// full-screen popup UI used by <see cref="MagnetUnlockSplash"/>. Each mechanic is shown
+    /// exactly once, gated by the <c>bs.tut.&lt;key&gt;</c> PlayerPrefs flag set on dismiss.
     /// </summary>
     public class TutorialController : MonoBehaviour
     {
-        private GSM  _gsm;
-        private SM   _sm;
-        private Font _font;
-        private GameObject _overlay;
-        private string _pendingFlagKey;
+        private GSM _gsm;
+        private SM  _sm;
 
-        public void Initialize(GSM gsm, SM sm, Font font)
+        // Non-null while a splash is visible; prevents a second splash on rapid level changes.
+        private SpecialMechanicSplash _activeSplash;
+
+        public void Initialize(GSM gsm, SM sm, UnityEngine.Font font)
         {
-            _gsm  = gsm;
-            _sm   = sm;
-            _font = font ?? GameAssets.MenuFont;
+            _gsm = gsm;
+            _sm  = sm;
+            // font kept for signature compatibility; SpecialMechanicSplash resolves its own font.
             if (_gsm != null) _gsm.OnLevelLoaded += OnLevelLoaded;
         }
 
@@ -41,7 +35,7 @@ namespace BoltSort.Gameplay
         private void OnLevelLoaded(int levelId, int colorCount, int stackDepth,
                                    int tempSlotCount, int tempSlotDepth, long seqId)
         {
-            if (_overlay != null) return; // already showing one
+            if (_activeSplash != null) return; // already showing one
 
             var lds = BoltSort.LevelData.LevelDataSystem.Instance;
             if (lds == null || !lds.IsReady) return;
@@ -52,11 +46,14 @@ namespace BoltSort.Gameplay
 
             // Show the first un-seen mechanic present on this level (one per load).
             if (HasFrozen(rec) && NotSeen("frozen"))
-                Show("frozen", "key_tut_frozen_title", "key_tut_frozen_body");
+                ShowSplash("frozen",     "key_tut_frozen_title",     "key_tut_frozen_body",
+                           GameAssets.SnowFlakeIcon ?? GameAssets.SnowflakeBadge);
             else if (HasMystery(rec) && NotSeen("mystery"))
-                Show("mystery", "key_tut_mystery_title", "key_tut_mystery_body");
+                ShowSplash("mystery",    "key_tut_mystery_title",    "key_tut_mystery_body",
+                           GameAssets.BallMystery);
             else if (rec.HasMulticolor && NotSeen("multicolor"))
-                Show("multicolor", "key_tut_multicolor_title", "key_tut_multicolor_body");
+                ShowSplash("multicolor", "key_tut_multicolor_title", "key_tut_multicolor_body",
+                           GameAssets.BallMulticolor);
         }
 
         private static bool HasFrozen(BoltSort.LevelData.LevelRecord rec)
@@ -75,100 +72,21 @@ namespace BoltSort.Gameplay
 
         private static bool NotSeen(string key) => PlayerPrefs.GetInt("bs.tut." + key, 0) == 0;
 
-        // ── Placeholder overlay ───────────────────────────────────────────────────
-
-        private void Show(string flagKey, string titleKey, string bodyKey)
+        private void ShowSplash(string flagKey, string titleKey, string bodyKey, Sprite icon)
         {
-            _pendingFlagKey = flagKey;
-            _sm?.SetGamePaused(true); // block board input until dismissed
-
-            var canvasGO = new GameObject("TutorialOverlay");
-            var canvas   = canvasGO.AddComponent<Canvas>();
-            canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
-            canvas.sortingOrder = 150; // above board/HUD, below win overlay (200)
-            var scaler = canvasGO.AddComponent<CanvasScaler>();
-            scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            scaler.referenceResolution = new Vector2(720f, 1280f);
-            scaler.matchWidthOrHeight  = 1f;
-            canvasGO.AddComponent<GraphicRaycaster>();
-            _overlay = canvasGO;
-
-            // Dim backdrop (also swallows taps to the board behind it)
-            var dim = new GameObject("Dim");
-            dim.transform.SetParent(canvasGO.transform, false);
-            var dimImg = dim.AddComponent<Image>();
-            dimImg.color = new Color(0f, 0f, 0f, 0.6f);
-            Stretch(dim.GetComponent<RectTransform>());
-
-            // Panel
-            var panel = new GameObject("Panel");
-            panel.transform.SetParent(canvasGO.transform, false);
-            panel.AddComponent<Image>().color = new Color(0.12f, 0.12f, 0.22f, 0.98f);
-            var prt = panel.GetComponent<RectTransform>();
-            prt.anchorMin = new Vector2(0.5f, 0.5f); prt.anchorMax = new Vector2(0.5f, 0.5f);
-            prt.pivot = new Vector2(0.5f, 0.5f);
-            prt.sizeDelta = new Vector2(560f, 420f);
-
-            LocalizedText.Bind(MakeLabel(panel, "Title", Tr(titleKey), 48, new Vector2(0f, 110f), new Vector2(520f, 90f),
-                      BoltSortTheme.WinGold), titleKey);
-            LocalizedText.Bind(MakeLabel(panel, "Body", Tr(bodyKey), 30, new Vector2(0f, -10f), new Vector2(500f, 180f),
-                      Color.white), bodyKey);
-
-            // OK button
-            var okGO = new GameObject("OK");
-            okGO.transform.SetParent(panel.transform, false);
-            okGO.AddComponent<Image>().color = new Color(0.20f, 0.55f, 0.30f, 1f);
-            var okBtn = okGO.AddComponent<Button>();
-            okBtn.onClick.AddListener(Dismiss);
-            var okrt = okGO.GetComponent<RectTransform>();
-            okrt.anchorMin = new Vector2(0.5f, 0f); okrt.anchorMax = new Vector2(0.5f, 0f);
-            okrt.pivot = new Vector2(0.5f, 0f);
-            okrt.sizeDelta = new Vector2(220f, 80f);
-            okrt.anchoredPosition = new Vector2(0f, 30f);
-            LocalizedText.Bind(MakeLabel(okGO, "Label", Tr("key_ok"), 36, Vector2.zero, new Vector2(220f, 80f), Color.white), "key_ok");
-        }
-
-        private void Dismiss()
-        {
-            AudioMgr.Instance?.PlaySFX("button_tap");
-            if (!string.IsNullOrEmpty(_pendingFlagKey))
-            {
-                PlayerPrefs.SetInt("bs.tut." + _pendingFlagKey, 1);
-                PlayerPrefs.Save();
-                _pendingFlagKey = null;
-            }
-            _sm?.SetGamePaused(false);
-            if (_overlay != null) { Destroy(_overlay); _overlay = null; }
-        }
-
-        // ── UI helpers ────────────────────────────────────────────────────────────
-
-        private Text MakeLabel(GameObject parent, string name, string text, int size,
-                               Vector2 anchoredPos, Vector2 sizeDelta, Color color)
-        {
-            var go = new GameObject(name);
-            go.transform.SetParent(parent.transform, false);
-            var t = go.AddComponent<Text>();
-            t.text = text; t.font = _font; t.fontSize = size;
-            t.fontStyle = FontStyle.Bold; t.alignment = TextAnchor.MiddleCenter;
-            t.color = color; t.supportRichText = false;
-            t.horizontalOverflow = HorizontalWrapMode.Wrap;
-            t.verticalOverflow   = VerticalWrapMode.Overflow;
-            var rt = go.GetComponent<RectTransform>();
-            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
-            rt.pivot = new Vector2(0.5f, 0.5f);
-            rt.anchoredPosition = anchoredPos;
-            rt.sizeDelta = sizeDelta;
-            return t;
-        }
-
-        private static string Tr(string key)
-            => LocalizationManager.Instance != null ? LocalizationManager.Instance.Get(key) : key;
-
-        private static void Stretch(RectTransform rt)
-        {
-            rt.anchorMin = Vector2.zero; rt.anchorMax = Vector2.one;
-            rt.offsetMin = rt.offsetMax = Vector2.zero;
+            _sm?.SetGamePaused(true);
+            _activeSplash = SpecialMechanicSplash.Show(
+                GameAssets.MenuFont,
+                icon,
+                titleKey,
+                bodyKey,
+                onDismiss: () =>
+                {
+                    PlayerPrefs.SetInt("bs.tut." + flagKey, 1);
+                    PlayerPrefs.Save();
+                    _activeSplash = null;
+                    _sm?.SetGamePaused(false);
+                });
         }
     }
 }

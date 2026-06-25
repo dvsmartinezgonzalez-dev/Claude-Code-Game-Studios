@@ -33,6 +33,7 @@ namespace BoltSort.Editor
             ImportConfettiSheet();
             ImportShopTabs();
             ImportShopWallpapers();
+            ImportShopRedesign();
             ImportParticlesSprite();
 
             // Single-sprite images — name differs from filename → use named single entry
@@ -340,6 +341,27 @@ namespace BoltSort.Editor
             ImportSingle("Assets/Resources/Sprites/Levels/particles.png");
         }
 
+        // Redesigned Shop scene art (assets_admin/Shop/Shop_elements + Main_menu).
+        // Each PNG/JPG is a self-contained single sprite whose filename already matches the
+        // resource name GameAssets requests, so a plain Single import is all that's needed.
+        static readonly string[] ShopRedesignSprites =
+        {
+            "shop_background.jpg", "banner_shop.png", "exit_button.png", "coin_2.png",
+            "diamond_2.png", "card_bg.png", "etiqueta.png", "more_coins_2.png",
+            "btn_green.png", "btn_light_blue.png", "btn_yellow.png", "btn_blue.png",
+            "tab_tubes.png", "tab_balls.png", "tab_backgrounds.png", "tab_specials.png",
+        };
+
+        static void ImportShopRedesign()
+        {
+            const string dir = "Assets/Resources/Sprites/Shop/";
+            foreach (var file in ShopRedesignSprites)
+            {
+                string path = dir + file;
+                if (AssetImporter.GetAtPath(path) != null) ImportSingle(path);
+            }
+        }
+
         static void ImportShopWallpapers()
         {
             const string dir = "Assets/Resources/Sprites/Shop/Wallpapers";
@@ -488,7 +510,8 @@ namespace BoltSort.Editor
             // essential: buttons may already be sliced from an earlier run, which would
             // otherwise make us skip importing the newer ball/tube art entirely.
             if (ButtonsSliced() && TubesBottomPivot() && HelperTubesConfigured() &&
-                ConfettiSliced() && ShopTabsSliced() && ParticlesImported()) return;
+                ConfettiSliced() && ShopTabsSliced() && ParticlesImported() &&
+                ShopRedesignImported()) return;
 
             Debug.Log("[GameAssets] Game assets not fully configured — auto-importing...");
             GameAssetImporter.ImportAll();
@@ -543,6 +566,15 @@ namespace BoltSort.Editor
         {
             const string probeAsset = "Assets/Resources/Sprites/Levels/particles.png";
             if (AssetImporter.GetAtPath(probeAsset) == null) return true; // PNG absent → nothing to do
+            var imp = AssetImporter.GetAtPath(probeAsset) as TextureImporter;
+            return imp != null && imp.textureType == TextureImporterType.Sprite;
+        }
+
+        // True once the redesigned shop art has been imported as sprites (probe = banner_shop).
+        static bool ShopRedesignImported()
+        {
+            const string probeAsset = "Assets/Resources/Sprites/Shop/banner_shop.png";
+            if (AssetImporter.GetAtPath(probeAsset) == null) return true; // absent → nothing to do
             var imp = AssetImporter.GetAtPath(probeAsset) as TextureImporter;
             return imp != null && imp.textureType == TextureImporterType.Sprite;
         }

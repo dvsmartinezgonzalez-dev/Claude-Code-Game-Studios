@@ -1,5 +1,4 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
@@ -11,33 +10,41 @@ using AudioMgr = BoltSort.Audio.AudioManager;
 namespace BoltSort.Gameplay
 {
     /// <summary>
-    /// Procedurally builds the standalone Shop scene: header, coin balance, a three-tab
-    /// skin browser (Tubes / Backgrounds / Balls) and a 2-column scrollable grid with
-    /// buy/equip flow. Skins persist via <see cref="SkinManager"/> and apply live in
-    /// Gameplay. Returns to MainMenu via SceneTransitionManager.
+    /// Procedurally builds the standalone Shop scene (redesigned): full-screen background,
+    /// banner header with an exit button, a live coins/gems currency bar, a four-tab
+    /// sprite-swap category selector (Tubes / Balls / Backgrounds / Specials) and a
+    /// 2-column scrollable card grid with buy / equip / stock flows. Skins persist via
+    /// <see cref="SkinManager"/>; power-ups and currency via <see cref="EconomyManager"/>.
+    /// Returns to the calling scene tracked by <see cref="SceneTransitionManager.PreviousScene"/>.
     /// </summary>
     public class ShopSceneController : MonoBehaviour
     {
+        // Tab indices — order matches the four-icon row art (tab_tubes/balls/backgrounds/specials).
+        private const int TabTubes = 0, TabBalls = 1, TabBackgrounds = 2, TabSpecials = 3;
+
         private Font          _font;
         private GameObject    _canvas;
         private float         _safeTop, _safeBottom;
-        private SkinCategory  _category = SkinCategory.Tubes;
+        private int           _tab = TabTubes;
         private RectTransform _gridContent;
-        private Text          _coinsLabel;
+        private Text          _coinsLabel, _gemsLabel;
+        private Image         _tabRow;
         private GameObject    _popup;
 
-        private readonly Dictionary<SkinCategory, Image> _tabImages = new();
-
-        // Cell visual constants
-        private static readonly Color CellBg        = new(0.13f, 0.13f, 0.25f, 0.98f);
-        private static readonly Color CellEquipped  = new(0.15f, 0.45f, 0.25f, 0.98f);
-        private static readonly Color BorderEquip   = new(1f, 0.84f, 0.20f, 1f);
-        private static readonly Color CoinGold      = new(1f, 0.85f, 0.20f, 1f);
+        // Card colours / fallbacks.
+        private static readonly Color CardBgFallback = new(0.13f, 0.13f, 0.25f, 0.98f);
+        private static readonly Color CoinGold       = new(1f, 0.85f, 0.20f, 1f);
+        private static readonly Color GemBlue        = new(0.55f, 0.85f, 1f, 1f);
+        private static readonly Color BtnGreenFb     = new(0.20f, 0.65f, 0.30f, 1f);
+        private static readonly Color BtnLightBlueFb = new(0.35f, 0.70f, 0.95f, 1f);
+        private static readonly Color BtnYellowFb    = new(0.95f, 0.78f, 0.20f, 1f);
+        private static readonly Color BtnBlueFb      = new(0.25f, 0.45f, 0.90f, 1f);
 
         private void Start()
         {
             EnsureAudioManager();
             EnsureSaveSystem();
+            EconomyManager.EnsureInstance();
             EnsureTransitionManager();
             EnsureEventSystem();
             ConfigureCamera();
@@ -71,164 +78,187 @@ namespace BoltSort.Gameplay
             scaler.matchWidthOrHeight  = 1f;
             canvasGO.AddComponent<GraphicRaycaster>();
 
-            float lpu     = 1280f / Screen.height;
-            _safeTop      = (Screen.height - Screen.safeArea.yMax) * lpu;
-            _safeBottom   = Screen.safeArea.yMin * lpu;
+            float lpu   = 1280f / Mathf.Max(1, Screen.height);
+            _safeTop    = (Screen.height - Screen.safeArea.yMax) * lpu;
+            _safeBottom = Screen.safeArea.yMin * lpu;
 
-            // Background
+            // ── Background (lowest layer) ──
             var bg    = new GameObject("Background");
             bg.transform.SetParent(canvasGO.transform, false);
             var bgImg = bg.AddComponent<Image>();
             bgImg.color = BoltSortTheme.BackgroundDeep;
-            GameAssets.Apply(bgImg, GameAssets.GameBackground);
+            GameAssets.Apply(bgImg, GameAssets.ShopBackground ?? GameAssets.GameBackground);
+            bgImg.raycastTarget = false;
             Stretch(bgImg.rectTransform);
 
-            BuildHeader(canvasGO);
-            BuildTabBar(canvasGO);
-            BuildScroll(canvasGO);
+            // Vertical bands (canvas px from the top).
+            float bannerH   = 150f;
+            float cyTop      = _safeTop + bannerH + 6f;   // currency bar top
+            float cyH        = 58f;
+            float tabTop     = cyTop + cyH + 10f;          // tab row top
+            float tabH       = 92f;
+            float scrollTop  = tabTop + tabH + 12f;
 
-            SkinManager.OnSkinChanged += UpdateCoins;
-            SelectCategory(_category);
+            BuildHeader(canvasGO, bannerH);
+            BuildCurrencyBar(canvasGO, cyTop, cyH);
+            BuildTabBar(canvasGO, tabTop, tabH);
+            BuildScroll(canvasGO, scrollTop);
+
+            SkinManager.OnSkinChanged += OnBalance;
+            if (EconomyManager.Instance != null) EconomyManager.Instance.OnBalanceChanged += OnBalance;
+
+            SelectTab(_tab);
         }
 
-        private void BuildHeader(GameObject canvasGO)
+        private void BuildHeader(GameObject canvasGO, float bannerH)
         {
-            var header = new GameObject("Header");
-            header.transform.SetParent(canvasGO.transform, false);
-            header.AddComponent<Image>().color = BoltSortTheme.HUDBackground;
-            var hr = header.GetComponent<RectTransform>();
-            hr.anchorMin = new Vector2(0f, 1f); hr.anchorMax = new Vector2(1f, 1f);
-            hr.pivot = new Vector2(0.5f, 1f);
-            hr.offsetMin = new Vector2(0f, -(110f + _safeTop)); hr.offsetMax = Vector2.zero;
+            // Banner — centred at the top with a slight upward bleed; "Shop" text on it.
+            var banner = new GameObject("Banner");
+            banner.transform.SetParent(canvasGO.transform, false);
+            var bannerImg = banner.AddComponent<Image>();
+            GameAssets.Apply(bannerImg, GameAssets.ShopBanner, preserveAspect: true);
+            if (GameAssets.ShopBanner == null) bannerImg.color = BoltSortTheme.HUDBackground;
+            bannerImg.raycastTarget = false;
+            var brt = banner.GetComponent<RectTransform>();
+            brt.anchorMin = brt.anchorMax = new Vector2(0.5f, 1f);
+            brt.pivot     = new Vector2(0.5f, 1f);
+            brt.sizeDelta = new Vector2(480f, bannerH);
+            var bannerOld = new Vector2(0f, -4f);
+            brt.anchoredPosition = bannerOld + new Vector2(0f, -50f); // lowered 50px (shop tweak)
+            Debug.Log($"[Shop] Banner anchoredPosition {bannerOld} → {brt.anchoredPosition}");
 
-            var title = MakeLabel(header, "Title", Tr("key_shop"), _font, 52,
+            var title = MakeLabel(banner, "Title", Tr("key_shop"), _font, 56,
                                   TextAnchor.MiddleCenter, bold: true, shadow: true);
-            title.color = BoltSortTheme.HUDText;
-            var tr = title.rectTransform;
-            tr.anchorMin = Vector2.zero; tr.anchorMax = Vector2.one;
-            tr.offsetMin = Vector2.zero; tr.offsetMax = new Vector2(0f, -_safeTop);
+            title.color = Color.white;
+            var trt = title.rectTransform;
+            trt.SetParent(brt, false); // title is a child of the banner, centred on the sprite
+            trt.anchorMin = trt.anchorMax = new Vector2(0.5f, 0.5f);
+            trt.pivot = new Vector2(0.5f, 0.5f);
+            trt.anchoredPosition = Vector2.zero;
+            trt.sizeDelta = new Vector2(360f, 90f);
 
-            // Back / home button (top-left)
-            var backBtn = new GameObject("BackButton");
-            backBtn.transform.SetParent(header.transform, false);
-            var backImg = backBtn.AddComponent<Image>();
-            if (GameAssets.BtnHomeAction != null)      GameAssets.Apply(backImg, GameAssets.BtnHomeAction, true);
-            else if (GameAssets.NavBack != null)       GameAssets.Apply(backImg, GameAssets.NavBack, true);
-            else                                       backImg.color = new Color(0.12f, 0.12f, 0.22f, 0.9f);
-            var bb = backBtn.AddComponent<Button>();
-            bb.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
-            bb.onClick.AddListener(GoBack);
-            var bbr = backBtn.GetComponent<RectTransform>();
-            bbr.anchorMin = new Vector2(0f, 0f); bbr.anchorMax = new Vector2(0f, 1f);
-            bbr.pivot     = new Vector2(0f, 0.5f);
-            bbr.offsetMin = new Vector2(10f, 12f); bbr.offsetMax = new Vector2(98f, -(12f + _safeTop));
-
-            // Coin display (top-right): right-anchored HLG → [CoinIcon][Number][+]
-            // The group auto-sizes to fit its content and expands leftward from the right edge.
-            var coinRow = new GameObject("CoinRow");
-            coinRow.transform.SetParent(header.transform, false);
-            var coinRowRt = coinRow.GetComponent<RectTransform>();
-            if (coinRowRt == null) coinRowRt = coinRow.AddComponent<RectTransform>();
-            coinRowRt.anchorMin = new Vector2(1f, 0f); coinRowRt.anchorMax = new Vector2(1f, 1f);
-            coinRowRt.pivot     = new Vector2(1f, 0.5f);
-            coinRowRt.anchoredPosition = new Vector2(-8f, -_safeTop * 0.5f);
-            coinRowRt.sizeDelta = new Vector2(0f, 0f); // width auto-set by ContentSizeFitter
-
-            var hlg = coinRow.AddComponent<HorizontalLayoutGroup>();
-            hlg.childAlignment = TextAnchor.MiddleCenter;
-            hlg.spacing = 6f;
-            hlg.padding = new RectOffset(0, 0, 0, 0);
-            hlg.childControlWidth = false; hlg.childControlHeight = false;
-            hlg.childForceExpandWidth = false; hlg.childForceExpandHeight = false;
-
-            var rowFitter = coinRow.AddComponent<ContentSizeFitter>();
-            rowFitter.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-            rowFitter.verticalFit   = ContentSizeFitter.FitMode.Unconstrained;
-
-            // CoinIcon
-            var coinIconGO = new GameObject("CoinIcon");
-            coinIconGO.transform.SetParent(coinRow.transform, false);
-            var coinIconImg = coinIconGO.AddComponent<Image>();
-            GameAssets.Apply(coinIconImg, GameAssets.ShopCoinIcon, preserveAspect: true);
-            if (GameAssets.ShopCoinIcon == null) coinIconImg.color = CoinGold;
-            coinIconImg.raycastTarget = false;
-            var coinIconLe = coinIconGO.AddComponent<LayoutElement>();
-            coinIconLe.preferredWidth = 18f; coinIconLe.preferredHeight = 18f; // 50% of 36px baseline
-
-            // Coin number label — ContentSizeFitter so it grows with text
-            var coinsGO = new GameObject("Coins");
-            coinsGO.transform.SetParent(coinRow.transform, false);
-            _coinsLabel = coinsGO.AddComponent<Text>();
-            _coinsLabel.font = _font; _coinsLabel.fontSize = 32;
-            _coinsLabel.fontStyle = FontStyle.Bold; _coinsLabel.alignment = TextAnchor.MiddleCenter;
-            _coinsLabel.color = Color.white; _coinsLabel.supportRichText = false;
-            _coinsLabel.horizontalOverflow = HorizontalWrapMode.Overflow;
-            _coinsLabel.verticalOverflow   = VerticalWrapMode.Overflow;
-            var coinsSh = coinsGO.AddComponent<Shadow>();
-            coinsSh.effectColor = new Color(0f, 0f, 0f, 0.8f);
-            coinsSh.effectDistance = new Vector2(1f, -1f);
-            var coinsLe = coinsGO.AddComponent<LayoutElement>();
-            coinsLe.preferredHeight = 40f;
-            var coinsCsf = coinsGO.AddComponent<ContentSizeFitter>();
-            coinsCsf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
-            coinsCsf.verticalFit   = ContentSizeFitter.FitMode.Unconstrained;
-
-            // More coins button — fixed width, rightmost element
-            var moreCoinsBtnGO = new GameObject("MoreCoinsButton");
-            moreCoinsBtnGO.transform.SetParent(coinRow.transform, false);
-            var moreCoinsImg = moreCoinsBtnGO.AddComponent<Image>();
-            GameAssets.Apply(moreCoinsImg, GameAssets.ShopMoreCoins, preserveAspect: true);
-            if (GameAssets.ShopMoreCoins == null) moreCoinsImg.color = new Color(0.20f, 0.65f, 0.30f, 1f);
-            var moreCoinsBtn = moreCoinsBtnGO.AddComponent<Button>();
-            moreCoinsBtn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
-            moreCoinsBtn.onClick.AddListener(ShowMoreCoinsPopup);
-            var moreCoinsBtnLe = moreCoinsBtnGO.AddComponent<LayoutElement>();
-            moreCoinsBtnLe.preferredWidth = 20f; moreCoinsBtnLe.preferredHeight = 20f; // 50% of 40px baseline
-
-            UpdateCoins();
+            // Exit button — top-right, inside the safe area; returns to the caller.
+            var exit = new GameObject("ExitButton");
+            exit.transform.SetParent(canvasGO.transform, false);
+            var exitImg = exit.AddComponent<Image>();
+            GameAssets.Apply(exitImg, GameAssets.ShopExitButton ?? GameAssets.BtnExit, preserveAspect: true);
+            if (GameAssets.ShopExitButton == null && GameAssets.BtnExit == null)
+                exitImg.color = new Color(0.75f, 0.22f, 0.22f, 1f);
+            var exitBtn = exit.AddComponent<Button>();
+            exitBtn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
+            exitBtn.onClick.AddListener(GoBack);
+            var ert = exit.GetComponent<RectTransform>();
+            ert.anchorMin = ert.anchorMax = new Vector2(1f, 1f);
+            ert.pivot     = new Vector2(1f, 1f);
+            ert.sizeDelta = new Vector2(88f, 88f);
+            ert.anchoredPosition = new Vector2(-16f, -(_safeTop + 14f));
         }
 
-        private void BuildTabBar(GameObject canvasGO)
+        private void BuildCurrencyBar(GameObject canvasGO, float top, float height)
+        {
+            float rawTop = top;
+            top -= 40f; // raise the currency row 40px (shop tweak); anchoredPosition.y = -top
+            Debug.Log($"[Shop] CurrencyBar anchoredPosition.y {-rawTop} → {-top}");
+            _coinsLabel = BuildCurrencyChip(canvasGO, "CoinChip",
+                GameAssets.ShopCoinShop ?? GameAssets.ShopCoin2 ?? GameAssets.ShopCoinIcon, CoinGold,
+                top, height, leftAligned: true);
+            _gemsLabel = BuildCurrencyChip(canvasGO, "GemChip",
+                GameAssets.ShopDiamondShop ?? GameAssets.ShopDiamond2 ?? GameAssets.DiamondIcon, GemBlue,
+                top, height, leftAligned: false);
+            RefreshCurrency();
+        }
+
+        /// <summary>One corner-anchored [icon][amount] chip that auto-sizes to its text.</summary>
+        private Text BuildCurrencyChip(GameObject parent, string name, Sprite icon,
+                                       Color fallback, float top, float height, bool leftAligned)
+        {
+            var chip = new GameObject(name, typeof(RectTransform));
+            chip.transform.SetParent(parent.transform, false);
+            var rt = chip.GetComponent<RectTransform>();
+            float x = leftAligned ? 0f : 1f;
+            rt.anchorMin = rt.anchorMax = new Vector2(x, 1f);
+            rt.pivot     = new Vector2(x, 1f);
+            rt.anchoredPosition = new Vector2(leftAligned ? 24f : -24f, -top);
+
+            var hlg = chip.AddComponent<HorizontalLayoutGroup>();
+            hlg.childAlignment = TextAnchor.MiddleLeft;
+            hlg.spacing = 6f;
+            hlg.childControlWidth = false;  hlg.childControlHeight = false;
+            hlg.childForceExpandWidth = false; hlg.childForceExpandHeight = false;
+            var csf = chip.AddComponent<ContentSizeFitter>();
+            csf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            csf.verticalFit   = ContentSizeFitter.FitMode.Unconstrained;
+
+            var iconGO = new GameObject("Icon");
+            iconGO.transform.SetParent(chip.transform, false);
+            var iconImg = iconGO.AddComponent<Image>();
+            GameAssets.Apply(iconImg, icon, preserveAspect: true);
+            iconImg.preserveAspect = true;
+            if (icon == null) iconImg.color = fallback;
+            iconImg.raycastTarget = false;
+            // Fixed 70×70. The HLG has childControlWidth/Height = false, so it lays out using
+            // the RectTransform sizeDelta directly (LayoutElement set too, for completeness).
+            iconImg.rectTransform.sizeDelta = new Vector2(70f, 70f);
+            var iconLe = iconGO.AddComponent<LayoutElement>();
+            iconLe.preferredWidth = iconLe.preferredHeight = 70f;
+
+            var label = new GameObject("Amount").AddComponent<Text>();
+            label.transform.SetParent(chip.transform, false);
+            label.font = _font; label.fontSize = 34; label.fontStyle = FontStyle.Bold;
+            label.alignment = TextAnchor.MiddleLeft; label.color = Color.white;
+            label.supportRichText = false;
+            label.horizontalOverflow = HorizontalWrapMode.Overflow;
+            label.verticalOverflow   = VerticalWrapMode.Overflow;
+            AddOutline(label.gameObject);
+            var le = label.gameObject.AddComponent<LayoutElement>();
+            le.preferredHeight = height - 8f;
+            var lcsf = label.gameObject.AddComponent<ContentSizeFitter>();
+            lcsf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            return label;
+        }
+
+        private void BuildTabBar(GameObject canvasGO, float top, float height)
         {
             var bar = new GameObject("TabBar", typeof(RectTransform));
             bar.transform.SetParent(canvasGO.transform, false);
-            var barRt = bar.GetComponent<RectTransform>();
-            barRt.anchorMin = new Vector2(0f, 1f); barRt.anchorMax = new Vector2(1f, 1f);
-            barRt.pivot = new Vector2(0.5f, 1f);
-            float top = 110f + _safeTop;
-            barRt.offsetMin = new Vector2(0f, -(top + 96f));
-            barRt.offsetMax = new Vector2(0f, -top);
+            var rt = bar.GetComponent<RectTransform>();
+            rt.anchorMin = new Vector2(0f, 1f); rt.anchorMax = new Vector2(1f, 1f);
+            rt.pivot = new Vector2(0.5f, 1f);
+            rt.offsetMin = new Vector2(16f, -(top + height));
+            rt.offsetMax = new Vector2(-16f, -top);
 
-            var grid = bar.AddComponent<HorizontalLayoutGroup>();
-            grid.childControlWidth = true;  grid.childControlHeight = true;
-            grid.childForceExpandWidth = true; grid.childForceExpandHeight = true;
-            grid.spacing = 8f; grid.padding = new RectOffset(12, 12, 8, 8);
+            // Single Image whose sprite swaps per selected tab. Fills the rect (no
+            // letterboxing) so the four equal click zones line up with the four icons.
+            _tabRow = bar.AddComponent<Image>();
+            _tabRow.preserveAspect = false;
+            _tabRow.raycastTarget = false;
 
-            MakeTab(bar, SkinCategory.Tubes,       "TUBES");
-            MakeTab(bar, SkinCategory.Backgrounds, "BACKGROUNDS");
-            MakeTab(bar, SkinCategory.Balls,       "BALLS");
+            // Four equal invisible click zones across the row.
+            for (int i = 0; i < 4; i++)
+            {
+                int idx = i;
+                var zone = new GameObject($"Tab_{i}");
+                zone.transform.SetParent(bar.transform, false);
+                var zImg = zone.AddComponent<Image>();
+                zImg.color = new Color(0f, 0f, 0f, 0.001f); // transparent but raycastable
+                var zrt = zone.GetComponent<RectTransform>();
+                zrt.anchorMin = new Vector2(i / 4f, 0f);
+                zrt.anchorMax = new Vector2((i + 1) / 4f, 1f);
+                zrt.offsetMin = zrt.offsetMax = Vector2.zero;
+                var zbtn = zone.AddComponent<Button>();
+                zbtn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
+                zbtn.onClick.AddListener(() => SelectTab(idx));
+            }
         }
 
-        private void MakeTab(GameObject parent, SkinCategory cat, string label)
+        private void BuildScroll(GameObject canvasGO, float scrollTop)
         {
-            var go  = new GameObject($"Tab_{cat}");
-            go.transform.SetParent(parent.transform, false);
-            var img = go.AddComponent<Image>();
-            _tabImages[cat] = img;
-
-            var btn = go.AddComponent<Button>();
-            btn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
-            btn.onClick.AddListener(() => SelectCategory(cat));
-        }
-
-        private void BuildScroll(GameObject canvasGO)
-        {
-            var scrollGO = new GameObject("SkinScroll", typeof(RectTransform));
+            var scrollGO = new GameObject("Scroll", typeof(RectTransform));
             scrollGO.transform.SetParent(canvasGO.transform, false);
             var scrollRt = scrollGO.GetComponent<RectTransform>();
             scrollRt.anchorMin = Vector2.zero; scrollRt.anchorMax = Vector2.one;
-            scrollRt.offsetMin = new Vector2(0f, _safeBottom + 16f);
-            scrollRt.offsetMax = new Vector2(0f, -(110f + _safeTop + 104f));
+            scrollRt.offsetMin = new Vector2(0f, _safeBottom + 12f);
+            scrollRt.offsetMax = new Vector2(0f, -scrollTop);
 
             var scroll = scrollGO.AddComponent<ScrollRect>();
             scroll.horizontal = false; scroll.vertical = true;
@@ -236,11 +266,10 @@ namespace BoltSort.Gameplay
             scroll.elasticity = 0.1f; scroll.inertia = true; scroll.decelerationRate = 0.135f;
             scroll.scrollSensitivity = 24f;
 
-            // Viewport
             var vp = new GameObject("Viewport");
             vp.transform.SetParent(scrollGO.transform, false);
             var vpImg = vp.AddComponent<Image>();
-            vpImg.color = new Color(0f, 0f, 0f, 0.001f); // near-invisible, needed for raycast/mask
+            vpImg.color = new Color(0f, 0f, 0f, 0.001f);
             vp.AddComponent<RectMask2D>();
             var vpRt = vp.GetComponent<RectTransform>();
             vpRt.anchorMin = Vector2.zero; vpRt.anchorMax = Vector2.one;
@@ -248,16 +277,15 @@ namespace BoltSort.Gameplay
             vpRt.pivot = new Vector2(0.5f, 1f);
             scroll.viewport = vpRt;
 
-            // Content
             var content = new GameObject("Content", typeof(RectTransform));
             content.transform.SetParent(vp.transform, false);
             _gridContent = content.GetComponent<RectTransform>();
             _gridContent.anchorMin = new Vector2(0f, 1f); _gridContent.anchorMax = new Vector2(1f, 1f);
             _gridContent.pivot = new Vector2(0.5f, 1f);
-            _gridContent.offsetMin = new Vector2(0f, 0f); _gridContent.offsetMax = new Vector2(0f, 0f);
+            _gridContent.offsetMin = _gridContent.offsetMax = Vector2.zero;
 
             var glg = content.AddComponent<GridLayoutGroup>();
-            glg.cellSize = new Vector2(326f, 248f);
+            glg.cellSize = new Vector2(326f, 300f);
             glg.spacing  = new Vector2(18f, 18f);
             glg.padding  = new RectOffset(16, 16, 16, 16);
             glg.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
@@ -266,40 +294,22 @@ namespace BoltSort.Gameplay
 
             var fitter = content.AddComponent<ContentSizeFitter>();
             fitter.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-
             scroll.content = _gridContent;
         }
 
-        // ── Category / grid ─────────────────────────────────────────────────────────
+        // ── Tabs / grid ───────────────────────────────────────────────────────────
 
-        private void SelectCategory(SkinCategory cat)
+        private void SelectTab(int tab)
         {
-            _category = cat;
-            RefreshTabVisuals();
+            _tab = tab;
+            if (_tabRow != null)
+            {
+                var spr = GameAssets.ShopTabRow(tab);
+                if (spr != null) { _tabRow.sprite = spr; _tabRow.color = Color.white; }
+                else _tabRow.color = new Color(0.16f, 0.16f, 0.30f, 1f);
+            }
             RebuildGrid();
         }
-
-        private void RefreshTabVisuals()
-        {
-            foreach (var kv in _tabImages)
-            {
-                bool active = kv.Key == _category;
-                Sprite spr = GetTabSprite(kv.Key, active);
-                if (spr != null) { kv.Value.sprite = spr; kv.Value.color = Color.white; }
-                else kv.Value.color = active ? new Color(0.30f, 0.55f, 0.95f, 1f)
-                                             : new Color(0.16f, 0.16f, 0.30f, 1f);
-                var lbl = kv.Value.GetComponentInChildren<Text>();
-                if (lbl != null) lbl.color = active ? Color.white : new Color(1f, 1f, 1f, 0.7f);
-            }
-        }
-
-        private static Sprite GetTabSprite(SkinCategory cat, bool selected) => cat switch
-        {
-            SkinCategory.Tubes       => selected ? GameAssets.ShopTabTubesSelected       : GameAssets.ShopTabTubesUnselected,
-            SkinCategory.Backgrounds => selected ? GameAssets.ShopTabWallpapersSelected   : GameAssets.ShopTabWallpapersUnselected,
-            SkinCategory.Balls       => selected ? GameAssets.ShopTabBallsSelected        : GameAssets.ShopTabBallsUnselected,
-            _                        => null,
-        };
 
         private void RebuildGrid()
         {
@@ -307,89 +317,280 @@ namespace BoltSort.Gameplay
             for (int i = _gridContent.childCount - 1; i >= 0; i--)
                 Destroy(_gridContent.GetChild(i).gameObject);
 
-            var items = SkinCatalogue.For(_category);
+            if (_tab == TabSpecials) { BuildSpecials(); return; }
+
+            var category = _tab == TabBalls ? SkinCategory.Balls
+                         : _tab == TabBackgrounds ? SkinCategory.Backgrounds
+                         : SkinCategory.Tubes;
+            var items = SkinCatalogue.For(category);
             for (int i = 0; i < items.Count; i++)
-                BuildCell(items[i], i);
+                BuildSkinCell(items[i], i);
         }
 
-        private void BuildCell(SkinItem item, int index)
+        // ── Skin cell ───────────────────────────────────────────────────────────────
+
+        private void BuildSkinCell(SkinItem item, int index)
         {
             bool equipped = SkinManager.IsEquipped(item);
             bool unlocked = SkinManager.IsUnlocked(item);
 
-            var cell = new GameObject($"Cell_{item.SkinId}");
-            cell.transform.SetParent(_gridContent, false);
-            var cellImg = cell.AddComponent<Image>();
-            cellImg.color = equipped ? CellEquipped : CellBg;
+            var cell = MakeCard(out var thumbArea);
 
-            // Equipped border (gold outline)
-            if (equipped)
-            {
-                var outline = cell.AddComponent<Outline>();
-                outline.effectColor = BorderEquip;
-                outline.effectDistance = new Vector2(4f, 4f);
-            }
-
-            // Thumbnail
-            var thumbGO = new GameObject("Thumb");
-            thumbGO.transform.SetParent(cell.transform, false);
-            var thumbImg = thumbGO.AddComponent<Image>();
+            // Thumbnail (≈50% of card height).
             var thumb = item.Thumbnail;
+            var thumbImg = thumbArea.AddComponent<Image>();
             if (thumb != null) { thumbImg.sprite = thumb; thumbImg.color = Color.white; thumbImg.preserveAspect = true; }
-            else               { thumbImg.color = SwatchColor(item); }
+            else               thumbImg.color = SwatchColor(item);
             thumbImg.raycastTarget = false;
-            var thr = thumbGO.GetComponent<RectTransform>();
-            thr.anchorMin = new Vector2(0.5f, 1f); thr.anchorMax = new Vector2(0.5f, 1f);
-            thr.pivot = new Vector2(0.5f, 1f);
-            thr.sizeDelta = new Vector2(150f, 150f);
-            thr.anchoredPosition = new Vector2(0f, -14f);
-
-            // Locked overlay
             if (!unlocked)
             {
                 var dim = new GameObject("Dim");
-                dim.transform.SetParent(thumbGO.transform, false);
+                dim.transform.SetParent(thumbArea.transform, false);
                 var dimImg = dim.AddComponent<Image>();
-                dimImg.color = new Color(0f, 0f, 0f, 0.45f);
+                dimImg.color = new Color(0f, 0f, 0f, 0.40f);
                 dimImg.raycastTarget = false;
                 Stretch(dim.GetComponent<RectTransform>());
             }
 
-            // Name
-            var name = MakeLabel(cell, "Name", item.DisplayName, _font, 26,
+            // Name.
+            AddCardName(cell, item.DisplayName);
+
+            // Price row (only when locked).
+            if (!unlocked) AddPriceRow(cell, item.UnlockCost, 0);
+
+            // Action button + etiqueta.
+            if (equipped)
+                AddActionButton(cell, GameAssets.ShopBtnLightBlue, BtnLightBlueFb,
+                                "✓ " + Tr("key_equipped"), interactable: false, onClick: null, showTag: false);
+            else if (unlocked)
+                AddActionButton(cell, GameAssets.ShopBtnGreen, BtnGreenFb,
+                                Tr("key_equip"), interactable: true,
+                                onClick: () => { SkinManager.EquipSkin(item); RebuildGrid(); }, showTag: false);
+            else
+                AddActionButton(cell, GameAssets.ShopBtnYellow, BtnYellowFb,
+                                Tr("key_buy"), interactable: true,
+                                onClick: () => ShowPurchasePopup(item), showTag: true);
+
+            AnimateIn(cell, index, equipped);
+        }
+
+        // ── Specials tab ──────────────────────────────────────────────────────────
+
+        private void BuildSpecials()
+        {
+            int cap = EconomyConfig.PowerUpMaxHeld;
+            var em  = EconomyManager.Instance;
+
+            // Extra Tube.
+            BuildStockSpecial(0, GameAssets.BtnExtraTube, Tr("key_extra_tube"),
+                em != null ? em.ExtraTubes : 0, cap, EconomyConfig.ExtraTubeGemPrice,
+                () => em != null && em.BuyExtraTube());
+
+            // Lightning Bolt.
+            BuildStockSpecial(1, GameAssets.BtnUndoNew, Tr("key_lightning_bolt"),
+                em != null ? em.LightningBolts : 0, cap, EconomyConfig.LightningBoltGemPrice,
+                () => em != null && em.BuyLightningBolt());
+
+            // Buy Coins (IAP placeholder) — uses the dedicated more_coins_2 art.
+            BuildIapSpecial(2, GameAssets.ShopMoreCoins2 ?? GameAssets.ShopCoin2 ?? GameAssets.ShopCoinIcon, CoinGold,
+                Tr("key_get_coins"), GameAssets.ShopBtnYellow, BtnYellowFb);
+
+            // Buy Gems (IAP placeholder).
+            BuildIapSpecial(3, GameAssets.ShopDiamond2 ?? GameAssets.DiamondIcon, GemBlue,
+                Tr("key_get_gems"), GameAssets.ShopBtnBlue, BtnBlueFb);
+        }
+
+        private void BuildStockSpecial(int index, Sprite icon, string name,
+                                       int held, int cap, int gemPrice, System.Func<bool> buy)
+        {
+            var cell = MakeCard(out var thumbArea);
+            var thumbImg = thumbArea.AddComponent<Image>();
+            if (icon != null) { thumbImg.sprite = icon; thumbImg.color = Color.white; thumbImg.preserveAspect = true; }
+            else              thumbImg.color = new Color(0.45f, 0.70f, 0.95f, 1f);
+            thumbImg.raycastTarget = false;
+
+            AddCardName(cell, $"{name}  {held}/{cap}");
+
+            bool full = held >= cap;
+            if (full)
+            {
+                AddActionButton(cell, GameAssets.ShopBtnLightBlue, BtnLightBlueFb,
+                                Tr("key_full"), interactable: false, onClick: null, showTag: false);
+            }
+            else
+            {
+                AddPriceRow(cell, 0, gemPrice);
+                AddActionButton(cell, GameAssets.ShopBtnBlue, BtnBlueFb, Tr("key_buy"),
+                    interactable: true, showTag: true, onClick: () =>
+                    {
+                        if (buy())
+                        {
+                            AudioMgr.Instance?.PlaySFX("extra_bonus");
+                            ShowToast(Tr("key_unlocked"));
+                            RebuildGrid();
+                        }
+                        else ShowToast(Tr("key_not_enough_coins"));
+                    });
+            }
+            AnimateIn(cell, index, false);
+        }
+
+        private void BuildIapSpecial(int index, Sprite icon, Color iconFb, string label,
+                                     Sprite btnSprite, Color btnFb)
+        {
+            var cell = MakeCard(out var thumbArea);
+            var thumbImg = thumbArea.AddComponent<Image>();
+            if (icon != null) { thumbImg.sprite = icon; thumbImg.color = Color.white; thumbImg.preserveAspect = true; }
+            else              thumbImg.color = iconFb;
+            thumbImg.raycastTarget = false;
+
+            AddCardName(cell, label);
+            AddActionButton(cell, btnSprite, btnFb, Tr("key_buy_euro"),
+                interactable: true, showTag: false, onClick: ShowComingSoon);
+            AnimateIn(cell, index, false);
+        }
+
+        // ── Card building blocks ────────────────────────────────────────────────────
+
+        /// <summary>Creates a card (elements_background) and its centred thumbnail holder.</summary>
+        private GameObject MakeCard(out GameObject thumbArea)
+        {
+            var cell = new GameObject("Card");
+            cell.transform.SetParent(_gridContent, false);
+            var img = cell.AddComponent<Image>();
+            GameAssets.Apply(img, GameAssets.ShopCardBg, preserveAspect: false);
+            if (GameAssets.ShopCardBg == null) img.color = CardBgFallback;
+
+            thumbArea = new GameObject("Thumb", typeof(RectTransform));
+            thumbArea.transform.SetParent(cell.transform, false);
+            var thr = thumbArea.GetComponent<RectTransform>();
+            thr.anchorMin = thr.anchorMax = new Vector2(0.5f, 1f);
+            thr.pivot = new Vector2(0.5f, 1f);
+            thr.sizeDelta = new Vector2(120f, 120f); // shrunk to make room for name + price row
+            thr.anchoredPosition = new Vector2(0f, -12f);
+            return cell;
+        }
+
+        private void AddCardName(GameObject cell, string text)
+        {
+            var name = MakeLabel(cell, "Name", text, _font, 26,
                                  TextAnchor.MiddleCenter, bold: true, shadow: false);
             name.raycastTarget = false;
-            var nrt = name.rectTransform;
-            nrt.anchorMin = new Vector2(0f, 0f); nrt.anchorMax = new Vector2(1f, 0f);
-            nrt.pivot = new Vector2(0.5f, 0f);
-            nrt.sizeDelta = new Vector2(0f, 36f);
-            nrt.anchoredPosition = new Vector2(0f, 52f);
+            var rt = name.rectTransform;
+            rt.anchorMin = new Vector2(0f, 0f); rt.anchorMax = new Vector2(1f, 0f);
+            rt.pivot = new Vector2(0.5f, 0f);
+            rt.sizeDelta = new Vector2(-16f, 30f);
+            rt.anchoredPosition = new Vector2(0f, 128f);
+        }
 
-            // Status
-            string status; Color statusColor;
-            if (equipped)       { status = "✓ " + Tr("key_equipped"); statusColor = Color.white; }
-            else if (unlocked)  { status = Tr("key_equip");          statusColor = new Color(0.55f, 0.85f, 1f, 1f); }
-            else                { status = TrF("key_cost_coins_fmt", item.UnlockCost); statusColor = CoinGold; }
+        /// <summary>Centred [icon amount] (coins and/or gems) row above the action button.</summary>
+        private void AddPriceRow(GameObject cell, int coins, int gems)
+        {
+            var row = new GameObject("PriceRow", typeof(RectTransform));
+            row.transform.SetParent(cell.transform, false);
+            var rrt = row.GetComponent<RectTransform>();
+            rrt.anchorMin = new Vector2(0.5f, 0f); rrt.anchorMax = new Vector2(0.5f, 0f);
+            rrt.pivot = new Vector2(0.5f, 0f);
+            rrt.anchoredPosition = new Vector2(0f, 78f);
+            rrt.sizeDelta = new Vector2(300f, 44f);
 
-            var st = MakeLabel(cell, "Status", status, _font, 26,
-                               TextAnchor.MiddleCenter, bold: true, shadow: false);
-            st.color = statusColor; st.raycastTarget = false;
-            var srt = st.rectTransform;
-            srt.anchorMin = new Vector2(0f, 0f); srt.anchorMax = new Vector2(1f, 0f);
-            srt.pivot = new Vector2(0.5f, 0f);
-            srt.sizeDelta = new Vector2(0f, 40f);
-            srt.anchoredPosition = new Vector2(0f, 10f);
+            var hlg = row.AddComponent<HorizontalLayoutGroup>();
+            hlg.childAlignment = TextAnchor.MiddleCenter; hlg.spacing = 6f;
+            hlg.childControlWidth = false; hlg.childControlHeight = false;
+            hlg.childForceExpandWidth = false; hlg.childForceExpandHeight = false;
+            var csf = row.AddComponent<ContentSizeFitter>();
+            csf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            var btn = cell.AddComponent<Button>();
-            btn.onClick.AddListener(() => OnCellTap(item, cell));
+            if (coins > 0) AddPriceTerm(row, GameAssets.ShopCoinShop ?? GameAssets.ShopCoin2 ?? GameAssets.ShopCoinIcon,
+                                        CoinGold, FormatCoins(coins), CoinGold);
+            if (gems > 0)  AddPriceTerm(row, GameAssets.ShopDiamondShop ?? GameAssets.ShopDiamond2 ?? GameAssets.DiamondIcon,
+                                        GemBlue, FormatCoins(gems), GemBlue);
+        }
 
-            // Entrance animation (staggered scale-up)
-            var crt = cell.GetComponent<RectTransform>();
-            crt.localScale = Vector3.zero;
-            StartCoroutine(EntranceAnim(crt, 0.04f * index));
+        private void AddPriceTerm(GameObject row, Sprite icon, Color iconFb, string amount, Color textColor)
+        {
+            var iconGO = new GameObject("Icon");
+            iconGO.transform.SetParent(row.transform, false);
+            var iconImg = iconGO.AddComponent<Image>();
+            GameAssets.Apply(iconImg, icon, preserveAspect: true);
+            iconImg.preserveAspect = true;
+            if (icon == null) iconImg.color = iconFb;
+            iconImg.raycastTarget = false;
+            // Card price icon: 44×44 to fit the 300px card without overlapping the name/button.
+            // (Top-bar currency chips stay 70×70 — see BuildCurrencyChip.)
+            iconImg.rectTransform.sizeDelta = new Vector2(44f, 44f);
+            var le = iconGO.AddComponent<LayoutElement>();
+            le.preferredWidth = le.preferredHeight = 44f;
 
-            // Equipped idle pulse
-            if (equipped) StartCoroutine(EquippedPulse(crt));
+            var t = new GameObject("Amount").AddComponent<Text>();
+            t.transform.SetParent(row.transform, false);
+            t.font = _font; t.fontSize = 28; t.fontStyle = FontStyle.Bold;
+            t.alignment = TextAnchor.MiddleLeft; t.color = textColor; t.supportRichText = false;
+            t.horizontalOverflow = HorizontalWrapMode.Overflow; t.verticalOverflow = VerticalWrapMode.Overflow;
+            t.raycastTarget = false;
+            AddOutline(t.gameObject);
+            var tle = t.gameObject.AddComponent<LayoutElement>();
+            tle.preferredHeight = 32f;
+            var tcsf = t.gameObject.AddComponent<ContentSizeFitter>();
+            tcsf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+        }
+
+        /// <summary>
+        /// Bottom-centred action button. When <paramref name="showTag"/>, an etiqueta price-tag
+        /// is placed so its right edge overlaps the button's left edge and its top sits at the
+        /// button's vertical midpoint (per the design spec).
+        /// </summary>
+        private void AddActionButton(GameObject cell, Sprite sprite, Color fallback, string label,
+                                     bool interactable, System.Action onClick, bool showTag)
+        {
+            const float btnW = 150f, btnH = 56f, btnY = 16f;
+
+            if (showTag && GameAssets.ShopEtiqueta != null)
+            {
+                var tag = new GameObject("Etiqueta");
+                tag.transform.SetParent(cell.transform, false);
+                var tagImg = tag.AddComponent<Image>();
+                tagImg.sprite = GameAssets.ShopEtiqueta; tagImg.color = Color.white;
+                tagImg.preserveAspect = true; tagImg.raycastTarget = false;
+                var tgrt = tag.GetComponent<RectTransform>();
+                tgrt.anchorMin = tgrt.anchorMax = new Vector2(0.5f, 0f);
+                tgrt.pivot = new Vector2(1f, 1f); // top-right corner is the anchor point
+                tgrt.sizeDelta = new Vector2(62f, 62f);
+                // right edge = button left edge (+6 overlap); top = button vertical midpoint
+                tgrt.anchoredPosition = new Vector2(-btnW * 0.5f + 6f, btnY + btnH * 0.5f);
+            }
+
+            var go = new GameObject("Action");
+            go.transform.SetParent(cell.transform, false);
+            var img = go.AddComponent<Image>();
+            if (sprite != null) { img.sprite = sprite; img.color = Color.white; img.type = Image.Type.Simple; }
+            else img.color = fallback;
+            var btn = go.AddComponent<Button>();
+            btn.interactable = interactable;
+            if (interactable && onClick != null)
+            {
+                btn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
+                btn.onClick.AddListener(() => onClick());
+            }
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0f);
+            rt.pivot = new Vector2(0.5f, 0f);
+            rt.sizeDelta = new Vector2(btnW, btnH);
+            rt.anchoredPosition = new Vector2(0f, btnY);
+
+            var t = MakeLabel(go, "Label", label, _font, 24, TextAnchor.MiddleCenter, bold: true, shadow: true);
+            t.color = Color.white; t.raycastTarget = false;
+            var lr = t.rectTransform;
+            lr.anchorMin = Vector2.zero; lr.anchorMax = Vector2.one;
+            lr.offsetMin = lr.offsetMax = Vector2.zero;
+        }
+
+        private void AnimateIn(GameObject cell, int index, bool equipped)
+        {
+            var rt = cell.GetComponent<RectTransform>();
+            rt.localScale = Vector3.zero;
+            StartCoroutine(EntranceAnim(rt, 0.04f * index));
+            if (equipped) StartCoroutine(EquippedPulse(rt));
         }
 
         private Color SwatchColor(SkinItem item) => item.Category switch
@@ -399,49 +600,24 @@ namespace BoltSort.Gameplay
             _                  => new Color(0.35f, 0.30f, 0.55f, 1f),
         };
 
-        // ── Interaction ──────────────────────────────────────────────────────────────
-
-        private void OnCellTap(SkinItem item, GameObject cell)
-        {
-            AudioMgr.Instance?.PlaySFX("button_tap");
-            if (SkinManager.IsEquipped(item)) return;
-
-            if (SkinManager.IsUnlocked(item))
-            {
-                SkinManager.EquipSkin(item);
-                RebuildGrid();
-            }
-            else
-            {
-                ShowPurchasePopup(item);
-            }
-        }
+        // ── Purchase popup (skins, coins) ────────────────────────────────────────────
 
         private void ShowPurchasePopup(SkinItem item)
         {
             ClosePopup();
-
-            _popup = new GameObject("PurchasePopup");
-            _popup.transform.SetParent(_canvas.transform, false);
-            var dim = _popup.AddComponent<Image>();
-            dim.color = new Color(0f, 0f, 0f, 0.75f);
-            Stretch(_popup.GetComponent<RectTransform>());
-            var dimBtn = _popup.AddComponent<Button>();
-            dimBtn.onClick.AddListener(ClosePopup);
+            _popup = MakeDimmer();
 
             var card = new GameObject("Card");
             card.transform.SetParent(_popup.transform, false);
             var cardImg = card.AddComponent<Image>();
             GameAssets.Apply(cardImg, GameAssets.ShopPanel, false);
             if (GameAssets.ShopPanel == null) cardImg.color = new Color(0.10f, 0.10f, 0.18f, 0.99f);
-            var cardBtn = card.AddComponent<Button>();
-            cardBtn.onClick.AddListener(() => { });
+            card.AddComponent<Button>().onClick.AddListener(() => { });
             var cr = card.GetComponent<RectTransform>();
             cr.anchorMin = cr.anchorMax = new Vector2(0.5f, 0.5f);
             cr.pivot = new Vector2(0.5f, 0.5f);
             cr.sizeDelta = new Vector2(520f, 560f);
 
-            // Thumbnail
             var thumbGO = new GameObject("Thumb");
             thumbGO.transform.SetParent(card.transform, false);
             var thumbImg = thumbGO.AddComponent<Image>();
@@ -456,31 +632,26 @@ namespace BoltSort.Gameplay
             thr.anchoredPosition = new Vector2(0f, -48f);
 
             AddCardLabel(card, item.DisplayName, 38, new Vector2(0f, 0.40f), new Vector2(1f, 0.50f), Color.white);
-            var price = AddCardLabel(card, TrF("key_cost_coins_fmt", item.UnlockCost), 40,
-                                     new Vector2(0f, 0.30f), new Vector2(1f, 0.40f), CoinGold);
-            price.color = CoinGold;
+            AddCardLabel(card, TrF("key_cost_coins_fmt", item.UnlockCost), 40,
+                         new Vector2(0f, 0.30f), new Vector2(1f, 0.40f), CoinGold);
 
-            // Confirm
-            var confirm = CreateButton(card, "Confirm", Tr("key_buy"), 32,
-                                       new Color(0.18f, 0.55f, 0.30f, 1f),
+            var confirm = CreateButton(card, "Confirm", Tr("key_buy"), 32, BtnGreenFb,
                                        () => ConfirmPurchase(item));
             var cfr = confirm.GetComponent<RectTransform>();
-            cfr.anchorMin = new Vector2(0.5f, 0f); cfr.anchorMax = new Vector2(0.5f, 0f);
+            cfr.anchorMin = cfr.anchorMax = new Vector2(0.5f, 0f);
             cfr.pivot = new Vector2(0.5f, 0f);
             cfr.sizeDelta = new Vector2(300f, 64f);
             cfr.anchoredPosition = new Vector2(0f, 120f);
 
-            // Cancel
             var cancel = CreateButton(card, "Cancel", Tr("key_cancel"), 30,
                                       new Color(0.40f, 0.20f, 0.24f, 1f), ClosePopup);
             var cnr = cancel.GetComponent<RectTransform>();
-            cnr.anchorMin = new Vector2(0.5f, 0f); cnr.anchorMax = new Vector2(0.5f, 0f);
+            cnr.anchorMin = cnr.anchorMax = new Vector2(0.5f, 0f);
             cnr.pivot = new Vector2(0.5f, 0f);
             cnr.sizeDelta = new Vector2(300f, 60f);
             cnr.anchoredPosition = new Vector2(0f, 44f);
 
-            cr.localScale = Vector3.zero;
-            StartCoroutine(TweenUtility.LerpRectScale(cr, Vector3.one, 0.22f, TweenUtility.EaseOutBack));
+            PopIn(cr);
         }
 
         private void ConfirmPurchase(SkinItem item)
@@ -490,8 +661,7 @@ namespace BoltSort.Gameplay
             {
                 case PurchaseResult.Success:
                     AudioMgr.Instance?.PlaySFX("extra_bonus");
-                    SkinManager.EquipSkin(item);   // auto-equip on purchase
-                    UpdateCoins();
+                    SkinManager.EquipSkin(item); // fires OnSkinChanged → currency refresh
                     ClosePopup();
                     RebuildGrid();
                     ShowToast(Tr("key_unlocked"));
@@ -507,22 +677,76 @@ namespace BoltSort.Gameplay
             }
         }
 
+        private void ShowComingSoon()
+        {
+            ClosePopup();
+            _popup = MakeDimmer();
+
+            var card = new GameObject("Card");
+            card.transform.SetParent(_popup.transform, false);
+            var cardImg = card.AddComponent<Image>();
+            if (GameAssets.MenuPopup != null) { cardImg.sprite = GameAssets.MenuPopup; cardImg.color = Color.white; }
+            else cardImg.color = new Color(0.10f, 0.10f, 0.18f, 0.99f);
+            card.AddComponent<Button>().onClick.AddListener(() => { });
+            var cr = card.GetComponent<RectTransform>();
+            cr.anchorMin = cr.anchorMax = new Vector2(0.5f, 0.5f);
+            cr.pivot = new Vector2(0.5f, 0.5f);
+            cr.sizeDelta = new Vector2(500f, 320f);
+
+            AddCardLabel(card, Tr("key_coming_soon"), 40, new Vector2(0.05f, 0.45f), new Vector2(0.95f, 0.70f), Color.white);
+
+            var ok = CreateButton(card, "OK", Tr("key_ok"), 32, BtnBlueFb, ClosePopup);
+            var okr = ok.GetComponent<RectTransform>();
+            okr.anchorMin = okr.anchorMax = new Vector2(0.5f, 0f);
+            okr.pivot = new Vector2(0.5f, 0f);
+            okr.sizeDelta = new Vector2(260f, 60f);
+            okr.anchoredPosition = new Vector2(0f, 40f);
+
+            PopIn(cr);
+        }
+
+        private GameObject MakeDimmer()
+        {
+            var dim = new GameObject("Popup");
+            dim.transform.SetParent(_canvas.transform, false);
+            var dimImg = dim.AddComponent<Image>();
+            dimImg.color = new Color(0f, 0f, 0f, 0.75f);
+            Stretch(dim.GetComponent<RectTransform>());
+            dim.AddComponent<Button>().onClick.AddListener(ClosePopup);
+            return dim;
+        }
+
+        private void PopIn(RectTransform cr)
+        {
+            cr.localScale = Vector3.zero;
+            StartCoroutine(TweenUtility.LerpRectScale(cr, Vector3.one, 0.22f, TweenUtility.EaseOutBack));
+        }
+
         private void ClosePopup()
         {
             if (_popup != null) { Destroy(_popup); _popup = null; }
         }
 
-        private void UpdateCoins()
+        // ── Currency refresh ──────────────────────────────────────────────────────────
+
+        private void OnBalance()
+        {
+            RefreshCurrency();
+            if (_tab == TabSpecials) RebuildGrid(); // stock / Full state may have changed
+        }
+
+        private void RefreshCurrency()
         {
             if (_coinsLabel != null) _coinsLabel.text = FormatCoins(SkinManager.GetCoins());
+            if (_gemsLabel != null)
+                _gemsLabel.text = FormatCoins(EconomyManager.Instance != null ? EconomyManager.Instance.Gems : 0);
         }
 
         /// <summary>Spanish-locale number format: dots as thousands separators (e.g. 1.234.567).</summary>
-        private static string FormatCoins(int coins)
+        private static string FormatCoins(int value)
         {
-            if (coins < 1000) return coins.ToString();
-            // Build from right: groups of 3, separated by dots.
-            var s = coins.ToString();
+            if (value < 1000) return value.ToString();
+            var s = value.ToString();
             var result = new System.Text.StringBuilder();
             int mod = s.Length % 3;
             for (int i = 0; i < s.Length; i++)
@@ -532,105 +756,6 @@ namespace BoltSort.Gameplay
                 result.Append(s[i]);
             }
             return result.ToString();
-        }
-
-        private void ShowMoreCoinsPopup()
-        {
-            ClosePopup();
-
-            _popup = new GameObject("MoreCoinsPopup");
-            _popup.transform.SetParent(_canvas.transform, false);
-            var dim = _popup.AddComponent<Image>();
-            dim.color = new Color(0f, 0f, 0f, 0.75f);
-            Stretch(_popup.GetComponent<RectTransform>());
-            var dimBtn = _popup.AddComponent<Button>();
-            dimBtn.onClick.AddListener(ClosePopup);
-
-            var card = new GameObject("Card");
-            card.transform.SetParent(_popup.transform, false);
-            var cardImg = card.AddComponent<Image>();
-            var popupSpr = GameAssets.MenuPopup;
-            if (popupSpr != null) { cardImg.sprite = popupSpr; cardImg.color = Color.white; cardImg.type = Image.Type.Simple; }
-            else cardImg.color = new Color(0.07f, 0.07f, 0.14f, 0.98f);
-            var cardBtn = card.AddComponent<Button>();
-            var cbc = cardBtn.colors;
-            cbc.normalColor = cbc.highlightedColor = cbc.pressedColor = cbc.selectedColor = Color.white;
-            cardBtn.colors = cbc;
-            var cr = card.GetComponent<RectTransform>();
-            cr.anchorMin = cr.anchorMax = new Vector2(0.5f, 0.5f);
-            cr.pivot = new Vector2(0.5f, 0.5f);
-            cr.sizeDelta = new Vector2(520f, 620f);
-
-            // Title centered within the top header area of the popup background
-            AddCardLabel(card, Tr("key_buy_coins"), 38, new Vector2(0.05f, 0.82f), new Vector2(0.95f, 0.94f), CoinGold);
-
-            // Fix 5A: offer buttons — fixed pixel sizes, evenly stacked, well-contained in the popup
-            // Card is 520×620. Use fixed-height rows centered in the lower portion.
-            (int coins, string price)[] offers =
-            {
-                (500,    "0,99€"),
-                (1200,   "1,99€"),
-                (2500,   "3,99€"),
-                (6000,   "7,99€"),
-                (14000,  "14,99€"),
-            };
-
-            const float offerBtnW = 440f, offerBtnH = 68f, offerGap = 10f;
-            // Stack from y=350 downward (center of card=310, title takes top portion)
-            float offerStartY = 330f;
-            for (int i = 0; i < offers.Length; i++)
-            {
-                var (offerCoins, offerPrice) = offers[i];
-                float btnY = offerStartY - i * (offerBtnH + offerGap);
-
-                var rowGO = new GameObject($"Offer_{i}");
-                rowGO.transform.SetParent(card.transform, false);
-                var rowImg = rowGO.AddComponent<Image>();
-                // Sliced (9-slice) so the button keeps its border shape at the fixed
-                // row dimensions instead of stretching/deforming the source sprite.
-                if (GameAssets.MenuButton != null) { rowImg.sprite = GameAssets.MenuButton; rowImg.type = Image.Type.Sliced; rowImg.preserveAspect = false; rowImg.color = Color.white; }
-                else rowImg.color = new Color(0.18f, 0.18f, 0.32f, 1f);
-                var offerCaptured = offerCoins;
-                var offerPriceCap = offerPrice;
-                var rowBtn = rowGO.AddComponent<Button>();
-                rowBtn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
-                rowBtn.onClick.AddListener(() =>
-                {
-                    Debug.Log($"[Shop] Purchase selected: {offerCaptured} coins ({offerPriceCap})");
-                    ClosePopup();
-                });
-                var rowRt = rowGO.GetComponent<RectTransform>();
-                rowRt.anchorMin = rowRt.anchorMax = new Vector2(0.5f, 1f);
-                rowRt.pivot     = new Vector2(0.5f, 1f);
-                rowRt.anchoredPosition = new Vector2(0f, -btnY);
-                rowRt.sizeDelta        = new Vector2(offerBtnW, offerBtnH);
-
-                var rowLabel = MakeLabel(rowGO, "Label",
-                                         TrF("key_coins_pack_fmt", FormatCoins(offerCoins), offerPrice),
-                                         _font, 26, TextAnchor.MiddleCenter, bold: true, shadow: true);
-                rowLabel.color = Color.white; rowLabel.raycastTarget = false;
-                var llr = rowLabel.rectTransform;
-                llr.anchorMin = Vector2.zero; llr.anchorMax = Vector2.one;
-                llr.offsetMin = llr.offsetMax = Vector2.zero;
-            }
-
-            // Close button
-            var closeGO = new GameObject("CloseButton");
-            closeGO.transform.SetParent(card.transform, false);
-            var closeImg = closeGO.AddComponent<Image>();
-            if (GameAssets.BtnExit != null) GameAssets.Apply(closeImg, GameAssets.BtnExit, true);
-            else closeImg.color = new Color(0.7f, 0.2f, 0.2f, 1f);
-            var closeBtn = closeGO.AddComponent<Button>();
-            closeBtn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
-            closeBtn.onClick.AddListener(ClosePopup);
-            var closeRt = closeGO.GetComponent<RectTransform>();
-            closeRt.anchorMin = closeRt.anchorMax = new Vector2(1f, 1f);
-            closeRt.pivot = new Vector2(1f, 1f);
-            closeRt.anchoredPosition = new Vector2(-12f, -12f);
-            closeRt.sizeDelta = new Vector2(60f, 60f);
-
-            cr.localScale = Vector3.zero;
-            StartCoroutine(TweenUtility.LerpRectScale(cr, Vector3.one, 0.22f, TweenUtility.EaseOutBack));
         }
 
         // ── Feedback / animation ──────────────────────────────────────────────────────
@@ -644,6 +769,7 @@ namespace BoltSort.Gameplay
             t.alignment = TextAnchor.MiddleCenter; t.color = Color.white; t.raycastTarget = false;
             var sh = go.AddComponent<Shadow>();
             sh.effectColor = new Color(0f, 0f, 0f, 0.8f); sh.effectDistance = new Vector2(2f, -2f);
+            AddOutline(go);
             var rt = go.GetComponent<RectTransform>();
             rt.anchorMin = new Vector2(0.1f, 0.5f); rt.anchorMax = new Vector2(0.9f, 0.58f);
             rt.offsetMin = rt.offsetMax = Vector2.zero;
@@ -699,14 +825,20 @@ namespace BoltSort.Gameplay
 
         private void OnDestroy()
         {
-            SkinManager.OnSkinChanged -= UpdateCoins;
+            SkinManager.OnSkinChanged -= OnBalance;
+            if (EconomyManager.Instance != null) EconomyManager.Instance.OnBalanceChanged -= OnBalance;
         }
+
+        // ── Navigation ────────────────────────────────────────────────────────────────
 
         private void GoBack()
         {
+            string prev = SceneTransitionManager.PreviousScene;
+            if (string.IsNullOrEmpty(prev) || prev == "Shop") prev = "MainMenu";
+
             var tm = SceneTransitionManager.Instance;
-            if (tm != null) tm.TransitionTo("MainMenu");
-            else UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
+            if (tm != null) tm.TransitionTo(prev);
+            else UnityEngine.SceneManagement.SceneManager.LoadScene(prev);
         }
 
         // ── Setup helpers ─────────────────────────────────────────────────────────
@@ -789,13 +921,26 @@ namespace BoltSort.Gameplay
             t.alignment = anchor; t.color = Color.white; t.supportRichText = false;
             t.horizontalOverflow = HorizontalWrapMode.Overflow;
             t.verticalOverflow   = VerticalWrapMode.Overflow;
+            // Auto-shrink to fit so no localized string overflows its container.
+            t.resizeTextForBestFit = true;
+            t.resizeTextMinSize = 10;
+            t.resizeTextMaxSize = size;
             if (shadow)
             {
                 var sh = go.AddComponent<Shadow>();
                 sh.effectColor    = new Color(0f, 0f, 0f, 0.8f);
                 sh.effectDistance = new Vector2(2f, -2f);
             }
+            AddOutline(go); // black stroke on every Shop label for readability
             return t;
+        }
+
+        private static void AddOutline(GameObject go)
+        {
+            if (go.GetComponent<Outline>() != null) return; // never double up
+            var o = go.AddComponent<Outline>();
+            o.effectColor = new Color(0f, 0f, 0f, 0.9f);
+            o.effectDistance = new Vector2(1f, 1f);
         }
 
         private static void Stretch(RectTransform rt)
@@ -805,8 +950,6 @@ namespace BoltSort.Gameplay
         }
 
         // ── Localization helpers ────────────────────────────────────────────────────
-        // The shop scene is rebuilt on entry, so static resolution against the active
-        // table is sufficient (no in-scene language selector to refresh live).
         private static string Tr(string key)
         {
             var m = LocalizationManager.Instance;
