@@ -1,0 +1,35 @@
+BoltSort — Cleanup Summary (2026-06-26)
+Branch: shop/cleanup-audit-20260626
+========================================
+
+ROOT CAUSE
+The weight was NOT textures/audio. It was committed APK build outputs.
+Game assets tracked total only ~48 MB; the bloat was 11 distinct APKs
+committed across history.
+
+ACTIONS DONE (git, outside Unity)
+1. Purged ALL *.apk from full git history (git-filter-repo).
+   .git/objects: 2.5 GB -> 58 MB   (saved ~2.44 GB)
+2. Untracked assets_admin/ (source art duplicating Assets/Resources).
+   Removed from tracking: 35 MB. Files remain on local disk.
+3. .gitignore += *.apk, *.aab, assets_admin/  (prevents recurrence)
+4. Added Assets/Editor/CleanupTools/ optimizer scripts + Assets/Reports/.
+
+BYTES SAVED
+  git history (.git)      : ~2.44 GB
+  working tree (apks)     : 249 MB  (2 current APKs removed from disk by rewrite)
+  tracking (assets_admin) : 35 MB   (still on disk, now ignored)
+  textures/audio          : pending — run Unity tools below
+
+SAFETY / REVERSIBILITY
+- Local backup refs: branch backup/pre-apk-purge-20260626, tag backup/pre-cleanup-20260626
+  (NOTE: these were also rewritten by filter-repo, so they do NOT contain the APKs).
+- The original un-rewritten history (with all APKs) remained on GitHub 'origin'
+  until the force-push. APKs are regenerable Unity build outputs.
+
+PENDING (must run inside Unity Editor — cannot run from CLI)
+- Cleanup > Generate Unused Asset Report
+- Cleanup > Optimize Large Textures and Audio (Conservative)
+- PlayMode smoke test: MainMenu / LevelSelect / Shop / Gameplay (check console for nulls)
+- Development Build + BuildReport (build_report_after.json)
+- Move-to-TrashForReview for unused candidates, then human sign-off before delete.
