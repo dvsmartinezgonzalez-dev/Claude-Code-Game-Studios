@@ -18,6 +18,9 @@ production/session-logs/
 
 expansions/
 
+# === Source art (local only — duplicates in-project Assets/Resources) ===
+assets_admin/
+
 # === Marrow (eval tooling — never commit) ===
 marrow/
 
@@ -26,6 +29,8 @@ marrow/
 docs/consistency-failures.md
 
 # === Build Output ===
+*.apk
+*.aab
 build/
 builds/
 bin/
