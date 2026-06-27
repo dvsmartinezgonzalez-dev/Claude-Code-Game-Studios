@@ -135,7 +135,7 @@ namespace BoltSort.Gameplay
             if (oldBannerSpr != null && newBannerSpr != null && !ReferenceEquals(oldBannerSpr, newBannerSpr))
                 heightDeltaUnits = -(newBannerSpr.rect.height / newBannerSpr.pixelsPerUnit
                                    - oldBannerSpr.rect.height / oldBannerSpr.pixelsPerUnit) / 2f;
-            brt.anchoredPosition = new Vector2(0f, -17f + heightDeltaUnits);
+            brt.anchoredPosition = new Vector2(0f, -60f + heightDeltaUnits);
 
             var title = MakeLabel(banner, "Title", Tr("key_shop"), _font, 56,
                                   TextAnchor.MiddleCenter, bold: true, shadow: true);
