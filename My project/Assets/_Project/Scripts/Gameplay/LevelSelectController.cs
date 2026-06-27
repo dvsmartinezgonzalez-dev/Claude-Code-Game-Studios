@@ -98,7 +98,9 @@ namespace BoltSort.Gameplay
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(720f, 1280f);
-            scaler.matchWidthOrHeight  = 1f;
+            // Match WIDTH (0): pin logical width to 720 so the grid/header never clip on
+            // phones narrower than 9:16. No-op at the 9:16 reference ratio.
+            scaler.matchWidthOrHeight  = 0f;
             canvasGO.AddComponent<GraphicRaycaster>();
 
             var bg = MakePanel(canvasGO, "Background", BoltSortTheme.BackgroundDeep);
@@ -162,7 +164,9 @@ namespace BoltSort.Gameplay
             scrollRect.viewport = viewportGO.GetComponent<RectTransform>();
 
             const float cellGap = 12f, padX = 24f, padTop = 20f;
-            float canvasWidth = 1280f * Screen.width / Mathf.Max(1f, Screen.height);
+            // Logical width is pinned to the reference width (720) under match-width, so the
+            // grid cells size identically on every device instead of per-aspect-ratio.
+            const float canvasWidth = 720f;
             _cellSize = (canvasWidth - padX * 2f - cellGap * (Columns - 1)) / Columns;
 
             var contentGO = new GameObject("Content", typeof(RectTransform));

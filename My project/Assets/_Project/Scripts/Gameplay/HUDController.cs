@@ -800,7 +800,9 @@ namespace BoltSort.Gameplay
 
             Font font = GameAssets.MenuFont; // Gummy display font (falls back to built-in)
 
-            float lpu        = 1280f / Screen.height;
+            // Uniform canvas scale = Screen.width/720 (match-width below), so 1 physical px
+            // = 720/Screen.width canvas units. Keeps notch insets pixel-accurate.
+            float lpu        = 720f / Mathf.Max(1, Screen.width);
             float safeTop    = (Screen.height - Screen.safeArea.yMax) * lpu;
             float safeBottom = Screen.safeArea.yMin * lpu;
 
@@ -814,7 +816,9 @@ namespace BoltSort.Gameplay
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(720f, 1280f);
-            scaler.matchWidthOrHeight  = 1f;
+            // Match WIDTH (0): pin logical width to 720 so the HUD never clips on phones
+            // narrower than 9:16. No-op at the 9:16 reference ratio.
+            scaler.matchWidthOrHeight  = 0f;
             canvasGO.AddComponent<GraphicRaycaster>();
 
             // Thunder Undo effect — its own overlay canvas (sortingOrder 150) above this HUD.
