@@ -130,7 +130,7 @@ namespace BoltSort.Gameplay
             if (oldBannerSpr != null && newBannerSpr != null && !ReferenceEquals(oldBannerSpr, newBannerSpr))
                 heightDeltaUnits = -(newBannerSpr.rect.height / newBannerSpr.pixelsPerUnit
                                    - oldBannerSpr.rect.height / oldBannerSpr.pixelsPerUnit) / 2f;
-            brt.anchoredPosition = new Vector2(0f, -54f + heightDeltaUnits); // -4 base -50 shop tweak
+            brt.anchoredPosition = new Vector2(0f, -17f + heightDeltaUnits);
 
             var title = MakeLabel(banner, "Title", Tr("key_shop"), _font, 56,
                                   TextAnchor.MiddleCenter, bold: true, shadow: true);
@@ -139,7 +139,7 @@ namespace BoltSort.Gameplay
             trt.SetParent(brt, false); // title is a child of the banner, centred on the sprite
             trt.anchorMin = trt.anchorMax = new Vector2(0.5f, 0.5f);
             trt.pivot = new Vector2(0.5f, 0.5f);
-            trt.anchoredPosition = Vector2.zero;
+            trt.anchoredPosition = new Vector2(0f, 27f);
             trt.sizeDelta = new Vector2(360f, 90f);
 
             // Exit button — top-right, inside the safe area; returns to the caller.
