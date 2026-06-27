@@ -27,9 +27,8 @@ namespace BoltSort.Gameplay
         private Action     _onGoShop;
         private Action     _onGoLevels;
         private Text       _langButtonLabel;
-        private Text[]     _langChecks;
-        private Image[]    _langRowImages;   // row backgrounds — recolored on selection change
-        private Text[]     _langRowLabels;   // row name labels — recolored on selection change
+        private Image[]    _langRowImages;   // per-row pill backgrounds — sprite-swapped on selection
+        private Text[]     _langRowLabels;   // per-row name labels — recoloured on selection
 
         // Native language names shown in the selector, aligned 1:1 with LangCodes.
         private static readonly string[] Languages =
@@ -412,52 +411,82 @@ namespace BoltSort.Gameplay
 
         // ── Scrollable language list (hidden until Language is tapped) ────────────────
 
-        // Row height used both for LayoutElement.preferredHeight and for row content sizing.
-        private const float LangRowH = 62f;
+        // Row height for language list entries (flag + pill button) and selection colours.
+        private const float LangRowH = 78f;
+        private static readonly Color LangTextSelected   = Color.white;
+        private static readonly Color LangTextUnselected = new Color(0.173f, 0.173f, 0.173f); // #2C2C2C
 
         private void BuildLanguageList(GameObject card, Font font)
         {
-            // Panel — uses popup sprite for consistency; falls back to a semi-transparent dark rect.
-            _langPanel = new GameObject("LanguagePanel");
+            const float panelW = 548f, panelH = 735f, bannerH = 132f, bgScale = 1.4f;
+
+            // ── Panel frame (transparent container for banner, exit, and the scroll list) ─
+            _langPanel = new GameObject("LanguagePanel", typeof(RectTransform));
             _langPanel.transform.SetParent(card.transform, false);
-            var panelImg = _langPanel.AddComponent<Image>();
-            var popupSpr = GameAssets.MenuPopup;
-            if (popupSpr != null) { panelImg.sprite = popupSpr; panelImg.color = Color.white; panelImg.type = Image.Type.Simple; }
-            else                  { panelImg.color = new Color(0.06f, 0.06f, 0.13f, 0.97f); }
             var pr = _langPanel.GetComponent<RectTransform>();
             pr.anchorMin = pr.anchorMax = pr.pivot = new Vector2(0.5f, 0.5f);
             pr.anchoredPosition = Vector2.zero;
-            pr.sizeDelta = new Vector2(440f, 560f);
+            pr.sizeDelta = new Vector2(panelW, panelH);
 
-            // ── Header row (title + close button) ─────────────────────────────────────
-            const float hdrH = 62f;
-            var hdrGO = new GameObject("Header", typeof(RectTransform));
-            hdrGO.transform.SetParent(_langPanel.transform, false);
-            var hdrRt = hdrGO.GetComponent<RectTransform>();
-            hdrRt.anchorMin = new Vector2(0f, 1f); hdrRt.anchorMax = new Vector2(1f, 1f);
-            hdrRt.pivot     = new Vector2(0.5f, 1f);
-            hdrRt.sizeDelta = new Vector2(0f, hdrH);
-            hdrRt.anchoredPosition = Vector2.zero;
+            // Background art — scaled +40% (bgScale) so it visually covers the Settings card
+            // behind the popup. Drawn first so it sits behind the banner/exit/scroll content.
+            var bgGO = new GameObject("Background");
+            bgGO.transform.SetParent(_langPanel.transform, false);
+            var panelImg = bgGO.AddComponent<Image>();
+            var bgSpr = GameAssets.LangBackground;
+            if (bgSpr != null) { panelImg.sprite = bgSpr; panelImg.color = Color.white; panelImg.type = Image.Type.Simple; }
+            else               { panelImg.color = new Color(0.06f, 0.06f, 0.13f, 0.98f); }
+            var bgRt = bgGO.GetComponent<RectTransform>();
+            bgRt.anchorMin = bgRt.anchorMax = bgRt.pivot = new Vector2(0.5f, 0.5f);
+            bgRt.anchoredPosition = Vector2.zero;
+            bgRt.sizeDelta = new Vector2(panelW * bgScale, panelH * bgScale);
 
-            var hdrTitleGO = new GameObject("Title");
-            hdrTitleGO.transform.SetParent(hdrGO.transform, false);
-            var hdrTitle = hdrTitleGO.AddComponent<Text>();
-            hdrTitle.font = font; hdrTitle.fontSize = 34; hdrTitle.fontStyle = FontStyle.Bold;
-            hdrTitle.alignment = TextAnchor.MiddleCenter; hdrTitle.color = Color.white;
-            hdrTitle.supportRichText = false; hdrTitle.raycastTarget = false;
-            hdrTitle.horizontalOverflow = HorizontalWrapMode.Wrap;
-            hdrTitle.verticalOverflow   = VerticalWrapMode.Overflow;
-            var htrt = hdrTitleGO.GetComponent<RectTransform>();
-            htrt.anchorMin = Vector2.zero; htrt.anchorMax = Vector2.one;
-            htrt.offsetMin = new Vector2(56f, 0f); htrt.offsetMax = new Vector2(-56f, 0f);
-            LocalizedText.Bind(hdrTitle, "key_language");
+            // ── Top banner: world_background art + globe icon + title ───────────────────
+            var bannerGO = new GameObject("TopBanner");
+            bannerGO.transform.SetParent(_langPanel.transform, false);
+            var bannerImg = bannerGO.AddComponent<Image>();
+            bannerImg.raycastTarget = false;
+            GameAssets.Apply(bannerImg, GameAssets.LangWorldBg, preserveAspect: true);
+            var brt = bannerGO.GetComponent<RectTransform>();
+            brt.anchorMin = new Vector2(0.5f, 1f); brt.anchorMax = new Vector2(0.5f, 1f);
+            brt.pivot     = new Vector2(0.5f, 1f);
+            brt.anchoredPosition = new Vector2(0f, -2f);
+            brt.sizeDelta        = new Vector2(panelW - 24f, bannerH);
 
-            // Close X on the language panel
-            var closeBtnGO = new GameObject("CloseBtn");
-            closeBtnGO.transform.SetParent(hdrGO.transform, false);
+            // Globe icon, left of the title.
+            var worldGO = new GameObject("WorldIcon");
+            worldGO.transform.SetParent(bannerGO.transform, false);
+            var worldImg = worldGO.AddComponent<Image>();
+            worldImg.raycastTarget = false;
+            GameAssets.Apply(worldImg, GameAssets.LangWorldIcon, preserveAspect: true);
+            var wrt = worldGO.GetComponent<RectTransform>();
+            wrt.anchorMin = new Vector2(0f, 0.5f); wrt.anchorMax = new Vector2(0f, 0.5f);
+            wrt.pivot     = new Vector2(0f, 0.5f);
+            wrt.anchoredPosition = new Vector2(28f, 0f);
+            wrt.sizeDelta        = new Vector2(86f, 86f);
+
+            // Title — centred on the banner, GummyPop white with a black outline.
+            var titleGO = new GameObject("TitleText");
+            titleGO.transform.SetParent(bannerGO.transform, false);
+            var title = titleGO.AddComponent<Text>();
+            title.font = font; title.fontSize = 40; title.fontStyle = FontStyle.Bold;
+            title.alignment = TextAnchor.MiddleCenter; title.color = Color.white;
+            title.supportRichText = false; title.raycastTarget = false;
+            title.horizontalOverflow = HorizontalWrapMode.Overflow;
+            title.verticalOverflow   = VerticalWrapMode.Overflow;
+            var ttrt = titleGO.GetComponent<RectTransform>();
+            ttrt.anchorMin = Vector2.zero; ttrt.anchorMax = Vector2.one;
+            ttrt.offsetMin = new Vector2(120f, 0f); ttrt.offsetMax = new Vector2(-40f, 0f);
+            var titleOl = titleGO.AddComponent<Outline>();
+            titleOl.effectColor    = new Color(0f, 0f, 0f, 0.9f);
+            titleOl.effectDistance = new Vector2(2f, -2f);
+            LocalizedText.Bind(title, "key_language");
+
+            // ── Exit button (top-right of the panel) ────────────────────────────────────
+            var closeBtnGO = new GameObject("ExitButton");
+            closeBtnGO.transform.SetParent(_langPanel.transform, false);
             var closeBtnImg = closeBtnGO.AddComponent<Image>();
-            var exitSpr = GameAssets.BtnExit;
-            if (exitSpr != null) GameAssets.Apply(closeBtnImg, exitSpr, preserveAspect: true);
+            if (GameAssets.BtnExit != null) GameAssets.Apply(closeBtnImg, GameAssets.BtnExit, preserveAspect: true);
             else closeBtnImg.color = new Color(0.7f, 0.2f, 0.2f, 1f);
             closeBtnGO.AddComponent<Button>().onClick.AddListener(() =>
             {
@@ -465,43 +494,31 @@ namespace BoltSort.Gameplay
                 _langPanel.SetActive(false);
             });
             var cbrt = closeBtnGO.GetComponent<RectTransform>();
-            cbrt.anchorMin = new Vector2(1f, 0.5f); cbrt.anchorMax = new Vector2(1f, 0.5f);
-            cbrt.pivot     = new Vector2(1f, 0.5f);
-            cbrt.anchoredPosition = new Vector2(-8f, 0f);
-            cbrt.sizeDelta        = new Vector2(48f, 48f);
+            cbrt.anchorMin = cbrt.anchorMax = cbrt.pivot = new Vector2(1f, 1f);
+            cbrt.anchoredPosition = new Vector2(-20f, -20f);
+            cbrt.sizeDelta        = new Vector2(58f, 58f);
 
-            // Thin divider under header
-            var divGO = new GameObject("Divider");
-            divGO.transform.SetParent(_langPanel.transform, false);
-            divGO.AddComponent<Image>().color = new Color(1f, 1f, 1f, 0.15f);
-            var divRt = divGO.GetComponent<RectTransform>();
-            divRt.anchorMin = new Vector2(0.05f, 1f); divRt.anchorMax = new Vector2(0.95f, 1f);
-            divRt.pivot     = new Vector2(0.5f, 1f);
-            divRt.anchoredPosition = new Vector2(0f, -hdrH);
-            divRt.sizeDelta        = new Vector2(0f, 2f);
-
-            // ── Scroll view ────────────────────────────────────────────────────────────
+            // ── Scroll view (below the banner) ──────────────────────────────────────────
             var scrollGO = new GameObject("Scroll", typeof(RectTransform));
             scrollGO.transform.SetParent(_langPanel.transform, false);
             var srt = scrollGO.GetComponent<RectTransform>();
             srt.anchorMin = new Vector2(0f, 0f); srt.anchorMax = new Vector2(1f, 1f);
-            // Top margin leaves room for header; bottom/side inset for visual breathing room.
-            srt.offsetMin = new Vector2(10f, 10f);
-            srt.offsetMax = new Vector2(-10f, -(hdrH + 6f));
+            // Top margin clears the banner; bottom/side insets keep rows off the art edges.
+            srt.offsetMin = new Vector2(28f, 26f);
+            srt.offsetMax = new Vector2(-28f, -(bannerH + 6f));
 
             var scroll = scrollGO.AddComponent<ScrollRect>();
             scroll.horizontal = false; scroll.vertical = true;
             scroll.movementType = ScrollRect.MovementType.Elastic;
             scroll.elasticity = 0.1f; scroll.inertia = true;
-            scroll.decelerationRate = 0.135f; scroll.scrollSensitivity = 28f;
+            scroll.decelerationRate = 0.135f; scroll.scrollSensitivity = 30f;
 
             // Viewport — RectMask2D avoids stencil/alpha issues that Mask has with
             // transparent backgrounds, and is the preferred approach for scroll views.
             var viewport = new GameObject("Viewport");
             viewport.transform.SetParent(scrollGO.transform, false);
             viewport.AddComponent<RectMask2D>();
-            // A near-invisible Image is needed so the scroll rect receives pointer events
-            // inside the viewport area (raycasting requires a graphic component).
+            // A near-invisible Image lets the scroll rect receive pointer events in the viewport.
             var vpImg = viewport.AddComponent<Image>();
             vpImg.color = new Color(0f, 0f, 0f, 0.001f);
             Stretch(viewport.GetComponent<RectTransform>());
@@ -517,11 +534,8 @@ namespace BoltSort.Gameplay
             scroll.content = crt;
 
             var vlg = content.AddComponent<VerticalLayoutGroup>();
-            vlg.spacing = 6f;
-            vlg.padding = new RectOffset(4, 4, 4, 4);
-            // Let the VLG set child heights from LayoutElement.preferredHeight;
-            // do NOT use childForceExpandHeight — that collapses rows when content
-            // is taller than the viewport.
+            vlg.spacing = 10f;
+            vlg.padding = new RectOffset(2, 2, 2, 6);
             vlg.childControlWidth = true;  vlg.childForceExpandWidth = true;
             vlg.childControlHeight = true; vlg.childForceExpandHeight = false;
             vlg.childAlignment = TextAnchor.UpperCenter;
@@ -529,80 +543,69 @@ namespace BoltSort.Gameplay
             var fit = content.AddComponent<ContentSizeFitter>();
             fit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
 
-            // ── Language rows ──────────────────────────────────────────────────────────
+            // ── Language rows: [flag] [pill button + native name] ───────────────────────
             int selected = CurrentLangIndex();
-            _langChecks    = new Text[Languages.Length];
             _langRowImages = new Image[Languages.Length];
             _langRowLabels = new Text[Languages.Length];
-            var btnSpr = GameAssets.MenuButton ?? GameAssets.WhiteButton;
 
             for (int i = 0; i < Languages.Length; i++)
             {
                 int idx = i;
                 bool isSel = (i == selected);
 
+                // Row root — transparent tap catcher spanning the whole row (large tap target).
                 var rowGo = new GameObject($"Lang_{i}");
                 rowGo.transform.SetParent(content.transform, false);
-
-                // Background image — use general_button sprite when available.
-                var rowImg = rowGo.AddComponent<Image>();
-                if (btnSpr != null)
-                {
-                    rowImg.sprite = btnSpr;
-                    rowImg.type   = Image.Type.Sliced;
-                    rowImg.color  = isSel ? new Color(1f, 0.85f, 0.1f, 1f)   // yellow = selected
-                                          : new Color(0.18f, 0.25f, 0.45f, 1f);
-                }
-                else
-                {
-                    rowImg.color = isSel ? new Color(0.20f, 0.55f, 0.30f, 1f)
-                                        : new Color(0.15f, 0.18f, 0.32f, 1f);
-                }
-
-                // Give the layout a fixed preferred height so the VLG can measure the row.
-                var le = rowGo.AddComponent<LayoutElement>();
-                le.preferredHeight = LangRowH;
-                le.minHeight       = LangRowH;
-
-                _langRowImages[i] = rowImg;
+                var rowCatcher = rowGo.AddComponent<Image>();
+                rowCatcher.color = new Color(0f, 0f, 0f, 0.001f);
                 rowGo.AddComponent<Button>().onClick.AddListener(() => SelectLanguage(idx));
+                var rle = rowGo.AddComponent<LayoutElement>();
+                rle.preferredHeight = LangRowH; rle.minHeight = LangRowH;
+                var rowHlg = rowGo.AddComponent<HorizontalLayoutGroup>();
+                rowHlg.spacing = 14f; rowHlg.childAlignment = TextAnchor.MiddleLeft;
+                rowHlg.padding = new RectOffset(6, 6, 4, 4);
+                rowHlg.childControlWidth = true;  rowHlg.childForceExpandWidth = false;
+                rowHlg.childControlHeight = true; rowHlg.childForceExpandHeight = true;
 
-                // Language name label (centered, slightly inset from the checkmark side).
-                var lblGO = new GameObject("Label");
-                lblGO.transform.SetParent(rowGo.transform, false);
+                // Flag (left, fixed width, aspect-preserved).
+                var flagGo = new GameObject("FlagImage");
+                flagGo.transform.SetParent(rowGo.transform, false);
+                var flagImg = flagGo.AddComponent<Image>();
+                flagImg.raycastTarget = false;
+                GameAssets.Apply(flagImg, GameAssets.LangFlag(LangCodeFor(i)), preserveAspect: true);
+                var flagLe = flagGo.AddComponent<LayoutElement>();
+                flagLe.preferredWidth = 92f; flagLe.flexibleWidth = 0f;
+
+                // Pill button background (fills the remaining width).
+                var pillGo = new GameObject("ButtonBg");
+                pillGo.transform.SetParent(rowGo.transform, false);
+                var pillImg = pillGo.AddComponent<Image>();
+                pillImg.raycastTarget = false; pillImg.type = Image.Type.Sliced;
+                var pillSpr = isSel ? GameAssets.LangRowSelected : GameAssets.LangRowUnselected;
+                if (pillSpr != null) { pillImg.sprite = pillSpr; pillImg.color = Color.white; }
+                else pillImg.color = isSel ? new Color(0.20f, 0.55f, 0.30f) : new Color(0.85f, 0.85f, 0.88f);
+                var pillLe = pillGo.AddComponent<LayoutElement>(); pillLe.flexibleWidth = 1f;
+                _langRowImages[i] = pillImg;
+
+                // Native-name label, centred on the pill.
+                var lblGO = new GameObject("ButtonText");
+                lblGO.transform.SetParent(pillGo.transform, false);
                 var lbl = lblGO.AddComponent<Text>();
                 _langRowLabels[i] = lbl;
-                lbl.text = Languages[i]; lbl.font = font; lbl.fontSize = 28;
+                lbl.text = Languages[i]; lbl.font = font; lbl.fontSize = 30;
                 lbl.fontStyle = FontStyle.Bold; lbl.alignment = TextAnchor.MiddleCenter;
-                lbl.color = isSel ? new Color(0.1f, 0.05f, 0f) : Color.white;
+                lbl.color = isSel ? LangTextSelected : LangTextUnselected;
                 lbl.supportRichText = false; lbl.raycastTarget = false;
-                // Wrap avoids LayoutGroup height measurement issues that Overflow causes.
                 lbl.horizontalOverflow = HorizontalWrapMode.Wrap;
                 lbl.verticalOverflow   = VerticalWrapMode.Overflow;
                 var lrt = lblGO.GetComponent<RectTransform>();
                 lrt.anchorMin = Vector2.zero; lrt.anchorMax = Vector2.one;
-                lrt.offsetMin = new Vector2(10f, 0f); lrt.offsetMax = new Vector2(-40f, 0f);
+                lrt.offsetMin = new Vector2(16f, 0f); lrt.offsetMax = new Vector2(-16f, 0f);
 
-                // Outline for readability.
+                // Outline only on the selected row (alpha toggled in SelectLanguage).
                 var ol = lblGO.AddComponent<Outline>();
-                ol.effectColor    = new Color(0f, 0f, 0f, 0.6f);
-                ol.effectDistance = new Vector2(1f, -1f);
-
-                // Checkmark glyph (right-aligned).
-                var chkGO = new GameObject("Check");
-                chkGO.transform.SetParent(rowGo.transform, false);
-                var chk = chkGO.AddComponent<Text>();
-                chk.text = "✓"; chk.font = font; chk.fontSize = 28;
-                chk.fontStyle = FontStyle.Bold; chk.alignment = TextAnchor.MiddleRight;
-                chk.color = isSel ? new Color(0.1f, 0.05f, 0f) : new Color(0.6f, 1f, 0.7f, 1f);
-                chk.supportRichText = false; chk.raycastTarget = false;
-                chk.horizontalOverflow = HorizontalWrapMode.Overflow;
-                chk.verticalOverflow   = VerticalWrapMode.Overflow;
-                var ckrt = chkGO.GetComponent<RectTransform>();
-                ckrt.anchorMin = Vector2.zero; ckrt.anchorMax = Vector2.one;
-                ckrt.offsetMin = Vector2.zero; ckrt.offsetMax = new Vector2(-8f, 0f);
-                chk.enabled = isSel;
-                _langChecks[i] = chk;
+                ol.effectColor    = new Color(0f, 0f, 0f, isSel ? 0.85f : 0f);
+                ol.effectDistance = new Vector2(1.5f, -1.5f);
             }
 
             _langPanel.SetActive(false);
@@ -622,23 +625,24 @@ namespace BoltSort.Gameplay
             LocalizationManager.Instance?.SetLanguage(LangCodeFor(idx));
             if (_langButtonLabel != null) _langButtonLabel.text = Languages[idx].ToUpper();
 
-            bool hasSpr = GameAssets.MenuButton != null || GameAssets.WhiteButton != null;
+            var selSpr   = GameAssets.LangRowSelected;
+            var unselSpr = GameAssets.LangRowUnselected;
             for (int i = 0; i < Languages.Length; i++)
             {
                 bool isSel = (i == idx);
 
                 if (_langRowImages != null && i < _langRowImages.Length && _langRowImages[i] != null)
-                    _langRowImages[i].color = isSel
-                        ? (hasSpr ? new Color(1f, 0.85f, 0.1f, 1f) : new Color(0.20f, 0.55f, 0.30f, 1f))
-                        : (hasSpr ? new Color(0.18f, 0.25f, 0.45f, 1f) : new Color(0.15f, 0.18f, 0.32f, 1f));
+                {
+                    var spr = isSel ? selSpr : unselSpr;
+                    if (spr != null) { _langRowImages[i].sprite = spr; _langRowImages[i].color = Color.white; }
+                    else _langRowImages[i].color = isSel ? new Color(0.20f, 0.55f, 0.30f) : new Color(0.85f, 0.85f, 0.88f);
+                }
 
                 if (_langRowLabels != null && i < _langRowLabels.Length && _langRowLabels[i] != null)
-                    _langRowLabels[i].color = isSel ? new Color(0.1f, 0.05f, 0f) : Color.white;
-
-                if (_langChecks != null && i < _langChecks.Length && _langChecks[i] != null)
                 {
-                    _langChecks[i].enabled = isSel;
-                    _langChecks[i].color   = isSel ? new Color(0.1f, 0.05f, 0f) : new Color(0.6f, 1f, 0.7f, 1f);
+                    _langRowLabels[i].color = isSel ? LangTextSelected : LangTextUnselected;
+                    var ol = _langRowLabels[i].GetComponent<Outline>();
+                    if (ol != null) ol.effectColor = new Color(0f, 0f, 0f, isSel ? 0.85f : 0f);
                 }
             }
 

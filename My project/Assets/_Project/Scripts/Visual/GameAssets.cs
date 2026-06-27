@@ -64,6 +64,27 @@ namespace BoltSort.Visual
         public static Sprite SettingsWideButton => LoadRes("Sprites/Settings/rate_game_privacy_button");
         public static Sprite WhiteButton        => LoadRes("Sprites/Buttons/white_button");
 
+        // ── Language popup art (assets_admin/Settings/Language → Resources/Sprites/Language/) ──
+        public static Sprite LangBackground  => LoadRes("Sprites/Language/background");
+        public static Sprite LangWorldBg     => LoadRes("Sprites/Language/world_background");
+        public static Sprite LangWorldIcon   => LoadRes("Sprites/Language/world");
+        public static Sprite LangRowSelected   => LoadRes("Sprites/Language/SELECT_BUTTON");
+        public static Sprite LangRowUnselected => LoadRes("Sprites/Language/UNSELECT_BUTTON");
+
+        /// <summary>Flag sprite for a language code (Resources/Sprites/Language/Flags/).
+        /// Returns null for an unmapped code.</summary>
+        public static Sprite LangFlag(string code)
+        {
+            string file = code switch
+            {
+                "en" => "USA",     "es" => "SPAIN",   "pt" => "PORTUGAL",
+                "fr" => "FRANCE",  "de" => "GERMANY", "it" => "ITALIAN",
+                "ru" => "RUSSIAN", "zh" => "CHINA",   "ja" => "JAPAN",
+                "hi" => "INDIAN",  _    => null,
+            };
+            return file == null ? null : LoadRes($"Sprites/Language/Flags/{file}");
+        }
+
         /// <summary>Decorative shop diamonds (1-5). Returns null if missing.</summary>
         public static Sprite MenuDiamond(int index) => LoadRes($"Sprites/Menu/diamond_{index}");
 
