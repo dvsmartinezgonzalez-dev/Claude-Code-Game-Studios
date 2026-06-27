@@ -463,7 +463,7 @@ namespace BoltSort.Gameplay
             wrt.anchorMin = new Vector2(0f, 0.5f); wrt.anchorMax = new Vector2(0f, 0.5f);
             wrt.pivot     = new Vector2(0f, 0.5f);
             wrt.anchoredPosition = new Vector2(58f, 0f);   // +30px right
-            wrt.sizeDelta        = new Vector2(98.9f, 98.9f); // 86 × 1.15 (+15%)
+            wrt.sizeDelta        = new Vector2(123.6f, 123.6f); // 98.9 × 1.25 (+25%)
 
             // Title — centred on the banner, GummyPop white with a black outline.
             var titleGO = new GameObject("TitleText");
@@ -476,7 +476,7 @@ namespace BoltSort.Gameplay
             title.verticalOverflow   = VerticalWrapMode.Overflow;
             var ttrt = titleGO.GetComponent<RectTransform>();
             ttrt.anchorMin = Vector2.zero; ttrt.anchorMax = Vector2.one;
-            ttrt.offsetMin = new Vector2(170f, 0f); ttrt.offsetMax = new Vector2(-40f, 0f); // clears the wider/shifted world icon
+            ttrt.offsetMin = new Vector2(135f, 0f); ttrt.offsetMax = new Vector2(-75f, 0f); // -35px left for visual centring; still clears the world icon
             var titleOl = titleGO.AddComponent<Outline>();
             titleOl.effectColor    = new Color(0f, 0f, 0f, 0.9f);
             titleOl.effectDistance = new Vector2(2f, -2f);
@@ -495,7 +495,7 @@ namespace BoltSort.Gameplay
             });
             var cbrt = closeBtnGO.GetComponent<RectTransform>();
             cbrt.anchorMin = cbrt.anchorMax = cbrt.pivot = new Vector2(1f, 1f);
-            cbrt.anchoredPosition = new Vector2(-20f, -20f);
+            cbrt.anchoredPosition = new Vector2(-60f, -60f); // inside the artwork frame border
             cbrt.sizeDelta        = new Vector2(58f, 58f);
 
             // ── Scroll view (below the banner) ──────────────────────────────────────────
