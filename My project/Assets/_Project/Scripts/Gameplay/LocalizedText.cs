@@ -113,7 +113,17 @@ namespace BoltSort.Gameplay
         /// <summary>Enables best-fit (legacy) / auto-sizing (TMP) once, capping max at the original size.</summary>
         private void ApplyAutoSize()
         {
-            if (!_autoSize || _autoSizeApplied) return;
+            // AutoSize disabled: actively clear best-fit/auto-sizing. A prior Refresh (e.g. the
+            // translationKey setter during Bind) may have enabled it before AutoSize was set
+            // false; without clearing it here, AutoSize=false is a no-op and fontSize is ignored.
+            if (!_autoSize)
+            {
+                if (_text != null) _text.resizeTextForBestFit = false;
+                else _tmp?.GetType().GetProperty("enableAutoSizing")?.SetValue(_tmp, false);
+                _autoSizeApplied = true;
+                return;
+            }
+            if (_autoSizeApplied) return;
             _autoSizeApplied = true;
 
             if (_text != null)
