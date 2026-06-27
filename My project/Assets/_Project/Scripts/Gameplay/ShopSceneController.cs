@@ -75,10 +75,15 @@ namespace BoltSort.Gameplay
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(720f, 1280f);
-            scaler.matchWidthOrHeight  = 1f;
+            // Match WIDTH (0) not height: portrait phones are narrower than the 9:16
+            // reference, so pinning logical width to 720 keeps fixed-width content (banner,
+            // 2-col card grid, popups) from overflowing/clipping at the sides. No-op at 9:16.
+            scaler.matchWidthOrHeight  = 0f;
             canvasGO.AddComponent<GraphicRaycaster>();
 
-            float lpu   = 1280f / Mathf.Max(1, Screen.height);
+            // Uniform canvas scale = Screen.width/720, so 1 physical px = 720/Screen.width
+            // canvas units (used for safe-area insets below).
+            float lpu   = 720f / Mathf.Max(1, Screen.width);
             _safeTop    = (Screen.height - Screen.safeArea.yMax) * lpu;
             _safeBottom = Screen.safeArea.yMin * lpu;
 

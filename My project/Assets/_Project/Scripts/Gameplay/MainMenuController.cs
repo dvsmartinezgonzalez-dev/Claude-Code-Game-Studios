@@ -80,11 +80,15 @@ namespace BoltSort.Gameplay
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
             scaler.referenceResolution = new Vector2(720f, 1280f);
-            scaler.matchWidthOrHeight  = 1f;
+            // Match WIDTH (0) not height: portrait phones are narrower than the 9:16
+            // reference, so pinning logical width to 720 preserves the designed horizontal
+            // proportions and stops the Settings/Language popups clipping. No-op at 9:16.
+            scaler.matchWidthOrHeight  = 0f;
             canvasGO.AddComponent<GraphicRaycaster>();
 
-            // MM-04: safe area — push top-corner buttons below notch/Dynamic Island
-            float lpu     = 1280f / Screen.height;
+            // MM-04: safe area — push top-corner buttons below notch/Dynamic Island.
+            // Uniform canvas scale = Screen.width/720, so 1 physical px = 720/Screen.width units.
+            float lpu     = 720f / Mathf.Max(1, Screen.width);
             float safeTop = (Screen.height - Screen.safeArea.yMax) * lpu;
 
             // Background is now a world-space SpriteRenderer (SpawnWorldBackground),
