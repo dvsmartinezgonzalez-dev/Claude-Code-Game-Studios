@@ -128,7 +128,7 @@ namespace BoltSort.Gameplay
                 playLabelRt.anchorMin = new Vector2(0f, 0.50f);
                 playLabelRt.anchorMax = new Vector2(1f, 1.00f);
                 playLabelRt.offsetMin = Vector2.zero;
-                playLabelRt.offsetMax = new Vector2(0f, 60f);
+                playLabelRt.offsetMax = new Vector2(0f, -60f);
                 LocalizedText.Bind(playLabel, "key_play");
             }
 
