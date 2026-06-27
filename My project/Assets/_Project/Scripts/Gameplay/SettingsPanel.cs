@@ -462,21 +462,21 @@ namespace BoltSort.Gameplay
             var wrt = worldGO.GetComponent<RectTransform>();
             wrt.anchorMin = new Vector2(0f, 0.5f); wrt.anchorMax = new Vector2(0f, 0.5f);
             wrt.pivot     = new Vector2(0f, 0.5f);
-            wrt.anchoredPosition = new Vector2(28f, 0f);
-            wrt.sizeDelta        = new Vector2(86f, 86f);
+            wrt.anchoredPosition = new Vector2(58f, 0f);   // +30px right
+            wrt.sizeDelta        = new Vector2(98.9f, 98.9f); // 86 × 1.15 (+15%)
 
             // Title — centred on the banner, GummyPop white with a black outline.
             var titleGO = new GameObject("TitleText");
             titleGO.transform.SetParent(bannerGO.transform, false);
             var title = titleGO.AddComponent<Text>();
-            title.font = font; title.fontSize = 40; title.fontStyle = FontStyle.Bold;
+            title.font = font; title.fontSize = 44; title.fontStyle = FontStyle.Bold; // 40 × 1.10 (+10%)
             title.alignment = TextAnchor.MiddleCenter; title.color = Color.white;
             title.supportRichText = false; title.raycastTarget = false;
             title.horizontalOverflow = HorizontalWrapMode.Overflow;
             title.verticalOverflow   = VerticalWrapMode.Overflow;
             var ttrt = titleGO.GetComponent<RectTransform>();
             ttrt.anchorMin = Vector2.zero; ttrt.anchorMax = Vector2.one;
-            ttrt.offsetMin = new Vector2(120f, 0f); ttrt.offsetMax = new Vector2(-40f, 0f);
+            ttrt.offsetMin = new Vector2(170f, 0f); ttrt.offsetMax = new Vector2(-40f, 0f); // clears the wider/shifted world icon
             var titleOl = titleGO.AddComponent<Outline>();
             titleOl.effectColor    = new Color(0f, 0f, 0f, 0.9f);
             titleOl.effectDistance = new Vector2(2f, -2f);
@@ -484,7 +484,7 @@ namespace BoltSort.Gameplay
 
             // ── Exit button (top-right of the panel) ────────────────────────────────────
             var closeBtnGO = new GameObject("ExitButton");
-            closeBtnGO.transform.SetParent(_langPanel.transform, false);
+            closeBtnGO.transform.SetParent(bgGO.transform, false); // anchor to the background art corner
             var closeBtnImg = closeBtnGO.AddComponent<Image>();
             if (GameAssets.BtnExit != null) GameAssets.Apply(closeBtnImg, GameAssets.BtnExit, preserveAspect: true);
             else closeBtnImg.color = new Color(0.7f, 0.2f, 0.2f, 1f);
