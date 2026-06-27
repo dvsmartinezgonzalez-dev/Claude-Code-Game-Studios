@@ -117,7 +117,9 @@ namespace BoltSort.Visual
         // ── Redesigned Shop scene (assets_admin/Shop/Shop_elements + Main_menu → Resources/Sprites/Shop/) ──
         public static Sprite ShopBackground   => LoadRes("Sprites/Shop/shop_background");
         public static Sprite ShopBanner       => LoadRes("Sprites/Shop/banner_shop");
+        public static Sprite ShopBanner2      => LoadRes("Sprites/Shop/banner_shop_2");
         public static Sprite ShopExitButton   => LoadRes("Sprites/Shop/exit_button");
+        public static Sprite ShopExitButton2  => LoadRes("Sprites/Shop/exit_button_2");
         public static Sprite ShopCoin2        => LoadRes("Sprites/Shop/coin_2");
         public static Sprite ShopDiamond2     => LoadRes("Sprites/Shop/diamond_2");
         // Pre-sized 70×70 currency icons for the shop currency bar and card price rows.

@@ -68,5 +68,9 @@
   "key_great": "GREAT!",
   "key_magnet_title": "MAGNET UNLOCKED!",
   "key_magnet_body": "From now on, same-color balls will follow each other automatically!",
-  "key_lets_go": "LET'S GO!"
+  "key_lets_go": "LET'S GO!",
+  "key_extra_tube_title": "EXTRA TUBE!",
+  "key_extra_tube_body": "Congratulations! You've earned an extra tube. Use it wisely.",
+  "key_extra_bolt_title": "LIGHTNING BOLT!",
+  "key_extra_bolt_body": "Congratulations! You've earned a lightning bolt. Get ready to surprise!"
 }

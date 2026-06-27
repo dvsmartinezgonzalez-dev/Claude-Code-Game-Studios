@@ -1,5 +1,5 @@
 {
-    "key_full": "Pieno",
+  "key_full": "Pieno",
   "key_get_coins": "Ottieni monete",
   "key_get_gems": "Ottieni gemme",
   "key_coming_soon": "Prossimamente",
@@ -7,7 +7,7 @@
   "key_extra_tube": "Tubo extra",
   "key_lightning_bolt": "Fulmine",
   "key_cost_gems_fmt": "{0} gemme",
-"key_play": "GIOCA",
+  "key_play": "GIOCA",
   "key_levels": "LIVELLI",
   "key_shop": "NEGOZIO",
   "key_settings": "IMPOSTAZIONI",
@@ -68,5 +68,9 @@
   "key_great": "GRANDE!",
   "key_magnet_title": "MAGNETE SBLOCCATO!",
   "key_magnet_body": "D'ora in poi, le palline dello stesso colore si seguiranno automaticamente!",
-  "key_lets_go": "ANDIAMO!"
+  "key_lets_go": "ANDIAMO!",
+  "key_extra_tube_title": "TUBO EXTRA!",
+  "key_extra_tube_body": "Congratulazioni! Hai guadagnato un tubo extra. Usalo con saggezza.",
+  "key_extra_bolt_title": "FULMINE!",
+  "key_extra_bolt_body": "Congratulazioni! Hai guadagnato un fulmine. Preparati a stupire!"
 }

@@ -1,5 +1,5 @@
 {
-    "key_full": "पूर्ण",
+  "key_full": "पूर्ण",
   "key_get_coins": "सिक्के पाएं",
   "key_get_gems": "रत्न पाएं",
   "key_coming_soon": "जल्द आ रहा है",
@@ -7,7 +7,7 @@
   "key_extra_tube": "अतिरिक्त ट्यूब",
   "key_lightning_bolt": "बिजली",
   "key_cost_gems_fmt": "{0} रत्न",
-"key_play": "खेलें",
+  "key_play": "खेलें",
   "key_levels": "स्तर",
   "key_shop": "दुकान",
   "key_settings": "सेटिंग्स",
@@ -68,5 +68,9 @@
   "key_great": "शानदार!",
   "key_magnet_title": "चुंबक अनलॉक!",
   "key_magnet_body": "अब से, एक ही रंग की गेंदें अपने आप एक-दूसरे का अनुसरण करेंगी!",
-  "key_lets_go": "चलो शुरू करें!"
+  "key_lets_go": "चलो शुरू करें!",
+  "key_extra_tube_title": "अतिरिक्त ट्यूब!",
+  "key_extra_tube_body": "बधाई! आपको एक अतिरिक्त ट्यूब मिली। इसे समझदारी से उपयोग करें।",
+  "key_extra_bolt_title": "बिजली!",
+  "key_extra_bolt_body": "बधाई! आपको बिजली मिली। चौंकाने के लिए तैयार हो जाइए!"
 }

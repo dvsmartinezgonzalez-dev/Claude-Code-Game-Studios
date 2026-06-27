@@ -1,5 +1,5 @@
 {
-    "key_full": "Полный",
+  "key_full": "Полный",
   "key_get_coins": "Получить монеты",
   "key_get_gems": "Получить кристаллы",
   "key_coming_soon": "Скоро",
@@ -7,7 +7,7 @@
   "key_extra_tube": "Доп. колба",
   "key_lightning_bolt": "Молния",
   "key_cost_gems_fmt": "{0} кристаллов",
-"key_play": "ИГРАТЬ",
+  "key_play": "ИГРАТЬ",
   "key_levels": "УРОВНИ",
   "key_shop": "МАГАЗИН",
   "key_settings": "НАСТРОЙКИ",
@@ -68,5 +68,9 @@
   "key_great": "СУПЕР!",
   "key_magnet_title": "МАГНИТ ОТКРЫТ!",
   "key_magnet_body": "Теперь шары одного цвета будут автоматически следовать друг за другом!",
-  "key_lets_go": "ПОЕХАЛИ!"
+  "key_lets_go": "ПОЕХАЛИ!",
+  "key_extra_tube_title": "ДОПОЛНИТЕЛЬНАЯ ТРУБКА!",
+  "key_extra_tube_body": "Поздравляем! Вы получили дополнительную трубку. Используйте её мудро.",
+  "key_extra_bolt_title": "МОЛНИЯ!",
+  "key_extra_bolt_body": "Поздравляем! Вы получили молнию. Приготовьтесь удивить!"
 }

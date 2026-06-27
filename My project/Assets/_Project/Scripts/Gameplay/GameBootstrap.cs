@@ -65,15 +65,15 @@ namespace BoltSort.Gameplay
                 EconomyManager.Instance.OnPowerUpDropped -= ShowPowerUpDropPopup;
         }
 
-        // Reward drop full-screen reveal (System 2). Distinct accent and icon per power-up type.
+        // Reward drop full-screen reveal (System 2). Uses the Magnet-style splash popup.
         private void ShowPowerUpDropPopup(PowerUpType type)
         {
-            string msg = type == PowerUpType.ExtraTube ? "You got an Extra Tube!" : "You got a Lightning Bolt!";
-            Color  accent = type == PowerUpType.ExtraTube
-                ? new Color(0.20f, 0.62f, 0.86f, 1f) : new Color(1f, 0.85f, 0.2f, 1f);
-            Sprite icon = type == PowerUpType.ExtraTube
+            bool isExtraTube = type == PowerUpType.ExtraTube;
+            string titleKey = isExtraTube ? "key_extra_tube_title" : "key_extra_bolt_title";
+            string bodyKey  = isExtraTube ? "key_extra_tube_body"  : "key_extra_bolt_body";
+            Sprite icon     = isExtraTube
                 ? GameAssets.BtnExtraTube : (GameAssets.BtnUndoNew ?? GameAssets.BtnUndoAction);
-            RewardPopup.Show(GameAssets.MenuFont, msg, accent, icon);
+            MagnetUnlockSplash.ShowPowerUp(GameAssets.MenuFont, icon, titleKey, bodyKey);
         }
 
         private IEnumerator Start()

@@ -47,6 +47,28 @@ namespace BoltSort.Gameplay
             }
         }
 
+        /// <summary>
+        /// Generic power-up unlock popup reusing the same visual style as the Magnet splash.
+        /// Shows icon + title + body + OK button; calls <paramref name="onDismiss"/> on close.
+        /// </summary>
+        public static MagnetUnlockSplash ShowPowerUp(Font font, Sprite icon,
+            string titleKey, string bodyKey, Action onDismiss = null)
+        {
+            try
+            {
+                var go = new GameObject("PowerUpUnlockSplash");
+                var splash = go.AddComponent<MagnetUnlockSplash>();
+                splash.BuildGeneric(font, icon, titleKey, bodyKey, onDismiss);
+                return splash;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[MagnetUnlockSplash] ShowPowerUp build failed: {e.Message}");
+                onDismiss?.Invoke();
+                return null;
+            }
+        }
+
         private void Build(Font font, Action onDismiss)
         {
             _onDismiss = onDismiss;
@@ -118,6 +140,82 @@ namespace BoltSort.Gameplay
             btnRt.sizeDelta        = new Vector2(440f, 140f);
             LocalizedText.Bind(AddLabel(btnGO, font, "Label", "LET'S GO!", 48, Vector2.zero, Vector2.one, Color.white, outline: false),
                      "key_lets_go");
+
+            StartCoroutine(ScaleIn());
+            StartCoroutine(PulseIcon());
+        }
+
+        private void BuildGeneric(Font font, Sprite icon, string titleKey, string bodyKey, Action onDismiss)
+        {
+            _onDismiss = onDismiss;
+
+            var canvas = gameObject.AddComponent<Canvas>();
+            canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 300;
+            var scaler = gameObject.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1080f, 1920f);
+            scaler.matchWidthOrHeight  = 0.5f;
+            gameObject.AddComponent<GraphicRaycaster>();
+
+            var dim = new GameObject("Dim");
+            dim.transform.SetParent(transform, false);
+            var dimImg = dim.AddComponent<Image>();
+            dimImg.color = new Color(0f, 0f, 0f, 0.78f);
+            Stretch(dim.GetComponent<RectTransform>());
+
+            var card = new GameObject("Card");
+            card.transform.SetParent(transform, false);
+            var cardImg = card.AddComponent<Image>();
+            var bgSpr = GameAssets.SettingsBackground ?? GameAssets.MenuPopup;
+            if (bgSpr != null) { cardImg.sprite = bgSpr; cardImg.color = Color.white; }
+            else cardImg.color = new Color(0.10f, 0.10f, 0.20f, 0.98f);
+            _cardRt = card.GetComponent<RectTransform>();
+            _cardRt.anchorMin = _cardRt.anchorMax = new Vector2(0.5f, 0.5f);
+            _cardRt.pivot     = new Vector2(0.5f, 0.5f);
+            _cardRt.anchoredPosition = Vector2.zero;
+            _cardRt.sizeDelta        = new Vector2(820f, 980f);
+
+            var iconGO = new GameObject("PowerUpIcon");
+            iconGO.transform.SetParent(card.transform, false);
+            var iconImg = iconGO.AddComponent<Image>();
+            if (icon != null) GameAssets.Apply(iconImg, icon, preserveAspect: true);
+            else { iconImg.sprite = CircleSprite(); iconImg.color = new Color(0.45f, 0.70f, 0.95f, 1f); }
+            iconImg.raycastTarget = false;
+            _iconRt = iconGO.GetComponent<RectTransform>();
+            _iconRt.anchorMin = _iconRt.anchorMax = new Vector2(0.5f, 0.74f);
+            _iconRt.pivot     = new Vector2(0.5f, 0.5f);
+            _iconRt.anchoredPosition = Vector2.zero;
+            _iconRt.sizeDelta        = new Vector2(260f, 260f);
+
+            string titleFallback = LocalizationManager.Instance?.Get(titleKey) ?? titleKey;
+            string bodyFallback  = LocalizationManager.Instance?.Get(bodyKey)  ?? bodyKey;
+
+            var titleT = AddLabel(card, font, "Title", titleFallback, 66,
+                new Vector2(0.05f, 0.50f), new Vector2(0.95f, 0.64f), BoltSortTheme.WinGold, outline: true);
+            LocalizedText.Bind(titleT, titleKey);
+
+            var bodyT = AddLabel(card, font, "Body", bodyFallback, 36,
+                new Vector2(0.08f, 0.26f), new Vector2(0.92f, 0.48f), Color.black, outline: false);
+            LocalizedText.Bind(bodyT, bodyKey);
+
+            string okLabel = LocalizationManager.Instance?.Get("key_ok") ?? "OK";
+            var btnGO = new GameObject("OKButton");
+            btnGO.transform.SetParent(card.transform, false);
+            var btnImg = btnGO.AddComponent<Image>();
+            var btnSpr = GameAssets.MenuButton;
+            if (btnSpr != null) GameAssets.Apply(btnImg, btnSpr, preserveAspect: true);
+            else btnImg.color = new Color(0.20f, 0.65f, 0.30f, 1f);
+            var btn = btnGO.AddComponent<Button>();
+            btn.onClick.AddListener(Dismiss);
+            var btnRt = btnGO.GetComponent<RectTransform>();
+            btnRt.anchorMin = btnRt.anchorMax = new Vector2(0.5f, 0f);
+            btnRt.pivot     = new Vector2(0.5f, 0f);
+            btnRt.anchoredPosition = new Vector2(0f, 80f);
+            btnRt.sizeDelta        = new Vector2(440f, 140f);
+            var btnLabel = AddLabel(btnGO, font, "Label", okLabel, 48,
+                Vector2.zero, Vector2.one, Color.white, outline: false);
+            LocalizedText.Bind(btnLabel, "key_ok");
 
             StartCoroutine(ScaleIn());
             StartCoroutine(PulseIcon());

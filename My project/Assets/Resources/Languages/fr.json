@@ -1,5 +1,5 @@
 {
-    "key_full": "Plein",
+  "key_full": "Plein",
   "key_get_coins": "Obtenir des pièces",
   "key_get_gems": "Obtenir des gemmes",
   "key_coming_soon": "Bientôt disponible",
@@ -7,7 +7,7 @@
   "key_extra_tube": "Tube bonus",
   "key_lightning_bolt": "Éclair",
   "key_cost_gems_fmt": "{0} gemmes",
-"key_play": "JOUER",
+  "key_play": "JOUER",
   "key_levels": "NIVEAUX",
   "key_shop": "BOUTIQUE",
   "key_settings": "RÉGLAGES",
@@ -68,5 +68,9 @@
   "key_great": "SUPER !",
   "key_magnet_title": "AIMANT DÉBLOQUÉ !",
   "key_magnet_body": "Désormais, les boules de même couleur se suivront automatiquement !",
-  "key_lets_go": "C'EST PARTI !"
+  "key_lets_go": "C'EST PARTI !",
+  "key_extra_tube_title": "TUBE SUPPLÉMENTAIRE !",
+  "key_extra_tube_body": "Félicitations ! Vous avez gagné un tube supplémentaire. Utilisez-le judicieusement.",
+  "key_extra_bolt_title": "ÉCLAIR !",
+  "key_extra_bolt_body": "Félicitations ! Vous avez gagné un éclair. Préparez-vous à surprendre !"
 }

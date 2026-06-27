@@ -116,16 +116,21 @@ namespace BoltSort.Gameplay
             var banner = new GameObject("Banner");
             banner.transform.SetParent(canvasGO.transform, false);
             var bannerImg = banner.AddComponent<Image>();
-            GameAssets.Apply(bannerImg, GameAssets.ShopBanner, preserveAspect: true);
-            if (GameAssets.ShopBanner == null) bannerImg.color = BoltSortTheme.HUDBackground;
+            var oldBannerSpr = GameAssets.ShopBanner;
+            var newBannerSpr = GameAssets.ShopBanner2 ?? oldBannerSpr;
+            GameAssets.Apply(bannerImg, newBannerSpr, preserveAspect: true);
+            if (newBannerSpr == null) bannerImg.color = BoltSortTheme.HUDBackground;
             bannerImg.raycastTarget = false;
             var brt = banner.GetComponent<RectTransform>();
             brt.anchorMin = brt.anchorMax = new Vector2(0.5f, 1f);
             brt.pivot     = new Vector2(0.5f, 1f);
             brt.sizeDelta = new Vector2(480f, bannerH);
-            var bannerOld = new Vector2(0f, -4f);
-            brt.anchoredPosition = bannerOld + new Vector2(0f, -50f); // lowered 50px (shop tweak)
-            Debug.Log($"[Shop] Banner anchoredPosition {bannerOld} → {brt.anchoredPosition}");
+            // Compensate vertical position when new banner sprite has a different height than old.
+            float heightDeltaUnits = 0f;
+            if (oldBannerSpr != null && newBannerSpr != null && !ReferenceEquals(oldBannerSpr, newBannerSpr))
+                heightDeltaUnits = -(newBannerSpr.rect.height / newBannerSpr.pixelsPerUnit
+                                   - oldBannerSpr.rect.height / oldBannerSpr.pixelsPerUnit) / 2f;
+            brt.anchoredPosition = new Vector2(0f, -54f + heightDeltaUnits); // -4 base -50 shop tweak
 
             var title = MakeLabel(banner, "Title", Tr("key_shop"), _font, 56,
                                   TextAnchor.MiddleCenter, bold: true, shadow: true);
@@ -141,8 +146,8 @@ namespace BoltSort.Gameplay
             var exit = new GameObject("ExitButton");
             exit.transform.SetParent(canvasGO.transform, false);
             var exitImg = exit.AddComponent<Image>();
-            GameAssets.Apply(exitImg, GameAssets.ShopExitButton ?? GameAssets.BtnExit, preserveAspect: true);
-            if (GameAssets.ShopExitButton == null && GameAssets.BtnExit == null)
+            GameAssets.Apply(exitImg, GameAssets.ShopExitButton2 ?? GameAssets.ShopExitButton ?? GameAssets.BtnExit, preserveAspect: true);
+            if (GameAssets.ShopExitButton2 == null && GameAssets.ShopExitButton == null && GameAssets.BtnExit == null)
                 exitImg.color = new Color(0.75f, 0.22f, 0.22f, 1f);
             var exitBtn = exit.AddComponent<Button>();
             exitBtn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));

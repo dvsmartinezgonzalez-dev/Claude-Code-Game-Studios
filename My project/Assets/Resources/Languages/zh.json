@@ -1,5 +1,5 @@
 {
-    "key_full": "已满",
+  "key_full": "已满",
   "key_get_coins": "获取金币",
   "key_get_gems": "获取宝石",
   "key_coming_soon": "敬请期待",
@@ -7,7 +7,7 @@
   "key_extra_tube": "额外试管",
   "key_lightning_bolt": "闪电",
   "key_cost_gems_fmt": "{0} 宝石",
-"key_play": "开始",
+  "key_play": "开始",
   "key_levels": "关卡",
   "key_shop": "商店",
   "key_settings": "设置",
@@ -68,5 +68,9 @@
   "key_great": "太棒了！",
   "key_magnet_title": "磁铁已解锁！",
   "key_magnet_body": "从现在起，相同颜色的小球会自动跟随彼此！",
-  "key_lets_go": "出发！"
+  "key_lets_go": "出发！",
+  "key_extra_tube_title": "额外管道！",
+  "key_extra_tube_body": "恭喜！您获得了一个额外管道。请善加利用。",
+  "key_extra_bolt_title": "闪电！",
+  "key_extra_bolt_body": "恭喜！您获得了一道闪电。准备好给对手惊喜吧！"
 }

@@ -1,5 +1,5 @@
 {
-    "key_full": "Voll",
+  "key_full": "Voll",
   "key_get_coins": "Münzen holen",
   "key_get_gems": "Edelsteine holen",
   "key_coming_soon": "Demnächst",
@@ -7,7 +7,7 @@
   "key_extra_tube": "Extra-Röhre",
   "key_lightning_bolt": "Blitz",
   "key_cost_gems_fmt": "{0} Edelsteine",
-"key_play": "SPIELEN",
+  "key_play": "SPIELEN",
   "key_levels": "LEVEL",
   "key_shop": "SHOP",
   "key_settings": "EINSTELLUNGEN",
@@ -68,5 +68,9 @@
   "key_great": "SUPER!",
   "key_magnet_title": "MAGNET FREIGESCHALTET!",
   "key_magnet_body": "Ab jetzt folgen sich gleichfarbige Kugeln automatisch!",
-  "key_lets_go": "LOS GEHT'S!"
+  "key_lets_go": "LOS GEHT'S!",
+  "key_extra_tube_title": "EXTRA-RÖHRE!",
+  "key_extra_tube_body": "Glückwunsch! Du hast eine extra Röhre erhalten. Nutze sie weise.",
+  "key_extra_bolt_title": "BLITZ!",
+  "key_extra_bolt_body": "Glückwunsch! Du hast einen Blitz erhalten. Mach dich bereit!"
 }

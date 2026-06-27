@@ -1,5 +1,5 @@
 {
-    "key_full": "満杯",
+  "key_full": "満杯",
   "key_get_coins": "コインを入手",
   "key_get_gems": "ジェムを入手",
   "key_coming_soon": "近日公開",
@@ -7,7 +7,7 @@
   "key_extra_tube": "追加チューブ",
   "key_lightning_bolt": "稲妻",
   "key_cost_gems_fmt": "{0} ジェム",
-"key_play": "プレイ",
+  "key_play": "プレイ",
   "key_levels": "レベル",
   "key_shop": "ショップ",
   "key_settings": "設定",
@@ -68,5 +68,9 @@
   "key_great": "すごい！",
   "key_magnet_title": "マグネット解放！",
   "key_magnet_body": "これからは同じ色のボールが自動でついてきます！",
-  "key_lets_go": "いくぞ！"
+  "key_lets_go": "いくぞ！",
+  "key_extra_tube_title": "エクストラチューブ！",
+  "key_extra_tube_body": "おめでとう！エクストラチューブを手に入れました。賢く使いましょう。",
+  "key_extra_bolt_title": "ライトニング！",
+  "key_extra_bolt_body": "おめでとう！ライトニングを手に入れました。驚かせる準備をしよう！"
 }
