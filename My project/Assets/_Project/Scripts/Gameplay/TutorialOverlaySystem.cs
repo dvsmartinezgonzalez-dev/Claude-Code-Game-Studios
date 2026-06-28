@@ -29,7 +29,6 @@ namespace BoltSort.Gameplay
         private const float  HandBobAmplitude    = 6f;   // px bob in pick-hint mode
         private const float  HandBobPeriod       = 0.9f; // seconds per bob cycle
         private const float  FrameInterval       = 0.10f; // seconds per animation frame
-        private const float  ExtraHintAutoDismiss = 3.5f; // auto-dismiss extra-tube hint
         private const float  MismatchMsgDuration  = 2.5f; // mismatch rule message auto-dismiss
         private const float  ExtraHandYOffset     = -120f; // 2.3: lower the extra-tube pulse hand
 
@@ -172,8 +171,27 @@ namespace BoltSort.Gameplay
         private void OnLevelComplete(int levelId, int moves, int par, long seqId)
         {
             // Level 2 finished by any means while the tutorial is still active → complete.
+            // Clean up immediately (no lingering floating message) so the Victory screen is
+            // free of any tutorial prompt/animation.
             if (levelId >= 2 && _step != Step.Inactive)
-                CompleteTutorial(showFinal: true);
+                CompleteTutorial(showFinal: false);
+        }
+
+        /// <summary>
+        /// Tears down every visible tutorial prompt and animation without ending the tutorial.
+        /// Called by <see cref="GameBootstrap"/> on level completion (before the Victory overlay
+        /// is shown) so no hand, hint, or tube icon survives onto the win screen. Idempotent and
+        /// safe to call when the tutorial is already dormant or complete.
+        /// </summary>
+        public void CleanupAll()
+        {
+            DevLog("CleanupAll() — clearing tutorial UI before victory");
+            StopHandAnims();
+            StopMismatchMessage();
+            if (_handImage != null) _handImage.enabled = false;
+            if (_hintText  != null) _hintText.enabled  = false;
+            if (_handRT    != null) _handRT.localScale = Vector3.one;
+            ClearTubeIcons();
         }
 
         private void OnBoardShapeChanged()
@@ -203,6 +221,7 @@ namespace BoltSort.Gameplay
 
         private void TransitionTo(Step next)
         {
+            DevLog($"step {_step} → {next}");
             StopHandAnims();
             StopMismatchMessage();
             HideAll();
@@ -315,10 +334,8 @@ namespace BoltSort.Gameplay
                 _handBobAnim = StartCoroutine(PulseHand());
             }
 
-            // Auto-dismiss after a few seconds if the player doesn't use the button.
-            yield return new WaitForSeconds(ExtraHintAutoDismiss);
-            if (_step == Step.ExtraTubeHint)
-                TransitionTo(Step.ResetHint);
+            // Mandatory step: the hint stays until the player actually uses the extra tube
+            // (OnBoardShapeChanged → ResetHint). No timed auto-dismiss skip.
         }
 
         private IEnumerator ShowResetHint()
@@ -540,6 +557,9 @@ namespace BoltSort.Gameplay
             if (_hintText   != null) _hintText.enabled   = false;
             ClearTubeIcons();
         }
+
+        [System.Diagnostics.Conditional("UNITY_EDITOR"), System.Diagnostics.Conditional("DEVELOPMENT_BUILD")]
+        private static void DevLog(string msg) => Debug.Log($"[TutorialOverlay] {msg}");
 
         private void SetHintText(string key)
         {

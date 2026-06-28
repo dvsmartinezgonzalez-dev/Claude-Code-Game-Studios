@@ -22,6 +22,7 @@ namespace BoltSort.Gameplay
         private BoltSort.GameStateManager.GameStateManager _gsm;
         private BoltSort.SortMechanic.SortMechanic         _sortMechanic;
         private HUDController                              _hud;
+        private TutorialOverlaySystem                      _tutorialOverlay;
 
         private int _currentLevelId = 1;
         private int _maxLevelId = 1;
@@ -119,8 +120,8 @@ namespace BoltSort.Gameplay
 
             // Animated tutorial overlay (new-user onboarding). Dormant if tutorial already complete.
             var tutOverlayGO = new GameObject("TutorialOverlaySystem");
-            tutOverlayGO.AddComponent<TutorialOverlaySystem>()
-                        .Initialize(_gsm, _sortMechanic, boardView, _hud);
+            _tutorialOverlay = tutOverlayGO.AddComponent<TutorialOverlaySystem>();
+            _tutorialOverlay.Initialize(_gsm, _sortMechanic, boardView, _hud);
 
             LoadLevelWithMagnetCheck(_currentLevelId);
             AudioMgr.Instance?.PlayMusic();
@@ -222,6 +223,11 @@ namespace BoltSort.Gameplay
 
         private async void HandleLevelComplete(int levelId, int moves, int par, long seqId)
         {
+            // Clear any active tutorial prompt/animation before the Victory overlay is shown.
+            // This runs before the HUD's OnLevelComplete handler (subscribed later) opens the
+            // win screen, so no hand/hint/icon can survive onto it.
+            _tutorialOverlay?.CleanupAll();
+
             int stars = moves <= par ? 3 : moves <= (int)(par * 1.5f) ? 2 : 1;
 
             // EconomyManager (System 3) is the currency authority: it awards first-time vs replay

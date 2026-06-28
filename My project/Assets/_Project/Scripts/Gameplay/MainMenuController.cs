@@ -18,6 +18,7 @@ namespace BoltSort.Gameplay
     {
         private SettingsPanel _settingsPanel;
         private NoAdsPopup    _noAdsPopup;
+        private Transform     _canvasRoot;
 
         private void Start()
         {
@@ -30,6 +31,20 @@ namespace BoltSort.Gameplay
             SpawnWorldBackground();
             BuildUI();
             AudioMgr.Instance?.PlayMusic();
+
+            // First-run gate: force a language choice before the player can reach PLAY / the
+            // tutorial. The modal's raycast-blocking background swallows all menu taps until a
+            // language is picked, and localization is reloaded before any tutorial text appears.
+            MaybeShowFirstRunLanguagePopup();
+        }
+
+        private void MaybeShowFirstRunLanguagePopup()
+        {
+            if (!FirstRunLanguagePopup.ShouldShow) return;
+            if (_canvasRoot == null) return;
+            var host = new GameObject("FirstRunLanguagePopup");
+            host.transform.SetParent(_canvasRoot, false);
+            host.AddComponent<FirstRunLanguagePopup>().Show(GameAssets.MenuFont, _canvasRoot, onChosen: null);
         }
 
         /// <summary>Adds game_background.png as a world-space sprite so particles in front of it
@@ -57,6 +72,9 @@ namespace BoltSort.Gameplay
             if (Keyboard.current == null) return;
             if (!Keyboard.current.escapeKey.wasPressedThisFrame) return;
 
+            // First-run language choice is mandatory: swallow back/Esc until it is made.
+            if (FirstRunLanguagePopup.IsBlocking) return;
+
             // If settings panel is open, close it first.
             if (_settingsPanel != null && _settingsPanel.IsOpen)
             {
@@ -76,6 +94,7 @@ namespace BoltSort.Gameplay
             var canvas   = canvasGO.AddComponent<Canvas>();
             canvas.renderMode   = RenderMode.ScreenSpaceOverlay;
             canvas.sortingOrder = 10;
+            _canvasRoot = canvasGO.transform;
 
             var scaler = canvasGO.AddComponent<CanvasScaler>();
             scaler.uiScaleMode         = CanvasScaler.ScaleMode.ScaleWithScreenSize;
