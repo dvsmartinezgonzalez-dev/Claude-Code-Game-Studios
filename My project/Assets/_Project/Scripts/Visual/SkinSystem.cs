@@ -81,6 +81,14 @@ namespace BoltSort.Visual
                            Category = SkinCategory.Balls, IsDefault = false, UnlockCost = 1000,
                            AssetFolder = "IceCream/",
                            ThumbnailPath = "Sprites/Balls/IceCream/ball_blue" },
+            new SkinItem { SkinId = "ball_crystal", DisplayName = "Crystal",
+                           Category = SkinCategory.Balls, IsDefault = false, UnlockCost = 1000,
+                           AssetFolder = "Crystal/",
+                           ThumbnailPath = "Sprites/Balls/Crystal/ball_blue" },
+            new SkinItem { SkinId = "ball_cubes", DisplayName = "Cubes",
+                           Category = SkinCategory.Balls, IsDefault = false, UnlockCost = 1000,
+                           AssetFolder = "Cubes/",
+                           ThumbnailPath = "Sprites/Balls/Cubes/ball_blue" },
         };
 
         private static readonly List<SkinItem> _backgrounds = new()
