@@ -108,6 +108,17 @@ namespace BoltSort.Gameplay
         /// <summary>Reveal animation length (s) — within the 0.2–0.3s design range.</summary>
         private const float MysteryRevealDur = 0.25f;
 
+        // ── Tube-completion VFX tuning (visual-only; see PlayTubeCompletionFlash) ──
+        // Mobile-safe, spawn-and-destroy (matches the win-celebration convention; no pool exists).
+        // Per completed tube: ConfettiCount + SparkleCount + 1 glow + 1 flash transient objects.
+        private const int   ConfettiCount    = 28;     // upward confetti pieces per completed tube
+        private const float ConfettiLifeMin  = 0.6f;   // confetti lifetime range (s)
+        private const float ConfettiLifeMax  = 1.1f;
+        private const int   SparkleCount     = 8;      // bright additive-style sparkle flecks
+        private const float TubePopScale     = 1.06f;  // brief flash-overlay scale "pop"
+        private const float TubePopDuration  = 0.16f;  // pop duration (s)
+        private const float TubeGlowDuration = 0.30f;  // radial glow flash fade (0.2–0.35s range)
+
         // ── Win state ─────────────────────────────────────────────────────────────
         private bool     _winPlaying;
         private Coroutine _winCoroutine;
@@ -750,24 +761,46 @@ namespace BoltSort.Gameplay
             for (int slot = 0; slot < cap; slot++)
                 _tubeCompletePulse[SlotKey(col, slot)] = Time.time + slot * 0.04f;
 
-            // Upward particle fan from the top of the tube, in the completed colour.
+            // Celebration burst from the top (mouth) of the tube: a multicolour confetti fan,
+            // bright sparkle flecks, and a one-shot radial glow. All transient and self-expiring.
             if (_columnSlot0World != null && col < _columnSlot0World.Length &&
                 _ballStep != null && col < _ballStep.Length)
             {
-                Vector3 top = _columnSlot0World[col] + Vector3.up * (cap * _ballStep[col]);
-                Color   c   = BoltSortTheme.BoltColorForId(colorId);
-                const int burst = 7;
-                for (int i = 0; i < burst; i++)
+                Vector3 top     = _columnSlot0World[col] + Vector3.up * (cap * _ballStep[col]);
+                Color   c       = BoltSortTheme.BoltColorForId(colorId);
+                var     palette = BoltSortTheme.BoltColors;
+                float   glowW   = (_tubeWidth != null && col < _tubeWidth.Length) ? _tubeWidth[col] : _colWidth;
+
+                // Radial glow flash: soft circle expanding 0.6→1.5 while it fades out.
+                StartCoroutine(TubeGlowFlash(top, c, glowW));
+
+                // Confetti fan: cone (~40°) of small tinted pieces with light gravity + spin.
+                for (int i = 0; i < ConfettiCount; i++)
                 {
-                    float angle = 60f + (60f / (burst - 1)) * i; // 60°–120°, fanning upward
-                    float speed = Random.Range(2.5f, 4.5f);
-                    StartCoroutine(WinParticle(top, angle, speed, Random.Range(0.07f, 0.11f),
-                                               Random.Range(0.40f, 0.70f), c));
+                    float angle = Random.Range(70f, 110f);            // upward cone (~40° wide)
+                    float speed = Random.Range(2.5f, 5f);
+                    float size  = Random.Range(0.04f, 0.14f);
+                    float life  = Random.Range(ConfettiLifeMin, ConfettiLifeMax);
+                    Color tint  = (palette != null && palette.Length > 0)
+                                  ? palette[Random.Range(0, palette.Length)] : c;
+                    StartCoroutine(ConfettiParticle(top, angle, speed, size, life, tint));
+                }
+
+                // Sparkles: tiny bright-white flecks, fast and short-lived (additive-style glint).
+                for (int i = 0; i < SparkleCount; i++)
+                {
+                    float angle = Random.Range(50f, 130f);
+                    float speed = Random.Range(3.5f, 6f);
+                    StartCoroutine(WinParticle(top, angle, speed,
+                                               Random.Range(0.03f, 0.06f),
+                                               Random.Range(0.25f, 0.45f), Color.white));
                 }
             }
 
-            // Soft white flash: a transient overlay cloned from the tube sprite, fading 0.6→0.
-            // An overlay (not a tint) keeps LateUpdate's per-frame tube colour writes from fighting it.
+            // Soft white flash + scale "pop": a transient overlay cloned from the tube sprite,
+            // brightening then fading while it briefly scales up (1.0→1.06→1.0). An overlay (not a
+            // tint/transform write) keeps LateUpdate's per-frame tube updates from fighting it, and
+            // gives the tactile "pulse" feedback without touching the tube's own normalized scale.
             if (_tubeRenderers != null && col < _tubeRenderers.Length && _tubeRenderers[col] != null)
             {
                 var src = _tubeRenderers[col];
@@ -779,12 +812,17 @@ namespace BoltSort.Gameplay
                 fsr.sprite       = src.sprite;
                 fsr.sortingOrder = src.sortingOrder + 5;
 
-                float dur = 0.40f, elapsed = 0f;
+                float dur = 0.42f, elapsed = 0f;
                 while (elapsed < dur)
                 {
                     if (fsr == null) break;
                     elapsed += Time.deltaTime;
-                    fsr.color = new Color(1f, 1f, 1f, 0.6f * (1f - elapsed / dur));
+                    float t = elapsed / dur;
+                    fsr.color = new Color(1f, 1f, 1f, 0.6f * (1f - t));
+                    float pop = elapsed < TubePopDuration
+                        ? 1f + (TubePopScale - 1f) * Mathf.Sin((elapsed / TubePopDuration) * Mathf.PI)
+                        : 1f;
+                    fGO.transform.localScale = new Vector3(pop, pop, 1f);
                     yield return null;
                 }
                 if (fGO != null) Destroy(fGO);
@@ -902,6 +940,65 @@ namespace BoltSort.Gameplay
                 go.transform.position += vel * Time.deltaTime;
                 go.transform.Rotate(0f, 0f, speed * 90f * Time.deltaTime);
                 sr.color = new Color(1f, 1f, 1f, 1f - t);
+                yield return null;
+            }
+            if (go != null) Destroy(go);
+        }
+
+        /// <summary>One confetti piece for a tube-completion burst: tinted, light gravity, spins,
+        /// fades over its life. Transient GameObject, self-destructs. Visual-only.</summary>
+        private IEnumerator ConfettiParticle(Vector3 origin, float angle, float speed,
+                                             float size, float lifetime, Color color)
+        {
+            var go = new GameObject("TubeConfetti");
+            go.transform.position   = origin;
+            go.transform.localScale = Vector3.one * size;
+
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite       = _particleCircle;
+            sr.color        = color;
+            sr.sortingOrder = 15;
+
+            float   rad   = Mathf.Deg2Rad * angle;
+            Vector3 vel   = new Vector3(Mathf.Cos(rad), Mathf.Sin(rad), 0f) * speed;
+            float   spin  = Random.Range(-180f, 180f);
+            float   elapsed = 0f;
+            while (elapsed < lifetime)
+            {
+                if (go == null) yield break;
+                elapsed += Time.deltaTime;
+                float t = elapsed / lifetime;
+                vel.y -= 0.9f * Time.deltaTime; // light gravity (~0.3 gravity-modifier feel)
+                go.transform.position += vel * Time.deltaTime;
+                go.transform.Rotate(0f, 0f, spin * Time.deltaTime);
+                sr.color = new Color(color.r, color.g, color.b, color.a * (1f - t));
+                yield return null;
+            }
+            if (go != null) Destroy(go);
+        }
+
+        /// <summary>One-shot radial glow flash at a tube mouth: a soft circle scaling 0.6→1.5 (× the
+        /// tube width) while it fades out. Transient GameObject, self-destructs. Visual-only.</summary>
+        private IEnumerator TubeGlowFlash(Vector3 origin, Color color, float baseSize)
+        {
+            var go = new GameObject("TubeCompleteGlow");
+            go.transform.position = origin;
+
+            var sr = go.AddComponent<SpriteRenderer>();
+            sr.sprite       = _glowSprite;
+            sr.sortingOrder = 14;
+            Color tint = Color.Lerp(color, Color.white, 0.6f); // bright, lightly tube-tinted
+
+            float dur = TubeGlowDuration, elapsed = 0f;
+            float refSize = baseSize > 0.0001f ? baseSize : 1f;
+            while (elapsed < dur)
+            {
+                if (go == null) yield break;
+                elapsed += Time.deltaTime;
+                float t = elapsed / dur;
+                float s = Mathf.Lerp(0.6f, 1.5f, t) * refSize;
+                go.transform.localScale = new Vector3(s, s, 1f);
+                sr.color = new Color(tint.r, tint.g, tint.b, 0.55f * (1f - t));
                 yield return null;
             }
             if (go != null) Destroy(go);

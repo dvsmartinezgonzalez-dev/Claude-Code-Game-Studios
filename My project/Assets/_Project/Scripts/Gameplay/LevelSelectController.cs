@@ -174,8 +174,15 @@ namespace BoltSort.Gameplay
             // row, leaving less empty space between cells. Every child element (number font, lock,
             // stars, mechanic icons) is sized relative to _cellSize, so all grow by the same 10%.
             const float baseCellSize = (canvasWidth - 24f * 2f - 12f * (Columns - 1)) / Columns; // 124.8
-            _cellSize = baseCellSize * 1.10f; // +10%
-            float cellGap = (canvasWidth - _cellSize * Columns) / (Columns + 1); // ≈5.6 (pad == gap)
+            // Tiles enlarged a further +5% over the prior +10% layout (number font + lock scale
+            // with _cellSize, so all grow together). A literal +5% would push 5 columns past the
+            // 720px logical row, so clamp the cell to the widest that still leaves a hairline gap,
+            // then split the small remainder evenly as padding + gaps (spacing shrinks to suit).
+            const float enlargeFactor = 1.10f * 1.05f;            // +5% over the previous layout
+            const float minGap        = 0.5f;                      // keep adjacent tiles from touching
+            float maxCell = (canvasWidth - minGap * (Columns + 1)) / Columns;
+            _cellSize = Mathf.Min(baseCellSize * enlargeFactor, maxCell); // ≈143.4
+            float cellGap = (canvasWidth - _cellSize * Columns) / (Columns + 1); // shrinks as cells grow
             float padX    = cellGap;
 
             var contentGO = new GameObject("Content", typeof(RectTransform));
