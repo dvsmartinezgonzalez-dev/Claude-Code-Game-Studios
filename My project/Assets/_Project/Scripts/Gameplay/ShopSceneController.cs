@@ -352,15 +352,8 @@ namespace BoltSort.Gameplay
             if (thumb != null) { thumbImg.sprite = thumb; thumbImg.color = Color.white; thumbImg.preserveAspect = true; }
             else               thumbImg.color = SwatchColor(item);
             thumbImg.raycastTarget = false;
-            if (!unlocked)
-            {
-                var dim = new GameObject("Dim");
-                dim.transform.SetParent(thumbArea.transform, false);
-                var dimImg = dim.AddComponent<Image>();
-                dimImg.color = new Color(0f, 0f, 0f, 0.40f);
-                dimImg.raycastTarget = false;
-                Stretch(dim.GetComponent<RectTransform>());
-            }
+            // Locked items are shown at full brightness (the price row + Buy button already convey
+            // locked state); no dark overlay is drawn over the thumbnail.
 
             // Name.
             AddCardName(cell, item.DisplayName);

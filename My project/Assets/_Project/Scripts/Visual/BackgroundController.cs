@@ -22,7 +22,8 @@ namespace BoltSort.Visual
         private void OnEnable()  => SkinManager.OnSkinChanged += ApplyWallpaper;
         private void OnDisable() => SkinManager.OnSkinChanged -= ApplyWallpaper;
 
-        /// <summary>Full-screen wallpaper layer above the gradient; hidden when Default skin is equipped.</summary>
+        /// <summary>Full-screen wallpaper layer above the gradient. Shows the equipped Background
+        /// skin, or the default gameplay wallpaper (wallpaper.png) when no skin is equipped.</summary>
         private void BuildWallpaper()
         {
             var go = new GameObject("Wallpaper");
@@ -42,7 +43,8 @@ namespace BoltSort.Visual
         private void ApplyWallpaper()
         {
             if (_wallpaperSr == null) return;
-            Sprite spr = SkinManager.EquippedBackgroundSprite;
+            // Equipped Background skin wins; otherwise fall back to the default gameplay wallpaper.
+            Sprite spr = SkinManager.EquippedBackgroundSprite ?? GameAssets.GameplayWallpaper;
             _wallpaperSr.sprite  = spr;
             _wallpaperSr.enabled = spr != null;
             if (spr != null)

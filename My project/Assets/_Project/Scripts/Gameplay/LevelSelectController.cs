@@ -111,8 +111,10 @@ namespace BoltSort.Gameplay
             safeAreaGO.transform.SetParent(canvasGO.transform, false);
             ApplySafeArea(safeAreaGO.GetComponent<RectTransform>());
 
-            // Header bar (title + back + settings)
+            // Header bar (title + back + shop). The dark background strip is disabled so the
+            // title and buttons render directly over the screen's general background.
             var header = MakePanel(safeAreaGO, "Header", BoltSortTheme.HUDBackground);
+            header.GetComponent<Image>().enabled = false;
             var hr = header.GetComponent<RectTransform>();
             hr.anchorMin = new Vector2(0f, 1f); hr.anchorMax = new Vector2(1f, 1f);
             hr.pivot = new Vector2(0.5f, 1f);
@@ -134,12 +136,12 @@ namespace BoltSort.Gameplay
             bbr.pivot = new Vector2(0f, 0.5f);
             bbr.offsetMin = new Vector2(8f, 8f); bbr.offsetMax = new Vector2(100f, -8f);
 
-            var settingsBtn = MakeAnimatedButton(header, "SettingsButton", "", _font, 36,
-                                                 () => _settingsPanel?.Toggle());
-            var settingsImg = settingsBtn.GetComponent<Image>();
-            if (GameAssets.NavSettings != null) GameAssets.Apply(settingsImg, GameAssets.NavSettings, true);
-            else settingsImg.color = new Color(0.12f, 0.12f, 0.22f, 0.9f);
-            var sbr = settingsBtn.GetComponent<RectTransform>();
+            // Shop button (replaces the old Settings button): go_button.png art, opens the Shop scene.
+            var shopBtn = MakeAnimatedButton(header, "ShopButton", "", _font, 36, OnShopClicked);
+            var shopImg = shopBtn.GetComponent<Image>();
+            if (GameAssets.LevelGoButton != null) GameAssets.Apply(shopImg, GameAssets.LevelGoButton, true);
+            else shopImg.color = new Color(0.12f, 0.12f, 0.22f, 0.9f);
+            var sbr = shopBtn.GetComponent<RectTransform>();
             sbr.anchorMin = new Vector2(1f, 0f); sbr.anchorMax = new Vector2(1f, 1f);
             sbr.pivot = new Vector2(1f, 0.5f);
             sbr.offsetMin = new Vector2(-100f, 8f); sbr.offsetMax = new Vector2(-8f, -8f);
@@ -163,11 +165,18 @@ namespace BoltSort.Gameplay
             Stretch(viewportGO.GetComponent<RectTransform>());
             scrollRect.viewport = viewportGO.GetComponent<RectTransform>();
 
-            const float cellGap = 12f, padX = 24f, padTop = 20f;
+            const float padTop = 16f;
             // Logical width is pinned to the reference width (720) under match-width, so the
             // grid cells size identically on every device instead of per-aspect-ratio.
             const float canvasWidth = 720f;
-            _cellSize = (canvasWidth - padX * 2f - cellGap * (Columns - 1)) / Columns;
+            // Level tiles enlarged 10% over the original 24px-pad / 12px-gap layout; the freed
+            // width is redistributed as equal (tighter) padding + gaps so the grid still fills the
+            // row, leaving less empty space between cells. Every child element (number font, lock,
+            // stars, mechanic icons) is sized relative to _cellSize, so all grow by the same 10%.
+            const float baseCellSize = (canvasWidth - 24f * 2f - 12f * (Columns - 1)) / Columns; // 124.8
+            _cellSize = baseCellSize * 1.10f; // +10%
+            float cellGap = (canvasWidth - _cellSize * Columns) / (Columns + 1); // ≈5.6 (pad == gap)
+            float padX    = cellGap;
 
             var contentGO = new GameObject("Content", typeof(RectTransform));
             contentGO.transform.SetParent(viewportGO.transform, false);
@@ -180,7 +189,8 @@ namespace BoltSort.Gameplay
             var grid = contentGO.AddComponent<GridLayoutGroup>();
             grid.cellSize        = new Vector2(_cellSize, _cellSize);
             grid.spacing         = new Vector2(cellGap, cellGap);
-            grid.padding         = new RectOffset((int)padX, (int)padX, (int)padTop, (int)padTop);
+            grid.padding         = new RectOffset(Mathf.RoundToInt(padX), Mathf.RoundToInt(padX),
+                                                  (int)padTop, (int)padTop);
             grid.constraint      = GridLayoutGroup.Constraint.FixedColumnCount;
             grid.constraintCount = Columns;
             grid.childAlignment  = TextAnchor.UpperCenter;
@@ -717,6 +727,13 @@ namespace BoltSort.Gameplay
             var tm = SceneTransitionManager.Instance;
             if (tm != null) tm.TransitionTo("MainMenu");
             else UnityEngine.SceneManagement.SceneManager.LoadScene("MainMenu");
+        }
+
+        private static void OnShopClicked()
+        {
+            var tm = SceneTransitionManager.Instance;
+            if (tm != null) tm.TransitionTo("Shop");
+            else UnityEngine.SceneManagement.SceneManager.LoadScene("Shop");
         }
 
         // ── Setup helpers ─────────────────────────────────────────────────────────

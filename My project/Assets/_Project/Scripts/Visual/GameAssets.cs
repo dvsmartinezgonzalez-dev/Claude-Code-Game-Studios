@@ -23,6 +23,8 @@ namespace BoltSort.Visual
         public static Sprite DiamondIcon     => LoadRes("Sprites/Diamante");
         public static Sprite GameBackground        => LoadRes("Sprites/game_background");
         public static Sprite LevelSelectBackground  => LoadRes("Sprites/Levels/levelselect_background");
+        /// <summary>Default gameplay-scene wallpaper, shown behind the board when no Background skin is equipped.</summary>
+        public static Sprite GameplayWallpaper      => LoadRes("Sprites/Levels/wallpaper");
 
         // ── Shop skin miniatures (1:1 thumbnails for Shop cards) ─────────────────
         private const string MiniDir = "Sprites/Shop/Miniatures/";
