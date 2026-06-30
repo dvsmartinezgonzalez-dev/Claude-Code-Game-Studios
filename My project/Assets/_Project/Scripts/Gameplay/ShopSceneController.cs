@@ -31,6 +31,20 @@ namespace BoltSort.Gameplay
         private Image         _tabRow;
         private GameObject    _popup;
 
+        // ── Purchase-popup state (premium animated buy flow) ──
+        private RenderTexture _blurRt;
+        private RectTransform _popupCard;
+        private RectTransform _popupThumb;
+        private RectTransform _popupPriceRow;
+        private RectTransform _confettiHost;
+        private RectTransform _buyRt;
+        private Button        _buyBtn;
+        private Text          _buyLabel;
+        private Vector2       _thumbHome;
+        private Coroutine     _thumbIdleCo;
+        private static Sprite _radialSprite;
+        private static Sprite _softCircle;
+
         // Card colours / fallbacks.
         private static readonly Color CardBgFallback = new(0.13f, 0.13f, 0.25f, 0.98f);
         private static readonly Color CoinGold       = new(1f, 0.85f, 0.20f, 1f);
@@ -608,24 +622,64 @@ namespace BoltSort.Gameplay
             _                  => new Color(0.35f, 0.30f, 0.55f, 1f),
         };
 
-        // ── Purchase popup (skins, coins) ────────────────────────────────────────────
+        // ── Purchase popup (skins) — premium animated buy flow ───────────────────────
+        // Tap outside the card closes it (no cancel/X button). A blurred snapshot of the
+        // shop sits behind a clean rounded card with a radial reward glow, a living
+        // thumbnail, and a large animated Buy CTA. Confirming fires confetti + reward burst.
 
         private void ShowPurchasePopup(SkinItem item)
         {
             ClosePopup();
-            _popup = MakeDimmer();
 
+            // Root — full-screen, invisible but tap-to-close outside the card.
+            _popup = new GameObject("Popup");
+            _popup.transform.SetParent(_canvas.transform, false);
+            var rootImg = _popup.AddComponent<Image>();
+            rootImg.color = new Color(0f, 0f, 0f, 0.001f); // clear during blur capture, still raycastable
+            Stretch(rootImg.rectTransform);
+            _popup.AddComponent<Button>().onClick.AddListener(ClosePopup);
+
+            // Blur layer — filled in after an end-of-frame screen capture.
+            var blur = new GameObject("Blur").AddComponent<RawImage>();
+            blur.transform.SetParent(_popup.transform, false);
+            blur.color = new Color(1f, 1f, 1f, 0f);
+            blur.raycastTarget = false;
+            Stretch(blur.rectTransform);
+
+            // Content — hidden until the snapshot is taken so it is not captured into the blur.
+            var content = new GameObject("Content", typeof(RectTransform));
+            content.transform.SetParent(_popup.transform, false);
+            Stretch(content.GetComponent<RectTransform>());
+            content.SetActive(false);
+
+            // Radial reward gradient (white core → pastel rim) behind the card.
+            var glowGO = new GameObject("RadialGlow");
+            glowGO.transform.SetParent(content.transform, false);
+            var glowImg = glowGO.AddComponent<Image>();
+            glowImg.sprite = RadialGradient();
+            glowImg.color = new Color(1f, 1f, 1f, 0f);
+            glowImg.raycastTarget = false;
+            var glowRt = glowGO.GetComponent<RectTransform>();
+            glowRt.anchorMin = glowRt.anchorMax = new Vector2(0.5f, 0.5f);
+            glowRt.pivot = new Vector2(0.5f, 0.5f);
+            glowRt.anchoredPosition = new Vector2(0f, 40f);
+            glowRt.sizeDelta = new Vector2(780f, 780f);
+
+            // Clean rounded card — dedicated shop panel art (elements_background).
             var card = new GameObject("Card");
-            card.transform.SetParent(_popup.transform, false);
+            card.transform.SetParent(content.transform, false);
             var cardImg = card.AddComponent<Image>();
-            GameAssets.Apply(cardImg, GameAssets.ShopPanel, false);
-            if (GameAssets.ShopPanel == null) cardImg.color = new Color(0.10f, 0.10f, 0.18f, 0.99f);
-            card.AddComponent<Button>().onClick.AddListener(() => { });
-            var cr = card.GetComponent<RectTransform>();
-            cr.anchorMin = cr.anchorMax = new Vector2(0.5f, 0.5f);
-            cr.pivot = new Vector2(0.5f, 0.5f);
-            cr.sizeDelta = new Vector2(520f, 560f);
+            if (GameAssets.ShopElementsBg != null)
+            { cardImg.sprite = GameAssets.ShopElementsBg; cardImg.type = Image.Type.Simple; cardImg.color = Color.white; }
+            else cardImg.color = new Color(0.10f, 0.12f, 0.22f, 0.99f);
+            card.AddComponent<Button>().onClick.AddListener(() => { }); // consume taps on the card
+            _popupCard = card.GetComponent<RectTransform>();
+            _popupCard.anchorMin = _popupCard.anchorMax = new Vector2(0.5f, 0.5f);
+            _popupCard.pivot = new Vector2(0.5f, 0.5f);
+            _popupCard.anchoredPosition = Vector2.zero;
+            _popupCard.sizeDelta = new Vector2(620f, 740f);
 
+            // Living thumbnail (square 1:1; float + pulse while open).
             var thumbGO = new GameObject("Thumb");
             thumbGO.transform.SetParent(card.transform, false);
             var thumbImg = thumbGO.AddComponent<Image>();
@@ -633,33 +687,109 @@ namespace BoltSort.Gameplay
             if (thumb != null) { thumbImg.sprite = thumb; thumbImg.color = Color.white; thumbImg.preserveAspect = true; }
             else               thumbImg.color = SwatchColor(item);
             thumbImg.raycastTarget = false;
-            var thr = thumbGO.GetComponent<RectTransform>();
-            thr.anchorMin = thr.anchorMax = new Vector2(0.5f, 1f);
-            thr.pivot = new Vector2(0.5f, 1f);
-            thr.sizeDelta = new Vector2(220f, 220f);
-            thr.anchoredPosition = new Vector2(0f, -48f);
+            _popupThumb = thumbGO.GetComponent<RectTransform>();
+            _popupThumb.anchorMin = _popupThumb.anchorMax = new Vector2(0.5f, 0.5f);
+            _popupThumb.pivot = new Vector2(0.5f, 0.5f);
+            _popupThumb.sizeDelta = new Vector2(300f, 300f);
+            _thumbHome = new Vector2(0f, 150f);
+            _popupThumb.anchoredPosition = _thumbHome;
 
-            AddCardLabel(card, item.DisplayName, 38, new Vector2(0f, 0.40f), new Vector2(1f, 0.50f), Color.white);
-            AddCardLabel(card, TrF("key_cost_coins_fmt", item.UnlockCost), 40,
-                         new Vector2(0f, 0.30f), new Vector2(1f, 0.40f), CoinGold);
+            // Name + price (≈35–40% larger than before).
+            AddCardLabel(card, item.DisplayName, 50,
+                         new Vector2(0.06f, 0.46f), new Vector2(0.94f, 0.56f), Color.white);
+            BuildPopupPrice(card, item.UnlockCost);
 
-            var confirm = CreateButton(card, "Confirm", Tr("key_buy"), 32, BtnGreenFb,
-                                       () => ConfirmPurchase(item));
-            var cfr = confirm.GetComponent<RectTransform>();
-            cfr.anchorMin = cfr.anchorMax = new Vector2(0.5f, 0f);
-            cfr.pivot = new Vector2(0.5f, 0f);
-            cfr.sizeDelta = new Vector2(300f, 64f);
-            cfr.anchoredPosition = new Vector2(0f, 120f);
+            // Big animated Buy CTA.
+            BuildBuyButton(card, Tr("key_buy"), () => ConfirmPurchase(item));
 
-            var cancel = CreateButton(card, "Cancel", Tr("key_cancel"), 30,
-                                      new Color(0.40f, 0.20f, 0.24f, 1f), ClosePopup);
-            var cnr = cancel.GetComponent<RectTransform>();
-            cnr.anchorMin = cnr.anchorMax = new Vector2(0.5f, 0f);
-            cnr.pivot = new Vector2(0.5f, 0f);
-            cnr.sizeDelta = new Vector2(300f, 60f);
-            cnr.anchoredPosition = new Vector2(0f, 44f);
+            // Confetti host (front of card).
+            var confHost = new GameObject("ConfettiHost", typeof(RectTransform));
+            confHost.transform.SetParent(content.transform, false);
+            Stretch(confHost.GetComponent<RectTransform>());
+            _confettiHost = confHost.GetComponent<RectTransform>();
 
-            PopIn(cr);
+            StartCoroutine(RevealPopup(blur, content, glowImg));
+        }
+
+        /// <summary>Centred [coin amount] price row, larger than the card rows for popup emphasis.</summary>
+        private void BuildPopupPrice(GameObject card, int cost)
+        {
+            var row = new GameObject("PriceRow", typeof(RectTransform));
+            row.transform.SetParent(card.transform, false);
+            _popupPriceRow = row.GetComponent<RectTransform>();
+            _popupPriceRow.anchorMin = _popupPriceRow.anchorMax = new Vector2(0.5f, 0.5f);
+            _popupPriceRow.pivot = new Vector2(0.5f, 0.5f);
+            _popupPriceRow.anchoredPosition = new Vector2(0f, -95f);
+            _popupPriceRow.sizeDelta = new Vector2(360f, 70f);
+
+            var hlg = row.AddComponent<HorizontalLayoutGroup>();
+            hlg.childAlignment = TextAnchor.MiddleCenter; hlg.spacing = 8f;
+            hlg.childControlWidth = false; hlg.childControlHeight = false;
+            hlg.childForceExpandWidth = false; hlg.childForceExpandHeight = false;
+            var csf = row.AddComponent<ContentSizeFitter>();
+            csf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var iconGO = new GameObject("Icon");
+            iconGO.transform.SetParent(row.transform, false);
+            var iconImg = iconGO.AddComponent<Image>();
+            var coin = GameAssets.ShopCoinShop ?? GameAssets.ShopCoin2 ?? GameAssets.ShopCoinIcon;
+            if (coin != null) { iconImg.sprite = coin; iconImg.color = Color.white; iconImg.preserveAspect = true; }
+            else iconImg.color = CoinGold;
+            iconImg.raycastTarget = false;
+            iconImg.rectTransform.sizeDelta = new Vector2(62f, 62f);
+            var le = iconGO.AddComponent<LayoutElement>();
+            le.preferredWidth = le.preferredHeight = 62f;
+
+            var t = new GameObject("Amount").AddComponent<Text>();
+            t.transform.SetParent(row.transform, false);
+            t.font = _font; t.fontSize = 52; t.fontStyle = FontStyle.Bold;
+            t.alignment = TextAnchor.MiddleLeft; t.color = CoinGold; t.supportRichText = false;
+            t.horizontalOverflow = HorizontalWrapMode.Overflow; t.verticalOverflow = VerticalWrapMode.Overflow;
+            t.text = FormatCoins(cost); t.raycastTarget = false;
+            AddOutline(t.gameObject);
+            var tle = t.gameObject.AddComponent<LayoutElement>();
+            tle.preferredHeight = 56f;
+            var tcsf = t.gameObject.AddComponent<ContentSizeFitter>();
+            tcsf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+        }
+
+        /// <summary>Large rounded green CTA with idle pulse, a sweeping shine, and press feedback.</summary>
+        private void BuildBuyButton(GameObject card, string label, System.Action onClick)
+        {
+            var go = new GameObject("BuyButton");
+            go.transform.SetParent(card.transform, false);
+            var img = go.AddComponent<Image>();
+            if (GameAssets.ShopBtnGreen != null)
+            { img.sprite = GameAssets.ShopBtnGreen; img.type = Image.Type.Sliced; img.color = Color.white; }
+            else img.color = BtnGreenFb;
+            go.AddComponent<RectMask2D>(); // clip the moving shine to the button bounds
+            _buyBtn = go.AddComponent<Button>();
+            _buyBtn.transition = Selectable.Transition.None;
+            _buyRt = go.GetComponent<RectTransform>();
+            _buyRt.anchorMin = _buyRt.anchorMax = new Vector2(0.5f, 0.5f);
+            _buyRt.pivot = new Vector2(0.5f, 0.5f);
+            _buyRt.anchoredPosition = new Vector2(0f, -250f);
+            _buyRt.sizeDelta = new Vector2(420f, 128f);
+
+            var shineGO = new GameObject("Shine");
+            shineGO.transform.SetParent(go.transform, false);
+            var shine = shineGO.AddComponent<Image>();
+            shine.sprite = SoftCircle(); shine.color = new Color(1f, 1f, 1f, 0f); shine.raycastTarget = false;
+            var srt = shineGO.GetComponent<RectTransform>();
+            srt.anchorMin = srt.anchorMax = new Vector2(0.5f, 0.5f);
+            srt.pivot = new Vector2(0.5f, 0.5f);
+            srt.sizeDelta = new Vector2(180f, 220f);
+
+            _buyLabel = MakeLabel(go, "Label", label, _font, 46, TextAnchor.MiddleCenter, bold: true, shadow: true);
+            _buyLabel.color = Color.white; _buyLabel.raycastTarget = false;
+            var lr = _buyLabel.rectTransform;
+            lr.anchorMin = Vector2.zero; lr.anchorMax = Vector2.one; lr.offsetMin = lr.offsetMax = Vector2.zero;
+
+            _buyBtn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
+            _buyBtn.onClick.AddListener(() => StartCoroutine(BuyPressFeedback(onClick)));
+
+            // No idle pulse/bounce — the button stays static; only the sweeping shine lives.
+            StartCoroutine(BuyShineSweep(srt, shine));
         }
 
         private void ConfirmPurchase(SkinItem item)
@@ -670,19 +800,329 @@ namespace BoltSort.Gameplay
                 case PurchaseResult.Success:
                     AudioMgr.Instance?.PlaySFX("extra_bonus");
                     SkinManager.EquipSkin(item); // fires OnSkinChanged → currency refresh
-                    ClosePopup();
-                    RebuildGrid();
-                    ShowToast(Tr("key_unlocked"));
+                    StartCoroutine(CelebratePurchase());
                     break;
                 case PurchaseResult.NotEnoughCoins:
                     ShowToast(Tr("key_not_enough_coins"));
-                    if (_popup != null)
-                        StartCoroutine(ShakeAnim(_popup.transform.Find("Card") as RectTransform));
+                    if (_popupCard != null) StartCoroutine(ShakeAnim(_popupCard));
                     break;
                 default:
                     ClosePopup();
                     break;
             }
+        }
+
+        // ── Purchase popup — animation & celebration ─────────────────────────────────
+
+        private IEnumerator RevealPopup(RawImage blur, GameObject content, Image glow)
+        {
+            yield return BuildBlur(blur);
+            if (content == null) yield break;
+            content.SetActive(true);
+            if (glow != null) StartCoroutine(GlowIdle(glow));
+            if (_popupThumb != null) _thumbIdleCo = StartCoroutine(ThumbIdle(_popupThumb));
+            if (_popupCard != null) PopIn(_popupCard);
+        }
+
+        /// <summary>Captures the screen, box-blurs it via successive downsample blits, shows it behind the card.</summary>
+        private IEnumerator BuildBlur(RawImage target)
+        {
+            yield return new WaitForEndOfFrame();
+            int w = Mathf.Max(2, Screen.width), h = Mathf.Max(2, Screen.height);
+
+            RenderTexture full = null;
+            try { full = RenderTexture.GetTemporary(w, h, 0); ScreenCapture.CaptureScreenshotIntoRenderTexture(full); }
+            catch { if (full != null) { RenderTexture.ReleaseTemporary(full); full = null; } }
+            if (full == null)
+            {
+                if (target != null) StartCoroutine(FadeRaw(target, new Color(0f, 0f, 0f, 0.72f), 0.18f));
+                yield break;
+            }
+
+            int dw = Mathf.Max(2, w / 2), dh = Mathf.Max(2, h / 2);
+            var a = RenderTexture.GetTemporary(dw, dh, 0); a.filterMode = FilterMode.Bilinear;
+            Graphics.Blit(full, a);
+            RenderTexture.ReleaseTemporary(full);
+            for (int i = 0; i < 4; i++)
+            {
+                int nw = Mathf.Max(2, dw / 2), nh = Mathf.Max(2, dh / 2);
+                var b = RenderTexture.GetTemporary(nw, nh, 0); b.filterMode = FilterMode.Bilinear;
+                Graphics.Blit(a, b);
+                RenderTexture.ReleaseTemporary(a); a = b; dw = nw; dh = nh;
+            }
+
+            _blurRt = new RenderTexture(Mathf.Max(2, w / 2), Mathf.Max(2, h / 2), 0) { filterMode = FilterMode.Bilinear };
+            _blurRt.Create();
+            Graphics.Blit(a, _blurRt);
+            RenderTexture.ReleaseTemporary(a);
+
+            if (target != null)
+            {
+                target.texture = _blurRt;
+                target.uvRect = new Rect(0f, 1f, 1f, -1f); // capture is bottom-up; flip for display
+                StartCoroutine(FadeRaw(target, new Color(0.72f, 0.72f, 0.78f, 1f), 0.18f));
+            }
+        }
+
+        private IEnumerator FadeRaw(RawImage img, Color target, float dur)
+        {
+            var start = new Color(target.r, target.g, target.b, 0f);
+            float t = 0f;
+            while (t < dur && img != null)
+            { t += Time.unscaledDeltaTime; img.color = Color.Lerp(start, target, t / dur); yield return null; }
+            if (img != null) img.color = target;
+        }
+
+        private IEnumerator GlowIdle(Image img)
+        {
+            float t = 0f;
+            while (img != null && _popup != null)
+            {
+                t += Time.unscaledDeltaTime;
+                img.color = new Color(1f, 1f, 1f, 0.42f + 0.16f * Mathf.Sin(t * 1.6f));
+                float s = 1f + 0.05f * Mathf.Sin(t * 1.2f);
+                img.rectTransform.localScale = new Vector3(s, s, 1f);
+                img.rectTransform.localRotation = Quaternion.Euler(0f, 0f, t * 6f);
+                yield return null;
+            }
+        }
+
+        private IEnumerator ThumbIdle(RectTransform rt)
+        {
+            float t = 0f;
+            while (rt != null && _popup != null)
+            {
+                t += Time.unscaledDeltaTime;
+                rt.anchoredPosition = new Vector2(_thumbHome.x, _thumbHome.y + 9f * Mathf.Sin(t * 2.0f));
+                float s = 1f + 0.045f * Mathf.Sin(t * 2.6f);
+                rt.localScale = new Vector3(s, s, 1f);
+                yield return null;
+            }
+        }
+
+        private IEnumerator BuyShineSweep(RectTransform srt, Image shine)
+        {
+            while (srt != null && _popup != null)
+            {
+                float t = 0f; const float dur = 1.1f;
+                while (t < dur && srt != null)
+                {
+                    t += Time.unscaledDeltaTime; float p = t / dur;
+                    srt.anchoredPosition = new Vector2(Mathf.Lerp(-230f, 230f, p), 0f);
+                    if (shine != null) shine.color = new Color(1f, 1f, 1f, 0.3f * Mathf.Sin(p * Mathf.PI));
+                    yield return null;
+                }
+                yield return new WaitForSecondsRealtime(0.9f);
+            }
+        }
+
+        private IEnumerator BuyPressFeedback(System.Action onClick)
+        {
+            if (_buyRt != null)
+            {
+                yield return TweenUtility.LerpRectScale(_buyRt, new Vector3(0.9f, 0.9f, 1f), 0.07f, TweenUtility.EaseOutQuad);
+                yield return TweenUtility.LerpRectScale(_buyRt, Vector3.one, 0.09f, TweenUtility.EaseOutBack);
+            }
+            onClick?.Invoke();
+        }
+
+        private IEnumerator CelebratePurchase()
+        {
+            // Transform the CTA (now static apart from this one-shot).
+            if (_buyBtn != null) _buyBtn.interactable = false;
+            if (_buyRt != null) _buyRt.localScale = Vector3.one;
+            if (_buyLabel != null) _buyLabel.text = "✓";
+
+            // Stop idle float so the bounce reads cleanly.
+            if (_thumbIdleCo != null) { StopCoroutine(_thumbIdleCo); _thumbIdleCo = null; }
+            if (_popupThumb != null) _popupThumb.anchoredPosition = _thumbHome;
+
+            ScreenFlashPopup();
+            RadialBurst();
+            StartCoroutine(BurstConfettiPopup());
+            SpawnCoinFlourish();
+            if (_popupCard != null)     StartCoroutine(PunchScale(_popupCard, 1.07f, 0.20f));
+            if (_popupThumb != null)    StartCoroutine(PunchScale(_popupThumb, 1.28f, 0.32f));
+            if (_popupPriceRow != null) StartCoroutine(PunchScale(_popupPriceRow, 1.22f, 0.30f));
+
+            yield return new WaitForSecondsRealtime(1.0f);
+
+            ClosePopup();
+            RebuildGrid();
+            ShowToast(Tr("key_unlocked"));
+        }
+
+        private IEnumerator PunchScale(RectTransform rt, float peak, float dur)
+        {
+            if (rt == null) yield break;
+            float t = 0f;
+            while (t < dur && rt != null)
+            {
+                t += Time.unscaledDeltaTime;
+                float s = 1f + (peak - 1f) * Mathf.Sin(Mathf.Clamp01(t / dur) * Mathf.PI);
+                rt.localScale = new Vector3(s, s, 1f);
+                yield return null;
+            }
+            if (rt != null) rt.localScale = Vector3.one;
+        }
+
+        private void ScreenFlashPopup()
+        {
+            if (_popup == null) return;
+            var go = new GameObject("Flash");
+            go.transform.SetParent(_popup.transform, false);
+            var img = go.AddComponent<Image>();
+            img.color = new Color(1f, 1f, 1f, 0f); img.raycastTarget = false;
+            Stretch(img.rectTransform);
+            StartCoroutine(FlashAnim(img));
+        }
+
+        private IEnumerator FlashAnim(Image img)
+        {
+            float t = 0f;
+            while (t < 0.07f) { t += Time.unscaledDeltaTime; if (img != null) img.color = new Color(1f, 1f, 1f, Mathf.Lerp(0f, 0.5f, t / 0.07f)); yield return null; }
+            t = 0f;
+            while (t < 0.25f) { t += Time.unscaledDeltaTime; if (img != null) img.color = new Color(1f, 1f, 1f, Mathf.Lerp(0.5f, 0f, t / 0.25f)); yield return null; }
+            if (img != null) Destroy(img.gameObject);
+        }
+
+        private void RadialBurst()
+        {
+            if (_popup == null) return;
+            var go = new GameObject("Burst");
+            go.transform.SetParent(_popup.transform, false);
+            var img = go.AddComponent<Image>();
+            img.sprite = SoftCircle(); img.color = new Color(1f, 1f, 1f, 0.7f); img.raycastTarget = false;
+            var rt = go.GetComponent<RectTransform>();
+            rt.anchorMin = rt.anchorMax = new Vector2(0.5f, 0.5f);
+            rt.pivot = new Vector2(0.5f, 0.5f);
+            rt.anchoredPosition = new Vector2(0f, 40f);
+            rt.sizeDelta = new Vector2(260f, 260f);
+            StartCoroutine(BurstAnim(rt, img));
+        }
+
+        private IEnumerator BurstAnim(RectTransform rt, Image img)
+        {
+            float t = 0f; const float dur = 0.55f;
+            while (t < dur && rt != null)
+            {
+                t += Time.unscaledDeltaTime; float p = t / dur;
+                float s = Mathf.Lerp(0.4f, 4f, TweenUtility.EaseOutQuad(p));
+                rt.localScale = new Vector3(s, s, 1f);
+                if (img != null) img.color = new Color(1f, 1f, 1f, 0.7f * (1f - p));
+                yield return null;
+            }
+            if (rt != null) Destroy(rt.gameObject);
+        }
+
+        private IEnumerator BurstConfettiPopup()
+        {
+            var sprites = GameAssets.ConfettiPieces;
+            if (sprites == null || sprites.Length == 0 || _confettiHost == null) yield break;
+            const int count = 26;
+            for (int i = 0; i < count; i++)
+            {
+                if (_confettiHost == null) yield break;
+                var go = new GameObject("Conf");
+                go.transform.SetParent(_confettiHost, false);
+                var img = go.AddComponent<Image>();
+                img.sprite = sprites[UnityEngine.Random.Range(0, sprites.Length)];
+                img.color = Color.white; img.raycastTarget = false;
+                var rt = go.GetComponent<RectTransform>();
+                rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.sizeDelta = new Vector2(26f, 26f);
+                rt.anchoredPosition = new Vector2(UnityEngine.Random.Range(-160f, 160f), UnityEngine.Random.Range(120f, 270f));
+                StartCoroutine(FlyConfettiPopup(rt, img,
+                    UnityEngine.Random.Range(220f, 460f),
+                    UnityEngine.Random.Range(-300f, 300f),
+                    UnityEngine.Random.Range(1.4f, 2.6f)));
+                yield return new WaitForSecondsRealtime(0.03f);
+            }
+        }
+
+        private void SpawnCoinFlourish()
+        {
+            var coin = GameAssets.ShopCoinShop ?? GameAssets.ShopCoin2 ?? GameAssets.ShopCoinIcon;
+            var host = _confettiHost != null ? _confettiHost : (_popup != null ? _popup.transform as RectTransform : null);
+            if (host == null) return;
+            for (int i = 0; i < 7; i++)
+            {
+                var go = new GameObject("Coin");
+                go.transform.SetParent(host, false);
+                var img = go.AddComponent<Image>();
+                if (coin != null) { img.sprite = coin; img.preserveAspect = true; img.color = Color.white; }
+                else img.color = CoinGold;
+                img.raycastTarget = false;
+                var rt = go.GetComponent<RectTransform>();
+                rt.anchorMin = rt.anchorMax = rt.pivot = new Vector2(0.5f, 0.5f);
+                rt.sizeDelta = new Vector2(54f, 54f);
+                rt.anchoredPosition = new Vector2(UnityEngine.Random.Range(-50f, 50f), -60f);
+                StartCoroutine(FlyConfettiPopup(rt, img,
+                    UnityEngine.Random.Range(-300f, -180f), // negative speed → rises
+                    UnityEngine.Random.Range(-60f, 60f),
+                    UnityEngine.Random.Range(0.8f, 1.3f)));
+            }
+        }
+
+        private IEnumerator FlyConfettiPopup(RectTransform rt, Image img, float speed, float rot, float life)
+        {
+            float t = 0f;
+            while (t < life && rt != null)
+            {
+                t += Time.unscaledDeltaTime;
+                var p = rt.anchoredPosition; p.y -= speed * Time.unscaledDeltaTime; rt.anchoredPosition = p;
+                rt.Rotate(0f, 0f, rot * Time.unscaledDeltaTime);
+                float a = 1f - Mathf.Clamp01((t - life * 0.6f) / (life * 0.4f));
+                if (img != null) img.color = new Color(img.color.r, img.color.g, img.color.b, a);
+                yield return null;
+            }
+            if (rt != null) Destroy(rt.gameObject);
+        }
+
+        // ── Procedural sprites for the purchase popup ────────────────────────────────
+
+        private static Sprite RadialGradient()
+        {
+            if (_radialSprite != null) return _radialSprite;
+            const int size = 128;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+                { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+            var px = new Color[size * size];
+            float c = (size - 1) * 0.5f, maxR = size * 0.5f;
+            Color inner = Color.white, outer = new Color(0.80f, 0.82f, 1f);
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = x - c, dy = y - c;
+                    float d = Mathf.Clamp01(Mathf.Sqrt(dx * dx + dy * dy) / maxR);
+                    var col = Color.Lerp(inner, outer, d);
+                    float a = Mathf.Clamp01(1f - d); a *= a;
+                    px[y * size + x] = new Color(col.r, col.g, col.b, a);
+                }
+            tex.SetPixels(px); tex.Apply();
+            _radialSprite = Sprite.Create(tex, new Rect(0, 0, size, size), Vector2.one * 0.5f, size);
+            return _radialSprite;
+        }
+
+        private static Sprite SoftCircle()
+        {
+            if (_softCircle != null) return _softCircle;
+            const int size = 64;
+            var tex = new Texture2D(size, size, TextureFormat.RGBA32, false)
+                { filterMode = FilterMode.Bilinear, wrapMode = TextureWrapMode.Clamp };
+            var px = new Color[size * size];
+            float c = (size - 1) * 0.5f, maxR = size * 0.5f;
+            for (int y = 0; y < size; y++)
+                for (int x = 0; x < size; x++)
+                {
+                    float dx = x - c, dy = y - c;
+                    float d = Mathf.Clamp01(Mathf.Sqrt(dx * dx + dy * dy) / maxR);
+                    float a = Mathf.Clamp01(1f - d); a *= a;
+                    px[y * size + x] = new Color(1f, 1f, 1f, a);
+                }
+            tex.SetPixels(px); tex.Apply();
+            _softCircle = Sprite.Create(tex, new Rect(0, 0, size, size), Vector2.one * 0.5f, size);
+            return _softCircle;
         }
 
         private void ShowComingSoon()
@@ -733,6 +1173,9 @@ namespace BoltSort.Gameplay
         private void ClosePopup()
         {
             if (_popup != null) { Destroy(_popup); _popup = null; }
+            if (_blurRt != null) { _blurRt.Release(); Destroy(_blurRt); _blurRt = null; }
+            _popupCard = _popupThumb = _popupPriceRow = _confettiHost = _buyRt = null;
+            _buyBtn = null; _buyLabel = null; _thumbIdleCo = null;
         }
 
         // ── Currency refresh ──────────────────────────────────────────────────────────
@@ -835,6 +1278,7 @@ namespace BoltSort.Gameplay
         {
             SkinManager.OnSkinChanged -= OnBalance;
             if (EconomyManager.Instance != null) EconomyManager.Instance.OnBalanceChanged -= OnBalance;
+            if (_blurRt != null) { _blurRt.Release(); Destroy(_blurRt); _blurRt = null; }
         }
 
         // ── Navigation ────────────────────────────────────────────────────────────────

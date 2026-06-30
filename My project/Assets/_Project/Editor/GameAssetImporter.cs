@@ -43,8 +43,6 @@ namespace BoltSort.Editor
                         "tile_level_locked",   1024, 1024);
             ImportNamed("Assets/game_assets/screens/ad_screen.png",
                         "ad_frame",            2048, 1152);
-            ImportNamed("Assets/game_assets/shop/shop_frame.png",
-                        "shop_panel",          1152, 2048);
 
             // Single-sprite images — name matches filename, use Single mode
             ImportSingle("Assets/game_assets/screens/game_background.png");

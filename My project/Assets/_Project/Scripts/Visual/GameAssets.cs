@@ -32,7 +32,6 @@ namespace BoltSort.Visual
         public static Sprite MiniatureTubeDefault     => LoadRes(MiniDir + "tube_default");
         public static Sprite MiniatureWallpaperDefault => LoadRes(MiniDir + "wallpaper_default");
         public static Sprite VictoryBg       => LoadRes("Sprites/victory_screen");
-        public static Sprite ShopPanel       => LoadRes("Sprites/shop_frame");
         public static Sprite ShopTabTubesSelected        => LoadRes("Sprites/Shop/selected_tubes");
         public static Sprite ShopTabTubesUnselected      => LoadRes("Sprites/Shop/unselected_tubes");
         public static Sprite ShopTabWallpapersSelected   => LoadRes("Sprites/Shop/selected_wallpapers");
@@ -135,6 +134,7 @@ namespace BoltSort.Visual
         public static Sprite ShopCoinShop     => LoadRes("Sprites/Shop/coin_shop");
         public static Sprite ShopDiamondShop  => LoadRes("Sprites/Shop/diamond_shop");
         public static Sprite ShopCardBg       => LoadRes("Sprites/Shop/card_bg");
+        public static Sprite ShopElementsBg   => LoadRes("Sprites/Shop/elements_background");
         public static Sprite ShopEtiqueta     => LoadRes("Sprites/Shop/etiqueta");
         public static Sprite ShopBtnGreen     => LoadRes("Sprites/Shop/btn_green");
         public static Sprite ShopBtnLightBlue => LoadRes("Sprites/Shop/btn_light_blue");

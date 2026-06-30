@@ -67,8 +67,7 @@ namespace BoltSort.Gameplay
             var card = new GameObject("ShopCard");
             card.transform.SetParent(_overlay.transform, false);
             var cardImg = card.AddComponent<Image>();
-            GameAssets.Apply(cardImg, GameAssets.ShopPanel, preserveAspect: false);
-            if (GameAssets.ShopPanel == null) cardImg.color = new Color(0.07f, 0.07f, 0.14f, 0.98f);
+            cardImg.color = new Color(0.07f, 0.07f, 0.14f, 0.98f);
             var cardRt = card.GetComponent<RectTransform>();
             cardRt.anchorMin        = new Vector2(0.5f, 0.5f);
             cardRt.anchorMax        = new Vector2(0.5f, 0.5f);
