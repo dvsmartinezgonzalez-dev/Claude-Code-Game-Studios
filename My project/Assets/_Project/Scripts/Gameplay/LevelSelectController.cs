@@ -104,7 +104,7 @@ namespace BoltSort.Gameplay
             canvasGO.AddComponent<GraphicRaycaster>();
 
             var bg = MakePanel(canvasGO, "Background", BoltSortTheme.BackgroundDeep);
-            GameAssets.Apply(bg.GetComponent<Image>(), GameAssets.GameBackground);
+            GameAssets.Apply(bg.GetComponent<Image>(), GameAssets.LevelSelectBackground ?? GameAssets.GameBackground);
             Stretch(bg.GetComponent<RectTransform>());
 
             var safeAreaGO = new GameObject("SafeArea", typeof(RectTransform));

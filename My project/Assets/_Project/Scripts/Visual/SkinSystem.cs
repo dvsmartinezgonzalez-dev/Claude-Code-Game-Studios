@@ -65,18 +65,21 @@ namespace BoltSort.Visual
     public static class SkinCatalogue
     {
         private const string WallDir = "Sprites/Shop/Wallpapers/";
+        private const string ThumbDir = "Sprites/Shop/Miniatures/";
 
         private static readonly List<SkinItem> _tubes = new()
         {
             new SkinItem { SkinId = "tube_default", DisplayName = "Default",
-                           Category = SkinCategory.Tubes, IsDefault = true, AssetFolder = "" },
+                           Category = SkinCategory.Tubes, IsDefault = true, AssetFolder = "",
+                           ThumbnailPath = ThumbDir + "tube_default" },
             // Future: new SkinItem { SkinId = "tube_neon", AssetFolder = "neon/", UnlockCost = 1000 }
         };
 
         private static readonly List<SkinItem> _balls = new()
         {
             new SkinItem { SkinId = "ball_default", DisplayName = "Default",
-                           Category = SkinCategory.Balls, IsDefault = true, AssetFolder = "" },
+                           Category = SkinCategory.Balls, IsDefault = true, AssetFolder = "",
+                           ThumbnailPath = ThumbDir + "ball_default" },
             new SkinItem { SkinId = "ball_icecream", DisplayName = "Ice Cream",
                            Category = SkinCategory.Balls, IsDefault = false, UnlockCost = 1000,
                            AssetFolder = "IceCream/",
@@ -114,22 +117,22 @@ namespace BoltSort.Visual
         private static readonly List<SkinItem> _backgrounds = new()
         {
             new SkinItem { SkinId = "bg_default", DisplayName = "Default",
-                           Category = SkinCategory.Backgrounds, IsDefault = true },
-            Wall("bg_boreal",    "Boreal",    "boreal"),
-            Wall("bg_planets",   "Planets",   "planets"),
-            Wall("bg_nature",    "Nature",    "nature"),
-            Wall("bg_lab",       "Lab",       "lab"),
-            Wall("bg_viking",    "Viking",    "viking"),
-            Wall("bg_icecream",  "Ice Cream", "icecream"),
-            Wall("bg_halloween", "Halloween", "halloween"),
-            Wall("bg_christmas", "Christmas", "christmas"),
-            Wall("bg_easter",    "Easter",    "easter"),
+                           Category = SkinCategory.Backgrounds, IsDefault = true,
+                           ThumbnailPath = ThumbDir + "wallpaper_default" },
+            Wall("bg_boreal",   "Boreal",    "boreal"),
+            Wall("bg_planets",  "Planets",   "planets"),
+            Wall("bg_nature",   "Nature",    "nature"),
+            Wall("bg_lab",      "Lab",       "lab"),
+            Wall("bg_icecream", "Ice Cream", "icecream"),
+            Wall("bg_jungle",   "Jungle",    "jungle"),
+            Wall("bg_relax",    "Relax",     "relax"),
+            Wall("bg_winter",   "Winter",    "winter"),
         };
 
         private static SkinItem Wall(string id, string name, string file) => new SkinItem
         {
             SkinId = id, DisplayName = name, Category = SkinCategory.Backgrounds,
-            ThumbnailPath = WallDir + file, AssetPaths = new[] { WallDir + file },
+            ThumbnailPath = ThumbDir + file, AssetPaths = new[] { WallDir + file },
             UnlockCost = 1000, IsDefault = false,
         };
 

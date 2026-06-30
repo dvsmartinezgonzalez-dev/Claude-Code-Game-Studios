@@ -21,7 +21,14 @@ namespace BoltSort.Visual
         public static Sprite BtnLevels       => LoadRes("Sprites/Levels");
         public static Sprite Superestrella   => LoadRes("Sprites/Superestrella");
         public static Sprite DiamondIcon     => LoadRes("Sprites/Diamante");
-        public static Sprite GameBackground  => LoadRes("Sprites/game_background");
+        public static Sprite GameBackground        => LoadRes("Sprites/game_background");
+        public static Sprite LevelSelectBackground  => LoadRes("Sprites/Levels/levelselect_background");
+
+        // ── Shop skin miniatures (1:1 thumbnails for Shop cards) ─────────────────
+        private const string MiniDir = "Sprites/Shop/Miniatures/";
+        public static Sprite MiniatureBallDefault     => LoadRes(MiniDir + "ball_default");
+        public static Sprite MiniatureTubeDefault     => LoadRes(MiniDir + "tube_default");
+        public static Sprite MiniatureWallpaperDefault => LoadRes(MiniDir + "wallpaper_default");
         public static Sprite VictoryBg       => LoadRes("Sprites/victory_screen");
         public static Sprite ShopPanel       => LoadRes("Sprites/shop_frame");
         public static Sprite ShopTabTubesSelected        => LoadRes("Sprites/Shop/selected_tubes");
