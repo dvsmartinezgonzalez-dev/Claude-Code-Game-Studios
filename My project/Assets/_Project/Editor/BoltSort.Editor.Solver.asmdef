@@ -2,7 +2,8 @@
     "name": "BoltSort.Editor.Solver",
     "rootNamespace": "BoltSort.Editor",
     "references": [
-        "BoltSort.LevelData"
+        "BoltSort.LevelData",
+        "BoltSort.Gameplay"
     ],
     "includePlatforms": [
         "Editor"
