@@ -15,6 +15,29 @@ namespace BoltSort.Gameplay
         public int  StreakBonus;    // extra coins from a 5/10 streak milestone (0 if none)
         public int  MilestoneGems;  // gems from a 25-level milestone (0 if none)
         public int  AchievementGems;// gems from a completion-count achievement (0 if none)
+        public int  SpecialCoins;   // first-time special-level coin bonus (RewardConfig; 0 if none)
+        public int  SpecialGems;    // first-time special-level gem bonus (RewardConfig; 0 if none)
+        public int  RandomGems;     // random gem drop on a normal level (RewardConfig; 0 if none)
+
+        /// <summary>Total coins earned this completion (base + streak + special).</summary>
+        public int TotalCoins => LevelCoins + StreakBonus + SpecialCoins;
+        /// <summary>Total gems earned this completion (milestone + achievement + special + random).</summary>
+        public int TotalGems  => MilestoneGems + AchievementGems + SpecialGems + RandomGems;
+    }
+
+    /// <summary>
+    /// Extra hard-reward inputs for a completion, supplied by the Unity layer so
+    /// <see cref="EconomyData"/> stays free of UnityEngine / RNG / ScriptableObjects. Default value
+    /// (all zero, <see cref="IsSpecial"/> false) grants no bonuses — preserving classic behaviour.
+    /// </summary>
+    public struct BonusRules
+    {
+        public bool  IsSpecial;    // level has mystery / multicolor / frozen mechanics
+        public int   SpecialGems;  // gems to grant on FIRST special completion
+        public int   SpecialCoins; // coins to grant on FIRST special completion
+        public int   RandomGems;   // gems to grant if the random roll succeeds (normal levels)
+        public float RandomProb;   // probability threshold for the random gem drop
+        public float RandomRoll;   // caller-supplied roll in [0,1)
     }
 
     /// <summary>Outcome of a daily-login claim.</summary>
@@ -60,6 +83,9 @@ namespace BoltSort.Gameplay
 
         // ── Level completion: coins, streak, milestone + achievement gems ────────────
         public LevelRewardResult RegisterLevelComplete(int levelId, int stars)
+            => RegisterLevelComplete(levelId, stars, default);
+
+        public LevelRewardResult RegisterLevelComplete(int levelId, int stars, BonusRules bonus)
         {
             var r = new LevelRewardResult();
             bool first = !completedLevels.Contains(levelId);
@@ -97,8 +123,21 @@ namespace BoltSort.Gameplay
                 currentStreak = 0; // replaying an old level breaks the streak
             }
 
-            coins += r.LevelCoins + r.StreakBonus;
-            gems  += r.MilestoneGems + r.AchievementGems;
+            // First-time special-level bonus (mystery / multicolor / frozen). First completion is
+            // inherently once-only (level enters completedLevels above), so no extra "claimed" set.
+            if (first && bonus.IsSpecial)
+            {
+                r.SpecialGems  = bonus.SpecialGems;
+                r.SpecialCoins = bonus.SpecialCoins;
+            }
+            // Random gem drop on normal (non-special) levels — any completion, gated by RNG roll.
+            else if (!bonus.IsSpecial && bonus.RandomRoll < bonus.RandomProb)
+            {
+                r.RandomGems = bonus.RandomGems;
+            }
+
+            coins += r.LevelCoins + r.StreakBonus + r.SpecialCoins;
+            gems  += r.MilestoneGems + r.AchievementGems + r.SpecialGems + r.RandomGems;
             return r;
         }
 
@@ -221,9 +260,15 @@ namespace BoltSort.Gameplay
 
         private void Start()
         {
-            // Auto-claim once-per-day / once-per-week rewards on launch (no dedicated screen).
-            ClaimDailyReward();
-            ClaimWeeklyChest();
+            // Auto-claim once-per-day / once-per-week rewards on launch (no dedicated screen) — but
+            // ONLY for a profile that has already played. A brand-new profile must stay 0 coins / 0
+            // gems until it clears its first level; this also stops "opening the Shop" (which lazily
+            // creates this manager) from granting the daily/weekly chest. See OnLevelComplete.
+            if (_data.completedLevels.Count > 0)
+            {
+                ClaimDailyReward();
+                ClaimWeeklyChest();
+            }
         }
 
         // ── Persistence ──────────────────────────────────────────────────────────────
@@ -264,16 +309,46 @@ namespace BoltSort.Gameplay
         // ── Level completion + drops (System 2 + 3) ──────────────────────────────────
 
         /// <summary>
-        /// Awards coins/gems for completing <paramref name="levelId"/> and (for non-tutorial levels)
-        /// rolls power-up drops. Returns the base coin reward to display on the win card.
+        /// Awards coins/gems for completing <paramref name="levelId"/> (base + streak + milestone +
+        /// achievement, plus the RewardConfig first-time-special and random-gem bonuses for
+        /// non-tutorial levels), rolls power-up drops, and — for non-tutorial levels — performs the
+        /// deferred daily/weekly auto-claim (kept off the fresh-profile / shop-open path so a new
+        /// profile stays 0/0 until the player actually plays). Returns the full reward breakdown.
         /// </summary>
-        public int OnLevelComplete(int levelId, int stars, bool isTutorial)
+        public LevelRewardResult OnLevelComplete(int levelId, int stars, bool isTutorial, bool isSpecial)
         {
-            LevelRewardResult r = _data.RegisterLevelComplete(levelId, stars);
+            var cfg = RewardConfig.Active;
+
+            BonusRules bonus = default;
+            if (!isTutorial)
+            {
+                bonus.IsSpecial    = isSpecial;
+                bonus.SpecialGems  = cfg.DiamondsFirstTimeSpecial;
+                bonus.SpecialCoins = cfg.CoinsFirstTimeSpecial;
+                bonus.RandomGems   = cfg.DiamondsForRandom;
+                bonus.RandomProb   = cfg.ProbRandomDiamond;
+                bonus.RandomRoll   = UnityEngine.Random.value;
+            }
+
+            LevelRewardResult r = _data.RegisterLevelComplete(levelId, stars, bonus);
             Save();
             OnBalanceChanged?.Invoke();
-            if (!isTutorial) TryDropPowerUp();
-            return r.LevelCoins;
+
+            if (cfg.VerboseLogs)
+                Debug.Log($"[Reward] Level {levelId} (special={isSpecial}, tutorial={isTutorial}): " +
+                          $"coins +{r.TotalCoins} [base {r.LevelCoins}, streak {r.StreakBonus}, special {r.SpecialCoins}], " +
+                          $"gems +{r.TotalGems} [milestone {r.MilestoneGems}, achiev {r.AchievementGems}, " +
+                          $"special {r.SpecialGems}, random {r.RandomGems}]  →  coins={_data.coins}, gems={_data.gems}");
+
+            if (!isTutorial)
+            {
+                TryDropPowerUp();
+                // Deferred daily/weekly: both are time-gated (idempotent), so calling per completion
+                // is cheap and means a fresh profile only starts earning them once it engages.
+                ClaimDailyReward();
+                ClaimWeeklyChest();
+            }
+            return r;
         }
 
         /// <summary>Independent 8% rolls per power-up type after a level; blocked at the held cap of 3.</summary>
@@ -327,8 +402,29 @@ namespace BoltSort.Gameplay
 
         public bool SpendCoins(int amount) { bool ok = _data.SpendCoins(amount); if (ok) { Save(); OnBalanceChanged?.Invoke(); } return ok; }
         public bool SpendGems(int amount)  { bool ok = _data.SpendGems(amount);  if (ok) { Save(); OnBalanceChanged?.Invoke(); } return ok; }
-        public void AddCoins(int amount)   { _data.AddCoins(amount); Save(); OnBalanceChanged?.Invoke(); }
-        public void AddGems(int amount)    { _data.AddGems(amount);  Save(); OnBalanceChanged?.Invoke(); }
+        /// <summary>Central audited coin grant. <paramref name="context"/> tags the caller in the log.</summary>
+        public void AddCoins(int amount, string context = null)
+        {
+            if (amount <= 0) return;
+            _data.AddCoins(amount); Save(); OnBalanceChanged?.Invoke();
+            if (RewardConfig.Active.VerboseLogs)
+                Debug.Log($"[Reward] AddCoins +{amount} ({context ?? "unspecified"}) → coins={_data.coins}");
+        }
+
+        /// <summary>Central audited gem (diamond) grant. <paramref name="context"/> tags the caller in the log.</summary>
+        public void AddGems(int amount, string context = null)
+        {
+            if (amount <= 0) return;
+            _data.AddGems(amount);  Save(); OnBalanceChanged?.Invoke();
+            if (RewardConfig.Active.VerboseLogs)
+                Debug.Log($"[Reward] AddGems +{amount} ({context ?? "unspecified"}) → gems={_data.gems}");
+        }
+
+        /// <summary>
+        /// Grants the rewarded-ad gem reward (RewardConfig.DiamondsPerAdWatch). Call this from the
+        /// "watch ad for gems" button after <see cref="AdService.ShowRewardedAd"/> reports success.
+        /// </summary>
+        public void GrantAdGemReward() => AddGems(RewardConfig.Active.DiamondsPerAdWatch, "ad_watch");
 
         public bool BuyExtraTube()     { return BuyPowerUp(PowerUpType.ExtraTube); }
         public bool BuyLightningBolt() { return BuyPowerUp(PowerUpType.LightningBolt); }

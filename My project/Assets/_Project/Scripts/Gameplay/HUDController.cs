@@ -78,8 +78,14 @@ namespace BoltSort.Gameplay
         private Text        _moreLevelsText;
         private Image[]     _winStarImages;
         private Text        _winCoinsText;     // WIN-04
+        private Text        _winGemsText;      // diamonds earned this level (always shown, incl. 0)
         private int         _winStarCount = 3; // WIN-01: set by GameBootstrap before HUD handler fires
         private int         _winCoins     = 0; // WIN-04
+        private int         _winGems      = 0; // diamonds earned this completion
+        private int         _winLevelId   = 0; // for the "double reward every X levels" gate
+        private bool        _rewardDoubled = false; // guards against double-adding on re-click
+        private GameObject  _adWatchButton;    // "watch ad → +N gems"
+        private GameObject  _adDoubleButton;   // "double reward (watch ad)"
         private RectTransform[] _confettiPieces;
         private Image[]     _confettiImages;
         private float[]     _confettiSpeeds;
@@ -524,6 +530,12 @@ namespace BoltSort.Gameplay
                 _winCoinsText.text = "";
             }
 
+            // Diamonds earned — always shown (including 0) for transparency.
+            if (_winGemsText != null) _winGemsText.text = _winGems.ToString();
+
+            // Reward-ad offers (watch-for-gems / double-reward) — visibility per level.
+            ConfigureWinAdButtons();
+
             // Light up only earned stars (WIN-01) and twinkle them; leave unearned stars dim
             if (_winStarImages != null)
             {
@@ -544,6 +556,76 @@ namespace BoltSort.Gameplay
             }
         }
 
+        // ── Win-screen reward-ad buttons ────────────────────────────────────────────
+
+        /// <summary>Sets which reward-ad buttons are visible for the current win, based on
+        /// AdService readiness, the "double every X levels" gate, and whether a reward exists.</summary>
+        private void ConfigureWinAdButtons()
+        {
+            var cfg = RewardConfig.Active;
+            bool adReady = AdService.Instance != null && AdService.Instance.IsRewardedAdReady();
+            bool everyX  = cfg.DoubleRewardEveryXLevels > 0 && _winLevelId > 0 &&
+                           (_winLevelId % cfg.DoubleRewardEveryXLevels == 0);
+            bool canDouble = adReady && !_rewardDoubled && everyX && (_winCoins > 0 || _winGems > 0);
+
+            if (_adWatchButton  != null) { SetButtonInteractable(_adWatchButton, true);  _adWatchButton.SetActive(adReady); }
+            if (_adDoubleButton != null) { SetButtonInteractable(_adDoubleButton, true); _adDoubleButton.SetActive(canDouble); }
+        }
+
+        /// <summary>"Watch ad → +N gems". Grants RewardConfig.DiamondsPerAdWatch on ad success.</summary>
+        private void OnWatchAdForGems()
+        {
+            var ads = AdService.Instance;
+            if (ads == null) return;
+            SetButtonInteractable(_adWatchButton, false);
+            ads.ShowRewardedAd(success =>
+            {
+                if (success)
+                {
+                    EconomyManager.Instance?.GrantAdGemReward();
+                    // Consume the offer this win so the stub can't be tapped for unlimited gems.
+                    if (_adWatchButton != null) _adWatchButton.SetActive(false);
+                }
+                else SetButtonInteractable(_adWatchButton, true);
+            });
+        }
+
+        /// <summary>"Double reward (watch ad)". Adds only the delta so the base (already granted at
+        /// level complete) is never re-added, then reflects the doubled totals on the win card.</summary>
+        private void OnDoubleReward()
+        {
+            if (_rewardDoubled) return;
+            var ads = AdService.Instance;
+            if (ads == null) return;
+            SetButtonInteractable(_adDoubleButton, false);
+            int baseCoins = _winCoins, baseGems = _winGems;
+            ads.ShowRewardedAd(success =>
+            {
+                if (!success) { SetButtonInteractable(_adDoubleButton, true); return; }
+                _rewardDoubled = true;
+                float mult = RewardConfig.Active.MultiplierOnDouble;
+                int extraCoins = Mathf.Max(0, Mathf.RoundToInt(baseCoins * mult) - baseCoins);
+                int extraGems  = Mathf.Max(0, Mathf.RoundToInt(baseGems  * mult) - baseGems);
+                var em = EconomyManager.Instance;
+                if (em != null)
+                {
+                    if (extraCoins > 0) em.AddCoins(extraCoins, "double_reward:" + _winLevelId);
+                    if (extraGems  > 0) em.AddGems(extraGems,  "double_reward:" + _winLevelId);
+                }
+                _winCoins += extraCoins; _winGems += extraGems;
+                if (_winCoinsText != null && _winCoins > 0) _winCoinsText.text = TrFmt("key_coins_fmt", _winCoins);
+                if (_winGemsText  != null) _winGemsText.text = _winGems.ToString();
+                if (_adDoubleButton != null) _adDoubleButton.SetActive(false); // consumed
+            });
+        }
+
+        private static void SetButtonInteractable(GameObject buttonGO, bool on)
+        {
+            if (buttonGO == null) return;
+            var b = buttonGO.GetComponent<Button>();
+            if (b != null) b.interactable = on;
+        }
+
         private void RefreshDeadlock()
         {
             if (_deadlockText != null)
@@ -557,10 +639,13 @@ namespace BoltSort.Gameplay
 
         // Called by GameBootstrap.HandleLevelComplete (subscribed in Awake) before this
         // component's own OnLevelComplete handler (subscribed in Initialize/Start) fires.
-        public void SetWinResult(int stars, int coins)
+        public void SetWinResult(int stars, int coins, int gems = 0, int levelId = 0)
         {
-            _winStarCount = Mathf.Clamp(stars, 0, 3);
-            _winCoins     = Mathf.Max(0, coins);
+            _winStarCount  = Mathf.Clamp(stars, 0, 3);
+            _winCoins      = Mathf.Max(0, coins);
+            _winGems       = Mathf.Max(0, gems);
+            _winLevelId    = levelId;
+            _rewardDoubled = false; // fresh result ⇒ the double-reward offer is available again
         }
 
         private void OnDestroy()
@@ -1092,6 +1177,39 @@ namespace BoltSort.Gameplay
             wcRect.anchoredPosition = new Vector2(0f, -510f);
             wcRect.sizeDelta        = new Vector2(320f, 70f);
 
+            // Diamonds-earned row (icon + count) — always shown for transparency, including 0.
+            var gemsRow = new GameObject("WinGemsRow", typeof(RectTransform));
+            gemsRow.transform.SetParent(winCard.transform, false);
+            var grRect = gemsRow.GetComponent<RectTransform>();
+            grRect.anchorMin = grRect.anchorMax = new Vector2(0.5f, 1f);
+            grRect.pivot     = new Vector2(0.5f, 1f);
+            grRect.anchoredPosition = new Vector2(0f, -556f);
+            grRect.sizeDelta        = new Vector2(320f, 50f);
+            var grHlg = gemsRow.AddComponent<HorizontalLayoutGroup>();
+            grHlg.childAlignment = TextAnchor.MiddleCenter; grHlg.spacing = 6f;
+            grHlg.childControlWidth = false; grHlg.childControlHeight = false;
+            grHlg.childForceExpandWidth = false; grHlg.childForceExpandHeight = false;
+            var grCsf = gemsRow.AddComponent<ContentSizeFitter>();
+            grCsf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+
+            var gemIconGO  = new GameObject("Icon");
+            gemIconGO.transform.SetParent(gemsRow.transform, false);
+            var gemIconImg = gemIconGO.AddComponent<Image>();
+            GameAssets.Apply(gemIconImg, GameAssets.DiamondIcon, preserveAspect: true);
+            if (GameAssets.DiamondIcon == null) gemIconImg.color = new Color(0.55f, 0.85f, 1f, 1f);
+            gemIconImg.raycastTarget = false;
+            gemIconImg.rectTransform.sizeDelta = new Vector2(42f, 42f);
+            var gemIconLe = gemIconGO.AddComponent<LayoutElement>();
+            gemIconLe.preferredWidth = gemIconLe.preferredHeight = 42f;
+
+            _winGemsText = MakeLabel(gemsRow, "WinGems", "0", font, 34,
+                                     TextAnchor.MiddleLeft, bold: true, shadow: true);
+            _winGemsText.color = new Color(0.6f, 0.88f, 1f, 1f);
+            _winGemsText.raycastTarget = false;
+            AddOutline(_winGemsText, new Color(0f, 0.12f, 0.22f, 0.9f), 2f);
+            var gemTextLe = _winGemsText.gameObject.AddComponent<LayoutElement>();
+            gemTextLe.preferredHeight = 44f; gemTextLe.preferredWidth = 90f;
+
             // More-levels fallback — between the coins label and the button row
             _moreLevelsText = MakeLabel(winCard, "MoreLevels", "More levels coming soon!",
                                         font, 26, TextAnchor.MiddleCenter, bold: false, shadow: true);
@@ -1174,7 +1292,53 @@ namespace BoltSort.Gameplay
             hbRect.sizeDelta        = new Vector2(240f, 96f);
             _winButtonRects[2] = hbRect;
 
+            // ── Reward-ad row (watch-for-gems + double-reward) ──────────────────────
+            // Anchored to the overlay bottom (below the win card's button cluster). The row uses a
+            // HorizontalLayoutGroup so hiding one button keeps the other centred. Visibility is
+            // decided per level in ShowWinOverlay; handlers go through AdService + EconomyManager.
+            var adRow = new GameObject("AdRow", typeof(RectTransform));
+            adRow.transform.SetParent(_winOverlay.transform, false);
+            var adRt = adRow.GetComponent<RectTransform>();
+            adRt.anchorMin = adRt.anchorMax = new Vector2(0.5f, 0f);
+            adRt.pivot     = new Vector2(0.5f, 0f);
+            adRt.anchoredPosition = new Vector2(0f, 96f);
+            var adHlg = adRow.AddComponent<HorizontalLayoutGroup>();
+            adHlg.childAlignment = TextAnchor.MiddleCenter; adHlg.spacing = 18f;
+            adHlg.childControlWidth = false; adHlg.childControlHeight = false;
+            adHlg.childForceExpandWidth = false; adHlg.childForceExpandHeight = false;
+            var adCsf = adRow.AddComponent<ContentSizeFitter>();
+            adCsf.horizontalFit = ContentSizeFitter.FitMode.PreferredSize;
+            adCsf.verticalFit   = ContentSizeFitter.FitMode.PreferredSize;
+
+            _adWatchButton = BuildAdButton(adRow, "AdWatchButton",
+                TrFmt("key_watch_ad_gems_fmt", RewardConfig.Active.DiamondsPerAdWatch), OnWatchAdForGems);
+            _adDoubleButton = BuildAdButton(adRow, "AdDoubleButton",
+                Tr("key_double_reward"), OnDoubleReward);
+            _adWatchButton.SetActive(false);
+            _adDoubleButton.SetActive(false);
+
             _winOverlay.SetActive(false);
+        }
+
+        /// <summary>Builds one reward-ad button (sprite + label + LayoutElement) for the AdRow.</summary>
+        private GameObject BuildAdButton(GameObject parent, string name, string label, Action onClick)
+        {
+            var go  = new GameObject(name);
+            go.transform.SetParent(parent.transform, false);
+            var img = go.AddComponent<Image>();
+            if (GameAssets.MenuButton != null) { img.sprite = GameAssets.MenuButton; img.color = Color.white; img.type = Image.Type.Simple; }
+            else img.color = new Color(0.20f, 0.55f, 0.85f, 1f);
+            var btn = go.AddComponent<Button>();
+            var rt  = go.GetComponent<RectTransform>();
+            btn.onClick.AddListener(() => AudioMgr.Instance?.PlaySFX("button_tap"));
+            btn.onClick.AddListener(() => { StartCoroutine(BounceButton(rt)); onClick?.Invoke(); });
+            var le = go.AddComponent<LayoutElement>();
+            le.preferredWidth = 264f; le.preferredHeight = 84f;
+            rt.sizeDelta = new Vector2(264f, 84f);
+
+            var t = AddTextLabel(go, label, GameAssets.MenuFont, 26);
+            t.resizeTextForBestFit = true; t.resizeTextMinSize = 12; t.resizeTextMaxSize = 26;
+            return go;
         }
 
         // ── UI helpers ────────────────────────────────────────────────────────────

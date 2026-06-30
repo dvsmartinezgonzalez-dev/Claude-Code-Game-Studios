@@ -32,6 +32,7 @@ namespace BoltSort.Gameplay
         {
             EnsureSaveSystem();
             EconomyManager.EnsureInstance(); // after SaveSystem: seeds coins from it on first run
+            AdService.EnsureInstance();      // rewarded-ad facade for the win-screen reward buttons
             EnsureAudioManager();
             EnsureTransitionManager();
             EnsureCamera();
@@ -235,11 +236,24 @@ namespace BoltSort.Gameplay
             // non-tutorial levels, and mirrors the coin balance back into SaveSystem.
             var economy = EconomyManager.Instance;
             int coinsEarned;
+            int gemsEarned = 0;
             if (economy != null)
             {
                 bool isTutorial = false;
-                try { isTutorial = _lds.GetLevel(levelId).IsTutorial; } catch { /* generated ⇒ not tutorial */ }
-                coinsEarned = economy.OnLevelComplete(levelId, stars, isTutorial);
+                bool isSpecial  = false;
+                try
+                {
+                    var rec    = _lds.GetLevel(levelId);
+                    isTutorial = rec.IsTutorial;
+                    // "Special" = any phase-2 mechanic present (mystery / multicolor / frozen tube).
+                    isSpecial  = rec.MysteryBalls || rec.HasMulticolor ||
+                                 (rec.FrozenTubes != null && rec.FrozenTubes.Length > 0);
+                }
+                catch { /* generated ⇒ not tutorial, not special */ }
+
+                LevelRewardResult reward = economy.OnLevelComplete(levelId, stars, isTutorial, isSpecial);
+                coinsEarned = reward.TotalCoins;
+                gemsEarned  = reward.TotalGems;
             }
             else
             {
@@ -247,9 +261,9 @@ namespace BoltSort.Gameplay
             }
 
             // SetWinResult runs synchronously here (GameBootstrap subscribed in Awake, before
-            // HUD subscribed in Start) so _winStarCount/_winCoins are set before HUD's handler
-            // calls ShowWinOverlay.
-            _hud?.SetWinResult(stars, coinsEarned);
+            // HUD subscribed in Start) so _winStarCount/_winCoins/_winGems are set before HUD's
+            // handler calls ShowWinOverlay.
+            _hud?.SetWinResult(stars, coinsEarned, gemsEarned, levelId);
 
             var ss = SaveSystem.SaveSystem.Instance;
             if (ss == null || !ss.IsReady) return;

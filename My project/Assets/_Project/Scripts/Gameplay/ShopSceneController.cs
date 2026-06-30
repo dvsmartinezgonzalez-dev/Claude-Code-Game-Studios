@@ -45,6 +45,11 @@ namespace BoltSort.Gameplay
             EnsureAudioManager();
             EnsureSaveSystem();
             EconomyManager.EnsureInstance();
+            // DEBUG: opening the Shop must NEVER change balances — it only reads them. This logs the
+            // balances at open so any unexpected change is caught against the next read.
+            if (RewardConfig.Active.VerboseLogs)
+                Debug.Log($"[Shop] Opened (read-only) — coins={SkinManager.GetCoins()}, " +
+                          $"gems={(EconomyManager.Instance != null ? EconomyManager.Instance.Gems : 0)}");
             EnsureTransitionManager();
             EnsureEventSystem();
             ConfigureCamera();

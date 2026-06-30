@@ -64,6 +64,104 @@ namespace BoltSort.Tests.Unit.Economy
             Assert.AreEqual(0, d.currentStreak);
         }
 
+        // ── Reward pass: first-time-special bonus + random gem drop (BonusRules) ─────
+        [Test]
+        public void test_bonus_first_time_special_awards_special_coins_and_gems()
+        {
+            // Arrange
+            var d = new EconomyData();
+            var bonus = new BonusRules { IsSpecial = true, SpecialGems = 3, SpecialCoins = 1000 };
+
+            // Act
+            var r = d.RegisterLevelComplete(7, 3, bonus);
+
+            // Assert
+            Assert.AreEqual(3, r.SpecialGems);
+            Assert.AreEqual(1000, r.SpecialCoins);
+            Assert.AreEqual(3, d.gems);
+            Assert.AreEqual(55 + 1000, d.coins); // first-time 3★ base + special coins
+        }
+
+        [Test]
+        public void test_bonus_special_replay_awards_no_special_bonus()
+        {
+            // Arrange — first clear pays the special bonus
+            var d = new EconomyData();
+            var bonus = new BonusRules { IsSpecial = true, SpecialGems = 3, SpecialCoins = 1000 };
+            d.RegisterLevelComplete(7, 3, bonus);
+
+            // Act — replay
+            var r = d.RegisterLevelComplete(7, 3, bonus);
+
+            // Assert
+            Assert.AreEqual(0, r.SpecialGems);
+            Assert.AreEqual(0, r.SpecialCoins);
+            Assert.AreEqual(3, d.gems); // unchanged from the first clear
+        }
+
+        [Test]
+        public void test_bonus_random_drop_below_threshold_awards_gem()
+        {
+            // Arrange — roll strictly below the probability ⇒ drop fires
+            var d = new EconomyData();
+            var bonus = new BonusRules { IsSpecial = false, RandomGems = 1, RandomProb = 0.01f, RandomRoll = 0f };
+
+            // Act
+            var r = d.RegisterLevelComplete(2, 1, bonus);
+
+            // Assert
+            Assert.AreEqual(1, r.RandomGems);
+            Assert.AreEqual(1, d.gems);
+        }
+
+        [Test]
+        public void test_bonus_random_drop_at_or_above_threshold_awards_nothing()
+        {
+            // Arrange — roll above the probability ⇒ no drop
+            var d = new EconomyData();
+            var bonus = new BonusRules { IsSpecial = false, RandomGems = 1, RandomProb = 0.01f, RandomRoll = 0.5f };
+
+            // Act
+            var r = d.RegisterLevelComplete(2, 1, bonus);
+
+            // Assert
+            Assert.AreEqual(0, r.RandomGems);
+            Assert.AreEqual(0, d.gems);
+        }
+
+        [Test]
+        public void test_bonus_special_level_does_not_roll_random_drop()
+        {
+            // Arrange — special level with a roll that WOULD pass the random gate
+            var d = new EconomyData();
+            var bonus = new BonusRules
+            {
+                IsSpecial = true, SpecialGems = 3, SpecialCoins = 1000,
+                RandomGems = 1, RandomProb = 0.01f, RandomRoll = 0f,
+            };
+
+            // Act
+            var r = d.RegisterLevelComplete(7, 3, bonus);
+
+            // Assert — only the special bonus pays out; the random drop never applies on specials
+            Assert.AreEqual(0, r.RandomGems);
+            Assert.AreEqual(3, r.SpecialGems);
+        }
+
+        [Test]
+        public void test_bonus_default_rules_preserve_legacy_behaviour()
+        {
+            // Arrange / Act — the 2-arg overload (legacy callers) must behave exactly as before
+            var d = new EconomyData();
+            var r = d.RegisterLevelComplete(25, 1); // a milestone level
+
+            // Assert — milestone gems only; no special/random additions
+            Assert.AreEqual(0, r.SpecialGems);
+            Assert.AreEqual(0, r.RandomGems);
+            Assert.AreEqual(10, r.MilestoneGems);
+            Assert.AreEqual(10, d.gems);
+        }
+
         // ── Gems: milestones + achievements ──────────────────────────────────────────
         [Test]
         public void test_milestone_gems_awarded_once()

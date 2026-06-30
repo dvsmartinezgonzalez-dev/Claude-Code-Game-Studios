@@ -23,6 +23,11 @@ namespace BoltSort.Gameplay
         private void Start()
         {
             EnsureSaveSystem();
+            // Create the currency authority here at boot (after SaveSystem) so its once-per-day /
+            // once-per-week auto-claim runs from the menu — NOT lazily when the Shop is first opened
+            // (which previously made "opening the Shop" appear to grant gems). A brand-new profile
+            // still stays 0/0: the auto-claim is deferred until the first level is cleared.
+            EconomyManager.EnsureInstance();
             EnsureAudioManager();
             EnsureTransitionManager();
             EnsureEventSystem();
